@@ -16,7 +16,7 @@ function Grundbok() {
   // Också, fetchData kommer från useFetchGet och måste renameas, annars blir två fetchData
 
   // Denna körs på page load för att visa rader men ej detaljer
-  const { fetchData: yearFetchData } = useFetchGet(`api/grundbok/?q=${year}`);
+  const { fetchData: yearFetchData } = useFetchGet(`api/grundbok?q=${year}`);
 
   // Visa detaljer, körs när detailsUrl ändras
   const { fetchData: detailsData } = useFetchGet(detailsUrl || "");
