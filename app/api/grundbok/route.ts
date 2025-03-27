@@ -1,49 +1,33 @@
-import { neon } from "@neondatabase/serverless";
 import { NextRequest, NextResponse } from "next/server";
+import { neon } from "@neondatabase/serverless";
 
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: NextRequest) {
-  const params = request.nextUrl.searchParams.get("q");
-
   try {
-    // If row selected (like "row123")
-    if (params && params.includes("row")) {
-      const match = params.match(/row(\d+)/);
-      if (match && match[1]) {
-        const transaktionsId = parseInt(match[1], 10);
+    const q = request.nextUrl.searchParams.get("q") ?? "";
 
-        const postDataQuery = await sql`
-          SELECT tp.*, k.kontobeskrivning
-          FROM transaktionsposter tp
-          INNER JOIN konton k ON tp.konto_id = k.konto_id
-          WHERE tp.transaktions_id = ${transaktionsId}
-          ORDER BY tp.transaktions_id DESC;
-        `;
+    console.log("🔍 Received query param:", q);
 
-        return NextResponse.json(postDataQuery);
+    const result = await sql`SELECT * FROM konton WHERE sökord ILIKE ${"%" + q + "%"}`;
+
+    return NextResponse.json(result, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  } catch (err: any) {
+    console.error("❌ Server error in /api/grundbok:", err);
+
+    return NextResponse.json(
+      { error: err.message || "Unknown error" },
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
       }
-    }
-
-    // If year selected (like "?q=2024")
-    if (params && !params.includes("row")) {
-      const yearQuery = await sql`
-        SELECT * FROM transaktioner
-        WHERE EXTRACT(YEAR FROM transaktionsdatum) = ${params}
-        ORDER BY transaktionsdatum DESC;
-      `;
-      return NextResponse.json({ yearData: yearQuery });
-    }
-
-    // Default: all rows
-    const allDataQuery = await sql`
-      SELECT * FROM transaktioner
-      ORDER BY transaktionsdatum DESC;
-    `;
-
-    return NextResponse.json({ yearData: allDataQuery });
-  } catch (error: any) {
-    console.error("❌ API error /api/grundbok:", error);
-    return NextResponse.json({ error: error.message || "Unexpected error" }, { status: 500 });
+    );
   }
 }
