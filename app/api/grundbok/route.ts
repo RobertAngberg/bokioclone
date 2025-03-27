@@ -5,9 +5,15 @@ const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q") ?? "";
+  console.log("🔍 Received query param q:", q);
 
   try {
+    const query = `SELECT * FROM konton WHERE sökord ILIKE '%${q}%'`;
+    console.log("📦 Running SQL query:", query);
+
     const rows = await sql`SELECT * FROM konton WHERE sökord ILIKE ${"%" + q + "%"}`;
+    console.log("✅ Query result:", rows);
+
     return new NextResponse(JSON.stringify(rows), {
       status: 200,
       headers: {
@@ -29,7 +35,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Optional: CORS preflight (for POST or complex requests)
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
