@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const sql = neon(process.env.DATABASE_URL!);
 
+console.log("🧠 grundbok GET route hit");
+
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q") ?? "";
   console.log("🔍 Received query param q:", q);
