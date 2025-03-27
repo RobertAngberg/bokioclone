@@ -1,33 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
+import { NextRequest, NextResponse } from "next/server";
 
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: NextRequest) {
+  const q = request.nextUrl.searchParams.get("q") ?? "";
+
   try {
-    const q = request.nextUrl.searchParams.get("q") ?? "";
-
-    console.log("🔍 Received query param:", q);
-
-    const result = await sql`SELECT * FROM konton WHERE sökord ILIKE ${"%" + q + "%"}`;
-
-    return NextResponse.json(result, {
+    const rows = await sql`SELECT * FROM konton WHERE sökord ILIKE ${"%" + q + "%"}`;
+    return new NextResponse(JSON.stringify(rows), {
       status: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
       },
     });
   } catch (err: any) {
-    console.error("❌ Server error in /api/grundbok:", err);
-
-    return NextResponse.json(
-      { error: err.message || "Unknown error" },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    console.error("❌ grundbok API failed:", err);
+    return new NextResponse(JSON.stringify({ error: err.message ?? "Server error" }), {
+      status: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
   }
+}
+
+// Optional: CORS preflight (for POST or complex requests)
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 }

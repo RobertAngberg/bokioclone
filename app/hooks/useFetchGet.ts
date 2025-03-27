@@ -5,20 +5,31 @@ function useFetchGet(url: string) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!url) return;
+
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://next-nu-brown.vercel.app/` + url);
+        const fullUrl = url.startsWith("http")
+          ? url
+          : `https://next-nu-brown.vercel.app${url.startsWith("/") ? "" : "/"}${url}`;
+
+        const response = await fetch(fullUrl);
+
         if (!response.ok) {
-          throw new Error("Failed to fetch data");
+          const msg = `Error ${response.status}: ${response.statusText}`;
+          throw new Error(msg);
         }
+
         const jsonData = await response.json();
         setFetchData(jsonData);
-      } catch (error) {
-        setError(error as Error);
+      } catch (err) {
+        console.error("❌ useFetchGet failed:", err);
+        setError(err as Error);
       }
     };
+
     fetchData();
-  }, [url]); // Glöm ej
+  }, [url]);
 
   return { error, fetchData };
 }

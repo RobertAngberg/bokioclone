@@ -1,41 +1,44 @@
-import { QueryResultRow, sql } from "@vercel/postgres";
-import { NextResponse } from "next/server";
+import { neon } from "@neondatabase/serverless";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: Request) {
-  const params = new URL(request.url).searchParams.get("q");
+const sql = neon(process.env.DATABASE_URL!);
 
-  if (params !== null && typeof Number) {
-    let yearData: QueryResultRow[] | null;
+export async function GET(request: NextRequest) {
+  const q = request.nextUrl.searchParams.get("q");
 
-    const yearQuery = await sql`
-      SELECT * FROM transaktioner 
-      WHERE EXTRACT(YEAR FROM transaktionsdatum) = ${params}
-      ORDER BY transaktionsdatum DESC;`;
-    yearData = yearQuery.rows;
+  if (!q) return NextResponse.json({ message: "Missing year" }, { status: 400 });
 
-    // Alla inkomster summerat
-    const dataInkomst = await sql`
-      SELECT SUM(belopp) AS totalBelopp FROM transaktioner 
-      WHERE kontotyp = 'Intäkt';`;
-    const totalInkomst: number = dataInkomst.rows[0].totalbelopp;
+  try {
+    const yearData = await sql`
+      SELECT * FROM transaktioner
+      WHERE EXTRACT(YEAR FROM transaktionsdatum) = ${q}
+      ORDER BY transaktionsdatum DESC;
+    `;
 
-    // Alla utgifter summerat
-    const dataUtgift = await sql`
-      SELECT SUM(belopp) AS totalBelopp FROM transaktioner 
-      WHERE kontotyp = 'Kostnad';`;
-    const totalUtgift: number = dataUtgift.rows[0].totalbelopp;
+    const inkomst = await sql`
+      SELECT SUM(belopp) AS total FROM transaktioner WHERE kontotyp = 'Intäkt';
+    `;
+    const utgift = await sql`
+      SELECT SUM(belopp) AS total FROM transaktioner WHERE kontotyp = 'Kostnad';
+    `;
 
-    // Resultat = inkomst - utgift
-    const totalResultat: number = totalInkomst - totalUtgift;
+    const totalInkomst = parseFloat(inkomst[0]?.total || 0);
+    const totalUtgift = parseFloat(utgift[0]?.total || 0);
+    const totalResultat = totalInkomst - totalUtgift;
 
-    // Alla rows som finns i table, sorterat efter datum
-    const query = await sql`
-      SELECT * FROM transaktioner ORDER BY transaktionsdatum DESC;`;
-    const allRows: QueryResultRow[] = query.rows;
+    const allRows = await sql`
+      SELECT * FROM transaktioner ORDER BY transaktionsdatum DESC;
+    `;
 
-    return NextResponse.json(
-      { totalInkomst, totalUtgift, totalResultat, allRows, yearData },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      totalInkomst,
+      totalUtgift,
+      totalResultat,
+      allRows,
+      yearData,
+    });
+  } catch (err) {
+    console.error("❌ Resultat API error:", err);
+    return NextResponse.json({ message: "Error", error: err }, { status: 500 });
   }
 }
