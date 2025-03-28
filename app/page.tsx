@@ -3,24 +3,33 @@
 import { useState, useEffect } from "react";
 import { Card } from "./start/Card";
 import { HomeChart } from "./start/HomeChart";
-import { fetchDataFromYear } from "./actions"; // Import the server action
+import { fetchDataFromYear } from "./actions";
 import React from "react";
 
+type YearSummary = {
+  totalInkomst: number;
+  totalUtgift: number;
+  totalResultat: number;
+  yearData: YearDataPoint[];
+};
+
+type YearDataPoint = {
+  month: string;
+  inkomst: number;
+  utgift: number;
+};
+
 function Home() {
-  const [year, setYear] = useState<string>("2024");
-  const [fetchData, setFetchData] = useState<any>(null); // Store the fetched data
+  const [year, setYear] = useState("2024");
+  const fetchData = useServerData(year);
 
-  // Fetch data when the year changes
-  const fetchDataFromServer = async (year: string) => {
-    const data = await fetchDataFromYear(year);
-    setFetchData(data);
-  };
-
-  useEffect(() => {
-    fetchDataFromServer(year);
-  }, [year]);
-
-  console.log("✅ DATA:", fetchData);
+  function useServerData(year: string): YearSummary | null {
+    const [data, setData] = useState<YearSummary | null>(null);
+    useEffect(() => {
+      fetchDataFromYear(year).then(setData);
+    }, [year]);
+    return data;
+  }
 
   return (
     <main className="items-center text-center bg-slate-950">
@@ -29,7 +38,7 @@ function Home() {
         <Card title="Utgifter" data={fetchData?.totalUtgift || 0} />
         <Card title="Resultat" data={fetchData?.totalResultat || 0} />
       </div>
-      <HomeChart setYear={setYear} chartData={fetchData?.yearData} />
+      <HomeChart setYear={setYear} chartData={fetchData?.yearData || []} />
     </main>
   );
 }

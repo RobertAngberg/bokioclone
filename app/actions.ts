@@ -1,10 +1,6 @@
-"use server";
-
 import { prisma } from "@/lib/prisma";
 
 export async function fetchDataFromYear(year: string) {
-  console.log("🔍 Fetching data for year:", year);
-
   try {
     const start = new Date(`${year}-01-01`);
     const end = new Date(`${parseInt(year) + 1}-01-01`);
