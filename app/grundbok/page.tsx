@@ -5,6 +5,25 @@ import { useFetchGet } from "../hooks/useFetchGet";
 import { YearSelect } from "./YearSelect";
 import { Table } from "./Table";
 
+interface HistoryItem {
+  transaktions_id: number;
+  transaktionsdatum: string;
+  kontobeskrivning: string;
+  kontotyp: string;
+  belopp: string;
+  fil: string | null;
+  kommentar: string | null;
+}
+
+interface TransactionDetail {
+  transaktionspost_id: number;
+  transaktions_id: number;
+  konto_id: number;
+  kontobeskrivning: string;
+  debet: string;
+  kredit: string;
+}
+
 function Grundbok() {
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [year, setYear] = useState("2023");
@@ -21,7 +40,6 @@ function Grundbok() {
   );
 
   useEffect(() => {
-    console.log("📦 yearData:", yearResult?.yearData);
     if (Array.isArray(yearResult?.yearData)) {
       const adjusted = yearResult.yearData.map((item) => {
         const date = new Date(item.transaktionsdatum);
@@ -31,14 +49,12 @@ function Grundbok() {
           transaktionsdatum: date.toISOString().slice(0, 10),
         };
       });
-      console.log("✅ adjustedData:", adjusted);
       setHistoryData(adjusted);
     }
   }, [yearResult]);
 
   useEffect(() => {
     if (detailsData) {
-      console.log("🔍 detailsData:", detailsData);
       setDetails(detailsData);
     }
   }, [detailsData]);
