@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { LogoutButton } from "./LogoutButton";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
 
   const closeMenu = () => {
     setIsOpen(false);
@@ -15,46 +17,45 @@ function Navbar() {
     <>
       <li
         onClick={closeMenu}
-        className="transition-colors duration-300 hover:text-slate-400 mb-6 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
+        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
       >
         <Link href="/">Hem</Link>
       </li>
       <li
         onClick={closeMenu}
-        className="transition-colors duration-300 hover:text-slate-400 mb-6 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
+        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
       >
         <Link href="/bokfor">Bokför</Link>
       </li>
       <li
         onClick={closeMenu}
-        className="transition-colors duration-300 hover:text-slate-400 mb-6 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
+        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
       >
         <Link href="/grundbok">Grundbok</Link>
       </li>
       <li
         onClick={closeMenu}
-        className="transition-colors duration-300 hover:text-slate-400 mb-6 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
+        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
       >
         <Link href="/huvudbok">Huvudbok</Link>
       </li>
       <li
         onClick={closeMenu}
-        className="transition-colors duration-300 hover:text-slate-400 mb-6 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
+        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
       >
         <Link href="/faktura">Faktura</Link>
       </li>
       <li
         onClick={closeMenu}
-        className="transition-colors duration-300 hover:text-slate-400 mb-6 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
+        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
       >
         <Link href="/sitebuilder">Hemsida</Link>
       </li>
-      <li
-        onClick={closeMenu}
-        className="transition-colors duration-300 hover:text-slate-400 mb-6 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
-      >
-        {/* <LogoutButton /> */}
-      </li>
+      {session?.user && (
+        <li onClick={closeMenu} className="mb-6 md:mb-0 md:px-6">
+          <LogoutButton />
+        </li>
+      )}
     </>
   );
 
@@ -62,7 +63,7 @@ function Navbar() {
     <div className="sticky top-0 z-50 flex items-center justify-end w-full h-20 px-4 bg-cyan-950 md:justify-center">
       {/* Mobile */}
       {isOpen && (
-        <ul className="text-4xl absolute p-6 pr-10 top-20 right-0 w-full h-screen bg-cyan-950 text-white font-bold text-right">
+        <ul className="absolute right-0 w-full h-screen p-6 pr-10 text-4xl font-bold text-right text-white top-20 bg-cyan-950">
           {renderMenuLinks()}
         </ul>
       )}
@@ -99,7 +100,12 @@ function Navbar() {
           )}
         </svg>
       </div>
-      <div className="hidden md:block">{/* <LogoutButton /> */}</div>
+      {/* Logout button on desktop (separate from menu) */}
+      {session?.user && (
+        <div className="hidden md:block md:ml-6">
+          <LogoutButton />
+        </div>
+      )}
     </div>
   );
 }
