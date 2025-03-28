@@ -3,47 +3,42 @@ import { NextRequest, NextResponse } from "next/server";
 
 const sql = neon(process.env.DATABASE_URL!);
 
-console.log("🧠 grundbok GET route hit");
-
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q") ?? "";
-  console.log("🔍 Received query param q:", q);
 
   try {
-    const query = `SELECT * FROM konton WHERE sökord ILIKE '%${q}%'`;
-    console.log("📦 Running SQL query:", query);
+    if (q.startsWith("row")) {
+      const transId = parseInt(q.replace("row", ""));
+      const details = await sql`
+        SELECT tp.*, k.kontobeskrivning
+        FROM transaktionsposter tp
+        INNER JOIN konton k ON tp.konto_id = k.konto_id
+        WHERE tp.transaktions_id = ${transId}
+        ORDER BY tp.transaktions_id DESC;
+      `;
+      console.log("🧾 Row fetch:", details);
+      return NextResponse.json(details);
+    }
 
-    const rows = await sql`SELECT * FROM konton WHERE sökord ILIKE ${"%" + q + "%"}`;
-    console.log("✅ Query result:", rows);
+    let data;
+    if (q) {
+      data = await sql`
+        SELECT * FROM transaktioner
+        WHERE EXTRACT(YEAR FROM transaktionsdatum) = ${q}
+        ORDER BY transaktionsdatum DESC;
+      `;
+      console.log("📅 Year fetch:", data);
+    } else {
+      data = await sql`
+        SELECT * FROM transaktioner
+        ORDER BY transaktionsdatum DESC;
+      `;
+      console.log("📦 All fetch:", data);
+    }
 
-    return new NextResponse(JSON.stringify(rows), {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
+    return NextResponse.json({ yearData: data });
   } catch (err: any) {
     console.error("❌ grundbok API failed:", err);
-    return new NextResponse(JSON.stringify({ error: err.message ?? "Server error" }), {
-      status: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
+    return NextResponse.json({ error: err.message ?? "Server error" }, { status: 500 });
   }
-}
-
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
 }
