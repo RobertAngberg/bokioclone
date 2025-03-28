@@ -44,8 +44,8 @@ function AccountSearch({
       />
 
       {/* Div med sökresultat */}
-      {showSearchResults && fetchData?.data && searchText && (
-        <SearchResults data={fetchData.data} onClick={searchResultClick} />
+      {showSearchResults && data && searchText && (
+        <SearchResults data={data} onClick={searchResultClick} />
       )}
     </div>
   );
