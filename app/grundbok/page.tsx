@@ -12,24 +12,20 @@ function Grundbok() {
   const [detailsUrl, setDetailsUrl] = useState<string | null>(null);
   const [details, setDetails] = useState<TransactionDetail[]>([]);
 
-  const {
-    data: yearResult,
-    error: yearError,
-    loading: yearLoading,
-  } = useFetchGet<{ yearData: HistoryItem[] }>(`api/grundbok?q=${year}`);
+  const { fetchData: yearResult, error: yearError } = useFetchGet<{ yearData: HistoryItem[] }>(
+    `api/grundbok?q=${year}`
+  );
 
-  const {
-    data: detailsData,
-    error: detailsError,
-    loading: detailsLoading,
-  } = useFetchGet<TransactionDetail[]>(detailsUrl || "");
+  const { fetchData: detailsData, error: detailsError } = useFetchGet<TransactionDetail[]>(
+    detailsUrl || ""
+  );
 
   useEffect(() => {
     console.log("📦 yearData:", yearResult?.yearData);
     if (Array.isArray(yearResult?.yearData)) {
       const adjusted = yearResult.yearData.map((item) => {
         const date = new Date(item.transaktionsdatum);
-        date.setDate(date.getDate() + 1); // Adjust for timezone
+        date.setDate(date.getDate() + 1);
         return {
           ...item,
           transaktionsdatum: date.toISOString().slice(0, 10),
@@ -69,18 +65,14 @@ function Grundbok() {
         <p className="text-red-400">⚠️ Error loading details: {detailsError.message}</p>
       )}
 
-      {yearLoading ? (
-        <p className="text-slate-300">🔄 Loading...</p>
-      ) : (
-        <div className="w-full">
-          <Table
-            historyData={historyData}
-            handleRowClick={handleRowClick}
-            activeId={activeTransId}
-            details={details}
-          />
-        </div>
-      )}
+      <div className="w-full">
+        <Table
+          historyData={historyData}
+          handleRowClick={handleRowClick}
+          activeId={activeTransId}
+          details={details}
+        />
+      </div>
     </main>
   );
 }
