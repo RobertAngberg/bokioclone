@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: NextRequest) {
+  console.log("👋 Hello from bokfor API");
+
   const q = request.nextUrl.searchParams.get("q") ?? "";
 
   try {
