@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       console.log("📦 All fetch:", data);
     }
 
-    return NextResponse.json({ yearData: data }); // ✅ FIXED: no `.rows`
+    return NextResponse.json({ yearData: data.rows }); // ✅ FIXED: no `.rows`
   } catch (err: any) {
     console.error("❌ grundbok API failed:", err);
     return NextResponse.json({ error: err.message ?? "Server error" }, { status: 500 });
