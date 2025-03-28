@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 
-function useFetchGet<T = any>(url: string) {
-  const [data, setData] = useState<T | null>(null);
+function useFetchGet(url: string) {
+  const [fetchData, setFetchData] = useState<any | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!url) return;
 
-    const fetchData = async () => {
+    const fetchDataAsync = async () => {
       try {
         const fullUrl = url.startsWith("http")
           ? url
@@ -16,9 +15,7 @@ function useFetchGet<T = any>(url: string) {
 
         console.log("🌐 Fetching from:", fullUrl);
 
-        const response = await fetch(fullUrl, {
-          cache: "no-store", // Force fresh data
-        });
+        const response = await fetch(fullUrl, { cache: "no-store" });
 
         if (!response.ok) {
           const msg = `Error ${response.status}: ${response.statusText}`;
@@ -26,19 +23,17 @@ function useFetchGet<T = any>(url: string) {
         }
 
         const json = await response.json();
-        setData(json);
+        setFetchData(json);
       } catch (err) {
         console.error("❌ useFetchGet error:", err);
         setError(err as Error);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchDataAsync();
   }, [url]);
 
-  return { data, error, loading };
+  return { fetchData, error };
 }
 
 export { useFetchGet };
