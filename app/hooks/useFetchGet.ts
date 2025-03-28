@@ -7,7 +7,7 @@ function useFetchGet(url: string) {
   useEffect(() => {
     if (!url) return;
 
-    const fetchDataAsync = async () => {
+    const fetchData = async () => {
       try {
         const fullUrl = url.startsWith("http")
           ? url
@@ -15,22 +15,24 @@ function useFetchGet(url: string) {
 
         console.log("🌐 Fetching from:", fullUrl);
 
-        const response = await fetch(fullUrl, { cache: "no-store" });
+        const response = await fetch(fullUrl, {
+          cache: "no-store",
+        });
 
         if (!response.ok) {
           const msg = `Error ${response.status}: ${response.statusText}`;
           throw new Error(msg);
         }
 
-        const json = await response.json();
-        setFetchData(json);
+        const jsonData = await response.json();
+        setFetchData(jsonData);
       } catch (err) {
-        console.error("❌ useFetchGet error:", err);
+        console.error("❌ useFetchGet failed:", err);
         setError(err as Error);
       }
     };
 
-    fetchDataAsync();
+    fetchData();
   }, [url]);
 
   return { fetchData, error };
