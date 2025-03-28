@@ -12,13 +12,22 @@ function Grundbok() {
   const [detailsUrl, setDetailsUrl] = useState<string | null>(null);
   const [details, setDetails] = useState<TransactionDetail[]>([]);
 
-  const { fetchData: yearFetchData, error: yearError } = useFetchGet(`api/grundbok?q=${year}`);
-  const { fetchData: detailsData, error: detailsError } = useFetchGet(detailsUrl || "");
+  const {
+    data: yearData,
+    error: yearError,
+    loading: yearLoading,
+  } = useFetchGet<{ yearData: HistoryItem[] }>(`api/grundbok?q=${year}`);
+
+  const {
+    data: detailsData,
+    error: detailsError,
+    loading: detailsLoading,
+  } = useFetchGet<TransactionDetail[]>(detailsUrl || "");
 
   useEffect(() => {
-    console.log("📦 yearFetchData:", yearFetchData);
-    if (yearFetchData?.yearData && Array.isArray(yearFetchData.yearData)) {
-      const adjustedData = yearFetchData.yearData.map((item: HistoryItem) => {
+    console.log("📦 yearData:", yearData);
+    if (yearData?.yearData && Array.isArray(yearData.yearData)) {
+      const adjustedData = yearData.yearData.map((item: HistoryItem) => {
         const adjustedDate = new Date(item.transaktionsdatum);
         adjustedDate.setDate(adjustedDate.getDate() + 1);
         item.transaktionsdatum = adjustedDate.toISOString().slice(0, 10);
@@ -27,7 +36,7 @@ function Grundbok() {
       console.log("✅ adjustedData:", adjustedData);
       setHistoryData(adjustedData);
     }
-  }, [yearFetchData]);
+  }, [yearData]);
 
   useEffect(() => {
     if (detailsData) {
@@ -58,14 +67,19 @@ function Grundbok() {
         <p className="text-red-400">⚠️ Error loading details: {detailsError.message}</p>
       )}
 
-      <div className="w-full">
-        <Table
-          historyData={historyData}
-          handleRowClick={handleRowClick}
-          activeId={activeTransId}
-          details={details}
-        />
-      </div>
+      {/* Optional: show loading */}
+      {yearLoading ? (
+        <p className="text-slate-300">🔄 Loading...</p>
+      ) : (
+        <div className="w-full">
+          <Table
+            historyData={historyData}
+            handleRowClick={handleRowClick}
+            activeId={activeTransId}
+            details={details}
+          />
+        </div>
+      )}
     </main>
   );
 }
