@@ -1,3 +1,22 @@
+interface TableRowProps {
+  item: {
+    transaktions_id: string;
+    transaktionsdatum: string;
+    fil?: string;
+    kontobeskrivning: string;
+    belopp: number;
+    kommentar?: string;
+  };
+  handleRowClick: (id: string) => void;
+  activeId: string | null;
+  details: {
+    transaktionspost_id: string;
+    kontobeskrivning: string;
+    debet: number;
+    kredit: number;
+  }[];
+}
+
 function TableRow({ item, handleRowClick, activeId, details }: TableRowProps) {
   return (
     <>
@@ -5,20 +24,20 @@ function TableRow({ item, handleRowClick, activeId, details }: TableRowProps) {
       <tr
         key={item.transaktions_id}
         onClick={() => handleRowClick(item.transaktions_id)}
-        className="even:bg-gray-950 odd:bg-gray-900 hover:bg-gray-700 cursor-pointer"
+        className="cursor-pointer even:bg-gray-950 odd:bg-gray-900 hover:bg-gray-700"
       >
         <td className="p-5">{item.transaktions_id}</td>
         <td className="p-5">{item.transaktionsdatum}</td>
-        <td className="p-5 hidden md:table-cell">{item.fil}</td>
+        <td className="hidden p-5 md:table-cell">{item.fil}</td>
         <td className="p-5">{item.kontobeskrivning}</td>
         <td className="p-5">{item.belopp}</td>
-        <td className="p-5 hidden md:table-cell">{item.kommentar}</td>
+        <td className="hidden p-5 md:table-cell">{item.kommentar}</td>
       </tr>
       {/* Detta är unfoldat / maximerat */}
       {activeId === item.transaktions_id && (
-        <tr className="bg-gray-800 text-left">
+        <tr className="text-left bg-gray-800">
           <td colSpan={6}>
-            <div className="flex justify-center items-center p-5">
+            <div className="flex items-center justify-center p-5">
               <table className="w-full">
                 <thead>
                   <tr>

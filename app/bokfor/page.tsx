@@ -9,19 +9,19 @@ import { Step4 } from "./Step4";
 function Bokför() {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [searchText, setSearchText] = useState("");
-  const [kontonummer, setKontonummer] = useState<number>(0);
+  const [kontonummer, setKontonummer] = useState<string>("");
   const [kontobeskrivning, setKontobeskrivning] = useState<string>();
-  const [kontotyp, setKontotyp] = useState<string>();
+  const [kontotyp, setKontotyp] = useState<"Intäkt" | "Kostnad">();
   const [fil, setFil] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [belopp, setBelopp] = useState<number | undefined>(undefined);
-  const [transaktionsdatum, setTransaktionsdatum] = useState("");
-  const [kommentar, setKommentar] = useState("");
+  const [belopp, setBelopp] = useState<number | null>(null);
+  const [transaktionsdatum, setTransaktionsdatum] = useState<string | null>(null);
+  const [kommentar, setKommentar] = useState<string | null>(null);
 
   return (
-    <main className="items-center text-center bg-slate-950 min-h-screen pt-10 px-6">
+    <main className="items-center min-h-screen px-6 pt-10 text-center bg-slate-950">
       {currentStep === 1 && (
-        <div className="w-full text-white md:mx-auto md:w-2/5 bg-cyan-950 p-10 rounded rounded-3xl">
+        <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
           <AccountSearch
             searchText={searchText}
             setSearchText={setSearchText}
@@ -52,12 +52,12 @@ function Bokför() {
       {currentStep === 3 && (
         <Step3
           kontonummer={kontonummer}
-          kontobeskrivning={kontobeskrivning}
-          kontotyp={kontotyp}
-          fil={fil}
-          belopp={belopp}
-          transaktionsdatum={transaktionsdatum}
-          kommentar={kommentar}
+          kontobeskrivning={kontobeskrivning || ""}
+          kontotyp={kontotyp ?? "Intäkt"}
+          fil={fil || undefined}
+          belopp={belopp ?? 0}
+          transaktionsdatum={transaktionsdatum || ""}
+          kommentar={kommentar || ""}
           setCurrentStep={setCurrentStep}
         />
       )}

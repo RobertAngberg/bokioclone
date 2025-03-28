@@ -8,6 +8,7 @@ import { InvoiceCanvas } from "./InvoiceCanvas";
 import { LogoUpload } from "./LogoUpload";
 
 function Invoice() {
+  type Group = "first4" | "second4" | "third4" | "fourth4" | "fifth4" | "sixth4" | "seventh4";
   const [activeToggleBtn, setActiveToggleBtn] = useState<Group | null>(null);
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -114,8 +115,8 @@ function Invoice() {
   return (
     <main className="flex flex-col justify-center p-10 text-white bg-slate-950">
       {/* Syns bara på mindre skärmar */}
-      <div className="fixed inset-0 flex items-center justify-center bg-slate-950 text-white block lg:hidden">
-        <p className="text-center text-xl p-10 md:p-8">
+      <div className="fixed inset-0 flex items-center justify-center text-white bg-slate-950 lg:hidden">
+        <p className="p-10 text-xl text-center md:p-8">
           Beklagar, den här funktionen är endast tillgänglig på större skärmar.
         </p>
       </div>

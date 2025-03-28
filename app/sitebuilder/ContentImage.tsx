@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import ReactCrop, { Crop as ReactCropType, PixelCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+import React, { useState, useRef } from "react";
+import ReactCrop, { Crop as ReactCropType, PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
 type ExtendedCrop = ReactCropType & {
   aspect?: number;
@@ -20,7 +20,7 @@ const ContentImage: React.FC<ContentImageProps> = ({ onImageCrop }) => {
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const reader = new FileReader();
-      reader.addEventListener('load', () => setSrc(reader.result as string));
+      reader.addEventListener("load", () => setSrc(reader.result as string));
       reader.readAsDataURL(e.target.files[0]);
     }
   };
@@ -31,7 +31,7 @@ const ContentImage: React.FC<ContentImageProps> = ({ onImageCrop }) => {
 
     // Set the crop area to the full image after loading
     setCrop({
-      unit: '%', // Use percentage to make it responsive
+      unit: "%", // Use percentage to make it responsive
       x: 0,
       y: 0,
       width: 100,
@@ -63,8 +63,8 @@ const ContentImage: React.FC<ContentImageProps> = ({ onImageCrop }) => {
   };
 
   const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop, scale: number): string => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
@@ -90,12 +90,12 @@ const ContentImage: React.FC<ContentImageProps> = ({ onImageCrop }) => {
       );
     }
 
-    return canvas.toDataURL('image/jpeg');
+    return canvas.toDataURL("image/jpeg");
   };
 
   const getScaledImage = (image: HTMLImageElement, scale: number): string => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
     // Calculate exact canvas dimensions based on scale
     const scaledWidth = image.naturalWidth * scale;
@@ -118,18 +118,18 @@ const ContentImage: React.FC<ContentImageProps> = ({ onImageCrop }) => {
       );
     }
 
-    return canvas.toDataURL('image/jpeg');
+    return canvas.toDataURL("image/jpeg");
   };
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      {!src && (  // Only show the upload button if no image has been uploaded
-        <label className="bg-slate-700 text-white px-4 py-2 rounded cursor-pointer transition-colors duration-300 hover:bg-slate-500">
+      {!src && ( // Only show the upload button if no image has been uploaded
+        <label className="px-4 py-2 text-white transition-colors duration-300 rounded cursor-pointer bg-slate-700 hover:bg-slate-500">
           Välj fil
-          <input 
-            type="file" 
-            accept="image/*" 
-            onChange={onSelectFile} 
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onSelectFile}
             className="hidden" // Hide the default file input
           />
         </label>
@@ -145,15 +145,15 @@ const ContentImage: React.FC<ContentImageProps> = ({ onImageCrop }) => {
               src={src}
               alt="Source"
               onLoad={onImageLoad}
-              style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }} // Apply scale to the image visually
+              style={{ transform: `scale(${scale})`, transformOrigin: "top left" }} // Apply scale to the image visually
             />
           </ReactCrop>
           <div className="mt-2">
             <label className="block text-gray-700">Storlek:</label>
             <input
               type="range"
-              min="0.5"   // Allow scaling down to 50% of the original size
-              max="1"     // Maximum scale is 1 (100% of the original size)
+              min="0.5" // Allow scaling down to 50% of the original size
+              max="1" // Maximum scale is 1 (100% of the original size)
               step="0.01"
               value={scale}
               onChange={handleScaleChange}
@@ -161,7 +161,10 @@ const ContentImage: React.FC<ContentImageProps> = ({ onImageCrop }) => {
             />
           </div>
           <div className="flex justify-center mt-4">
-            <button onClick={handleSave} className="bg-slate-700 text-white px-4 py-2 rounded cursor-pointer transition-colors duration-300 hover:bg-slate-500">
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 text-white transition-colors duration-300 rounded cursor-pointer bg-slate-700 hover:bg-slate-500"
+            >
               Spara bild
             </button>
           </div>

@@ -4,13 +4,35 @@ import SectionInside from "./SectionInside";
 import AddSectionsMenu from "./AddSectionsMenu";
 import HeroImage from "./HeroImage";
 
+interface SectionProps {
+  setSections: React.Dispatch<React.SetStateAction<number[]>>;
+  sections: number[];
+  sectionId: number;
+  nextSectionId: number;
+}
+
 function Section({ setSections, sections, sectionId, nextSectionId }: SectionProps) {
   const [isAddingContentType, setIsAddingContentType] = useState<
     "header" | "text" | "image" | "twoColumns" | "threeColumns" | "headerImage" | null
   >(null);
+  // Define the Content type
+  interface Content {
+    kind: "header" | "text" | "image" | "twoColumns" | "threeColumns" | "headerImage";
+    text?: string;
+    imageUrl?: string;
+    columns?: number;
+  }
+
   const [content, setContent] = useState<Content | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  type HandleAddContent = (
+    kind: "header" | "text" | "image" | "twoColumns" | "threeColumns" | "headerImage",
+    text?: string,
+    imageUrl?: string,
+    columns?: number
+  ) => void;
 
   const handleAddContent: HandleAddContent = (kind, text, imageUrl, columns) => {
     setContent({ kind, text, imageUrl, columns });

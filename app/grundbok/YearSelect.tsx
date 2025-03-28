@@ -1,3 +1,7 @@
+interface YearSelectProps {
+  setYear: (year: string) => void;
+}
+
 function YearSelect({ setYear }: YearSelectProps) {
   return (
     <select

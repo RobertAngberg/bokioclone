@@ -12,10 +12,10 @@ function Sitebuilder() {
   const [nextSectionId, setNextSectionId] = useState(2);
 
   return (
-    <main className="flex justify-center items-start min-h-screen bg-slate-50">
-      <div className="w-full lg:w-2/3 min-h-screen bg-white shadow-lg shadow-slate-400 flex flex-col">
+    <main className="flex items-start justify-center min-h-screen bg-slate-50">
+      <div className="flex flex-col w-full min-h-screen bg-white shadow-lg lg:w-2/3 shadow-slate-400">
         <div className="px-6 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <Logo />
             <Navbar />
           </div>
@@ -25,14 +25,14 @@ function Sitebuilder() {
           </div>
         </div>
 
-        <div className="px-6 py-0 mb-60 flex-grow">
-          {sections.map((sectionId) => (
+        <div className="flex-grow px-6 py-0 mb-60">
+          {sections.map((sectionId: number) => (
             <Section
               key={sectionId}
               sections={sections}
-              setSections={(newSections) => {
-                setSections(newSections);
+              setSections={(prevSections) => {
                 setNextSectionId(nextSectionId + 1);
+                return [...(prevSections as number[])];
               }}
               sectionId={sectionId}
               nextSectionId={nextSectionId}
@@ -44,8 +44,8 @@ function Sitebuilder() {
       </div>
 
       {/* Syns bara på mindre skärmar */}
-      <div className="fixed inset-0 flex items-center justify-center bg-slate-950 text-white block lg:hidden">
-        <p className="text-center text-xl p-4 md:p-8">
+      <div className="fixed inset-0 flex items-center justify-center text-white bg-slate-950 lg:hidden">
+        <p className="p-4 text-xl text-center md:p-8">
           Beklagar, den här funktionen är endast tillgänglig på större skärmar.
         </p>
       </div>

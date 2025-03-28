@@ -1,3 +1,8 @@
+interface CommentProps {
+  kommentar: string;
+  setKommentar: (value: string) => void;
+}
+
 function Comment({ kommentar, setKommentar }: CommentProps) {
   return (
     <div className="mb-4">

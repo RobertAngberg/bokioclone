@@ -20,7 +20,7 @@ function AccountSearch({
   searchText: string;
   setSearchText: (text: string) => void;
   setKontonummer: (kontonummer: string) => void;
-  setKontotyp: (kontotyp: string) => void;
+  setKontotyp: (kontotyp: "Intäkt" | "Kostnad" | undefined) => void;
   setKontobeskrivning: (kontobeskrivning: string) => void;
 }) {
   const [showSearchResults, setShowSearchResults] = useState(true);
@@ -33,7 +33,9 @@ function AccountSearch({
 
   const searchResultClick = (item: FetchDataItem): void => {
     setKontonummer(item.kontonummer);
-    setKontotyp(item.kontotyp);
+    setKontotyp(
+      item.kontotyp === "Intäkt" || item.kontotyp === "Kostnad" ? item.kontotyp : undefined
+    );
     setKontobeskrivning(item.kontobeskrivning);
     setCurrentStep(2);
     setShowSearchResults(false);

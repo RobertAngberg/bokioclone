@@ -1,5 +1,12 @@
 import React, { useEffect } from "react";
 
+interface InvoiceCanvasProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  textFields: { [key: string]: string };
+  logoImage: HTMLImageElement | null;
+  saveAsJPG: () => void;
+}
+
 function InvoiceCanvas({ canvasRef, textFields, logoImage, saveAsJPG }: InvoiceCanvasProps) {
   useEffect(() => {
     if (canvasRef.current) {
@@ -124,7 +131,7 @@ function InvoiceCanvas({ canvasRef, textFields, logoImage, saveAsJPG }: InvoiceC
         ctx.fillText(textFields["Fot, social media"], 530, 940);
       }
     }
-  }, [textFields, logoImage]);
+  }, [textFields, logoImage, canvasRef]);
 
   return (
     <>

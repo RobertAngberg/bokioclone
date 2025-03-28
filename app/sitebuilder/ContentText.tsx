@@ -1,7 +1,10 @@
 import { useState } from "react";
 
-function ContentText({ handleAddContent }: ContentTextProps) {
+interface ContentTextProps {
+  handleAddContent: (type: string, value: string) => void;
+}
 
+function ContentText({ handleAddContent }: ContentTextProps) {
   const [inputValue, setInputValue] = useState("");
 
   return (
@@ -11,9 +14,14 @@ function ContentText({ handleAddContent }: ContentTextProps) {
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Enter your text"
-        className="mr-2 p-2 border border-gray-300 rounded flex-grow"
+        className="flex-grow p-2 mr-2 border border-gray-300 rounded"
       />
-      <button className="bg-slate-700 text-white px-4 py-2 rounded transition-colors duration-300 hover:bg-slate-500" onClick={() => handleAddContent("text", inputValue)}>Lägg till text</button>
+      <button
+        className="px-4 py-2 text-white transition-colors duration-300 rounded bg-slate-700 hover:bg-slate-500"
+        onClick={() => handleAddContent("text", inputValue)}
+      >
+        Lägg till text
+      </button>
     </div>
   );
 }

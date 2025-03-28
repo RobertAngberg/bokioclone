@@ -70,9 +70,9 @@ function Grundbok() {
   };
 
   return (
-    <main className="items-center min-h-screen text-center text-white md:px-10 bg-slate-950 px-4">
-      <div className="flex flex-col items-center justify-center p-10 text-center md:text-left md:flex-row w-full mb-2">
-        <h1 className="text-4xl font-bold md:mr-4 mb-6 md:mb-0">Grundbok</h1>
+    <main className="items-center min-h-screen px-4 text-center text-white md:px-10 bg-slate-950">
+      <div className="flex flex-col items-center justify-center w-full p-10 mb-2 text-center md:text-left md:flex-row">
+        <h1 className="mb-6 text-4xl font-bold md:mr-4 md:mb-0">Grundbok</h1>
         <YearSelect setYear={setYear} />
       </div>
 

@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 
+interface ContentTwoColumnsProps {
+  handleAddContent: (type: string, arg1?: any, arg2?: any, columnsData?: string[]) => void;
+}
+
 const ContentTwoColumns: React.FC<ContentTwoColumnsProps> = ({ handleAddContent }) => {
   const [columns, setColumns] = useState<{ text: string; isEditing: boolean }[]>([
     { text: "", isEditing: false },
@@ -53,16 +57,16 @@ const ContentTwoColumns: React.FC<ContentTwoColumnsProps> = ({ handleAddContent 
                 {column.text ? (
                   <p>{column.text}</p>
                 ) : (
-                  <div className="text-gray-400 italic">Klicka för att lägga till text...</div>
+                  <div className="italic text-gray-400">Klicka för att lägga till text...</div>
                 )}
               </div>
             )}
           </div>
         ))}
       </div>
-      <div className="w-full flex justify-center mt-4">
+      <div className="flex justify-center w-full mt-4">
         <button
-          className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
+          className="px-6 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
           onClick={handleSave}
         >
           Spara

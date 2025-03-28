@@ -1,5 +1,9 @@
 import { useState } from "react";
 
+interface ContentHeaderProps {
+  handleAddContent: (type: string, value: string) => void;
+}
+
 function ContentHeader({ handleAddContent }: ContentHeaderProps) {
   const [inputValue, setInputValue] = useState("");
 
@@ -10,10 +14,10 @@ function ContentHeader({ handleAddContent }: ContentHeaderProps) {
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Rubrikens text"
-        className="mr-2 p-2 border border-gray-300 rounded flex-grow"
+        className="flex-grow p-2 mr-2 border border-gray-300 rounded"
       />
       <button
-        className="bg-slate-700 text-white px-4 py-2 rounded transition-colors duration-300 hover:bg-slate-500"
+        className="px-4 py-2 text-white transition-colors duration-300 rounded bg-slate-700 hover:bg-slate-500"
         onClick={() => handleAddContent("header", inputValue)}
       >
         Lägg till rubrik

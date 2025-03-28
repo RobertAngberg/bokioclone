@@ -1,5 +1,16 @@
 import { useFetchPost } from "../hooks/useFetchPost";
 
+interface Step3Props {
+  kontonummer: string;
+  kontobeskrivning: string;
+  kontotyp: "Intäkt" | "Kostnad";
+  fil?: File;
+  belopp: number;
+  transaktionsdatum: string;
+  kommentar: string;
+  setCurrentStep: (step: number) => void;
+}
+
 function Step3({
   kontonummer,
   kontobeskrivning,
@@ -48,14 +59,14 @@ function Step3({
   };
 
   return (
-    <main className="items-center text-center bg-slate-950 min-h-screen text-white">
-      <div className="w-full text-white md:mx-auto md:w-2/5 bg-cyan-950 p-10 rounded rounded-3xl">
+    <main className="items-center min-h-screen text-center text-white bg-slate-950">
+      <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
         <h1 className="text-3xl font-bold bokföring mb-4">Steg 3: Kontrollera och slutför</h1>
         <p className="w-full font-bold">{kontobeskrivning}</p>
         <p className="w-full mb-6">
           {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
         </p>
-        <table className="border border-gray-300 mb-8 w-full text-left">
+        <table className="w-full mb-8 text-left border border-gray-300">
           <thead>
             <tr>
               <th className="p-4 border-b">Konto</th>
