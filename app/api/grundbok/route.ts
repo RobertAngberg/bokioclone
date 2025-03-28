@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: NextRequest) {
-  console.log("👋 Hello from bokfor API");
+  console.log("👋 Hello from grundbok API");
 
   const q = request.nextUrl.searchParams.get("q") ?? "";
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       console.log("📦 All fetch:", data);
     }
 
-    return NextResponse.json({ yearData: data.rows });
+    return NextResponse.json({ yearData: data }); // ✅ FIXED: no `.rows`
   } catch (err: any) {
     console.error("❌ grundbok API failed:", err);
     return NextResponse.json({ error: err.message ?? "Server error" }, { status: 500 });
