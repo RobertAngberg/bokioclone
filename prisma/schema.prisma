@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaktion {
+  transaktions_id      Int                 @id @default(autoincrement()) @map("transaktions_id")
+  transaktionsdatum    DateTime           @map("transaktionsdatum")
+  kontobeskrivning     String?            @map("kontobeskrivning")
+  kontotyp             String?            @map("kontotyp")
+  belopp               Float?             @map("belopp")
+  fil                  String?            @map("fil")
+  kommentar            String?            @map("kommentar")
+
+  transaktionsposter   Transaktionspost[] 
+
+  @@map("transaktioner")
+}
+
+model Transaktionspost {
+  transaktionspost_id  Int       @id @default(autoincrement()) @map("transaktionspost_id")
+  transaktions_id      Int       @map("transaktions_id")
+  konto_id             Int       @map("konto_id")
+  debet                Float     @map("debet")
+  kredit               Float     @map("kredit")
+
+  transaktion          Transaktion  @relation(fields: [transaktions_id], references: [transaktions_id], onDelete: Cascade)
+  konto                Konto        @relation(fields: [konto_id], references: [konto_id], onDelete: Cascade)
+
+  @@map("transaktionsposter")
+}
+
+model Konto {
+  konto_id           Int                 @id @default(autoincrement()) @map("konto_id")
+  kontonummer        String              @map("kontonummer")
+  kontobeskrivning   String?             @map("kontobeskrivning")
+  sökord             String?             @map("sökord")
+
+  transaktionsposter Transaktionspost[]  
+
+  @@map("konton")
+}

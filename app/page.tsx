@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "./start/Card";
 import { HomeChart } from "./start/HomeChart";
-import { useFetchGet } from "./hooks/useFetchGet";
+import { fetchDataFromYear } from "./actions"; // Import the server action
+import React from "react";
 
 function Home() {
   const [year, setYear] = useState<string>("2024");
-  const { fetchData } = useFetchGet(`api/hem?q=${year}`);
+  const [fetchData, setFetchData] = useState<any>(null); // Store the fetched data
+
+  // Fetch data when the year changes
+  const fetchDataFromServer = async (year: string) => {
+    const data = await fetchDataFromYear(year);
+    setFetchData(data);
+  };
+
+  useEffect(() => {
+    fetchDataFromServer(year);
+  }, [year]);
+
+  console.log("✅ DATA:", fetchData);
 
   return (
     <main className="items-center text-center bg-slate-950">

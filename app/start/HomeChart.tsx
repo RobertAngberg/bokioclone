@@ -1,6 +1,20 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import "chart.js/auto";
 import { Bar } from "react-chartjs-2";
+import React from "react";
+
+type ChartRow = {
+  month: string; // ISO date string, e.g. "2024-01-01T00:00:00.000Z"
+  inkomst: number;
+  utgift: number;
+};
+
+type HomeChartProps = {
+  setYear: (year: string) => void;
+  chartData: ChartRow[];
+};
 
 function HomeChart({ setYear, chartData }: HomeChartProps) {
   const [labels, setLabels] = useState<string[]>([]);
@@ -8,31 +22,21 @@ function HomeChart({ setYear, chartData }: HomeChartProps) {
   const [kostnadData, setKostnadData] = useState<number[]>([]);
 
   useEffect(() => {
-    // [] runt date = allows you to use any string as a key in groupedData
-    const groupedData: {
-      [date: string]: { inkomst: number; kostnad: number };
-    } = {};
+    if (!chartData) return;
 
-    chartData?.forEach((row) => {
-      // Justera datum +1
-      const adjustedDate = new Date(row.transaktionsdatum);
-      adjustedDate.setDate(adjustedDate.getDate() + 1); // +1 dag
-      const date = adjustedDate.toISOString().slice(0, 10);
+    const tempLabels: string[] = [];
+    const tempInkomsterData: number[] = [];
+    const tempKostnadData: number[] = [];
 
-      if (!groupedData[date]) {
-        groupedData[date] = { inkomst: 0, kostnad: 0 };
-      }
-      if (row.kontotyp === "Intäkt") {
-        groupedData[date].inkomst += row.belopp;
-      } else if (row.kontotyp === "Kostnad") {
-        groupedData[date].kostnad += row.belopp;
-      }
+    chartData.forEach((row) => {
+      const date = new Date(row.month);
+      if (isNaN(date.getTime())) return; // Skip invalid dates
+
+      const label = date.toLocaleString("default", { month: "short" }); // "Jan", "Feb", etc.
+      tempLabels.push(label);
+      tempInkomsterData.push(Number(row.inkomst));
+      tempKostnadData.push(-Number(row.utgift)); // Negate to show downward bars
     });
-
-    const tempLabels = Object.keys(groupedData).sort();
-    const tempInkomsterData = tempLabels.map((date) => groupedData[date].inkomst);
-    // Negate costs to go downwards
-    const tempKostnadData = tempLabels.map((date) => -groupedData[date].kostnad);
 
     setLabels(tempLabels);
     setInkomsterData(tempInkomsterData);
