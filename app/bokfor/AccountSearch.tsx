@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import { useFetchGet } from "../hooks/useFetchGet";
 import { SearchResults } from "./SearchResults";
 
+interface FetchDataItem {
+  kontonummer: string;
+  kontotyp: string;
+  kontobeskrivning: string;
+}
+
 function AccountSearch({
   setCurrentStep,
   searchText,
@@ -9,7 +15,14 @@ function AccountSearch({
   setKontonummer,
   setKontotyp,
   setKontobeskrivning,
-}: AccountSearchProps) {
+}: {
+  setCurrentStep: (step: number) => void;
+  searchText: string;
+  setSearchText: (text: string) => void;
+  setKontonummer: (kontonummer: string) => void;
+  setKontotyp: (kontotyp: string) => void;
+  setKontobeskrivning: (kontobeskrivning: string) => void;
+}) {
   const [showSearchResults, setShowSearchResults] = useState(true);
   const { fetchData, error } = useFetchGet(`api/bokfor?q=${searchText}`);
 
@@ -28,13 +41,13 @@ function AccountSearch({
 
   return (
     <div className="w-full">
-      <h1 className="font-bold text-4xl mb-4">Steg 1: Sök förval</h1>
+      <h1 className="mb-4 text-4xl font-bold">Steg 1: Sök förval</h1>
       <div className="mb-2">
         <p>Skriv in vad du vill bokföra.</p>
         <p>Systemet hittar rätt förval att använda.</p>
       </div>
       <input
-        className="w-full mt-4 p-3 rounded-lg text-black border-slate-950 border-2"
+        className="w-full p-3 mt-4 text-black border-2 rounded-lg border-slate-950"
         type="text"
         id="search-account-number"
         name="searchInput"
