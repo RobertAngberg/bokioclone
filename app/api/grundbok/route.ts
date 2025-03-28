@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
         WHERE tp.transaktions_id = ${transId}
         ORDER BY tp.transaktions_id DESC;
       `;
-      console.log("🧾 Row fetch:", details);
-      return NextResponse.json(details);
+      console.log("🧾 Row fetch:", details.rows);
+      return NextResponse.json(details.rows); // ✅ Return array directly
     }
 
     let data;
@@ -29,16 +29,16 @@ export async function GET(request: NextRequest) {
         WHERE EXTRACT(YEAR FROM transaktionsdatum) = ${q}
         ORDER BY transaktionsdatum DESC;
       `;
-      console.log("📅 Year fetch:", data);
+      console.log("📅 Year fetch:", data.rows);
     } else {
       data = await sql`
         SELECT * FROM transaktioner
         ORDER BY transaktionsdatum DESC;
       `;
-      console.log("📦 All fetch:", data);
+      console.log("📦 All fetch:", data.rows);
     }
 
-    return NextResponse.json({ yearData: data }); // ✅ FIXED: no `.rows`
+    return NextResponse.json({ yearData: data.rows }); // ✅ Return just .rows
   } catch (err: any) {
     console.error("❌ grundbok API failed:", err);
     return NextResponse.json({ error: err.message ?? "Server error" }, { status: 500 });
