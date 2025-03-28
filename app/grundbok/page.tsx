@@ -25,7 +25,16 @@ interface TransactionDetail {
 }
 
 function Grundbok() {
-  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
+  const [historyData, setHistoryData] = useState<
+    Array<{
+      transaktions_id: string;
+      transaktionsdatum: string;
+      kontobeskrivning: string;
+      belopp: number;
+      kommentar?: string;
+      fil?: string;
+    }>
+  >([]);
   const [year, setYear] = useState("2023");
   const [activeTransId, setActiveTransId] = useState<number | null>(null);
   const [detailsUrl, setDetailsUrl] = useState<string | null>(null);
@@ -45,8 +54,12 @@ function Grundbok() {
         const date = new Date(item.transaktionsdatum);
         date.setDate(date.getDate() + 1);
         return {
-          ...item,
+          transaktions_id: String(item.transaktions_id),
           transaktionsdatum: date.toISOString().slice(0, 10),
+          kontobeskrivning: item.kontobeskrivning,
+          belopp: parseFloat(item.belopp),
+          kommentar: item.kommentar || undefined,
+          fil: item.fil || undefined,
         };
       });
       setHistoryData(adjusted);
