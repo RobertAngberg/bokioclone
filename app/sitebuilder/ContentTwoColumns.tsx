@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 
 interface ContentTwoColumnsProps {
-  handleAddContent: (type: string, arg1?: any, arg2?: any, columnsData?: string[]) => void;
+  handleAddContent: (
+    type: "twoColumns" | "otherType",
+    arg1?: any,
+    arg2?: any,
+    columnsData?: string[]
+  ) => void;
 }
 
 const ContentTwoColumns: React.FC<ContentTwoColumnsProps> = ({ handleAddContent }) => {
