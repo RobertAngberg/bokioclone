@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       console.log("📦 All fetch:", data);
     }
 
-    return NextResponse.json({ yearData: data.rows });
+    return NextResponse.json({ yearData: data });
   } catch (err: any) {
     console.error("❌ grundbok API failed:", err);
     return NextResponse.json({ error: err.message ?? "Server error" }, { status: 500 });
