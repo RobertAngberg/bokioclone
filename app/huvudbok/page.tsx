@@ -42,15 +42,15 @@ function Huvudbok() {
       <div className="w-full max-w-4xl px-4 text-left">
         <h1 className="py-10 text-4xl font-bold text-center text-white">Huvudbok</h1>
         {Object.entries(groupedData).map(([desc, items]) => (
-          <div key={desc} className="mb-4">
+          <div key={desc} className="mb-1">
             <div
               onClick={() => toggleAccInfo(desc)}
-              className="flex items-center justify-between py-2 pr-10 text-white rounded-tl-lg rounded-tr-lg cursor-pointer bg-cyan-950"
+              className="flex items-center justify-between py-2 pr-10 text-white cursor-pointer bg-cyan-950"
             >
-              <span className="flex items-center justify-between p-5 pl-10 text-lg font-bold">
+              <span className="flex items-center justify-between p-2 pl-10 text-lg font-bold">
                 {items[0].kontonummer} - {desc}
               </span>
-              <span>{expandedAccInfo === desc ? "▽" : "▷"}</span>
+              <span>{expandedAccInfo === desc ? "▲" : "▼"}</span>
             </div>
 
             {expandedAccInfo === desc && (

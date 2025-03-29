@@ -46,13 +46,53 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
         label: "Inkomster",
         data: inkomstData,
         backgroundColor: "rgb(0, 128, 128)",
+        barPercentage: 0.5,
+        categoryPercentage: 1.0,
       },
       {
-        label: "Kostnad",
+        label: "Kostnader",
         data: kostnadData,
         backgroundColor: "rgb(255, 99, 132)",
+        barPercentage: 0.5,
+        categoryPercentage: 1.0,
       },
     ],
+  };
+
+  const options = {
+    maintainAspectRatio: false,
+    indexAxis: "x" as const,
+    scales: {
+      x: {
+        offset: true,
+        stacked: false,
+        ticks: {
+          color: "white",
+          font: { size: 14 },
+          padding: 20, // 🔥 more bottom margin
+        },
+        grid: {
+          color: "rgba(255, 255, 255, 0.05)",
+        },
+      },
+      y: {
+        ticks: {
+          color: "white",
+          font: { size: 14 },
+        },
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        labels: {
+          color: "white",
+          font: { size: 14 },
+        },
+      },
+    },
   };
 
   return (
@@ -74,7 +114,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
       </select>
 
       <div className="relative p-10" style={{ height: "80vh" }}>
-        <Bar datasetIdKey="id" options={{ maintainAspectRatio: false }} data={data} />
+        <Bar datasetIdKey="id" options={options} data={data} />
       </div>
     </div>
   );

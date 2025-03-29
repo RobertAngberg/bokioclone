@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AccountSearch } from "./AccountSearch";
+import { SearchAccount } from "./SearchAccount";
 import { Step2 } from "./Step2";
 import { Step3 } from "./Step3";
 import { Step4 } from "./Step4";
@@ -22,7 +22,7 @@ function Bokför() {
     <main className="items-center min-h-screen px-6 pt-10 text-center bg-slate-950">
       {currentStep === 1 && (
         <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <AccountSearch
+          <SearchAccount
             searchText={searchText}
             setSearchText={setSearchText}
             setKontonummer={setKontonummer}

@@ -21,7 +21,7 @@ type YearDataPoint = {
 function Home() {
   const [year, setYear] = useState("2024");
   const [data, setData] = useState<YearSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Track loading state
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoading(true);
@@ -36,7 +36,7 @@ function Home() {
 
   return (
     <main className="items-center text-center bg-slate-950">
-      <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2">
+      <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
         {/* Cards with Skeleton Loader */}
         {isLoading ? (
           <>

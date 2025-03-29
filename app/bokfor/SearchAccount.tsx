@@ -10,7 +10,7 @@ interface FetchDataItem {
   sökord: string;
 }
 
-interface AccountSearchProps {
+interface SearchAccountProps {
   setCurrentStep: (step: number) => void;
   searchText: string;
   setSearchText: (text: string) => void;
@@ -18,13 +18,13 @@ interface AccountSearchProps {
   setKontobeskrivning: (kontobeskrivning: string) => void;
 }
 
-function AccountSearch({
+function SearchAccount({
   setCurrentStep,
   searchText,
   setSearchText,
   setKontonummer,
   setKontobeskrivning,
-}: AccountSearchProps) {
+}: SearchAccountProps) {
   const [searchResult, setSearchResult] = useState<FetchDataItem | null>(null);
 
   useEffect(() => {
@@ -85,4 +85,4 @@ function AccountSearch({
   );
 }
 
-export { AccountSearch };
+export { SearchAccount };
