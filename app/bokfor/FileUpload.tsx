@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Tesseract from "tesseract.js";
-import { extractDataFromOCR } from "./actions";
+// import { extractDataFromOCR } from "./actions"; ❌ Temporarily disabled
 
 interface FileUploadProps {
   setFil: (file: File | null) => void;
@@ -34,9 +34,9 @@ function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp, fil }:
     if (!recognizedText) return;
 
     (async () => {
-      const parsed = await extractDataFromOCR(recognizedText);
-      if (parsed?.datum) setTransaktionsdatum(parsed.datum);
-      if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
+      // const parsed = await extractDataFromOCR(recognizedText); ❌ Disabled temporarily
+      // if (parsed?.datum) setTransaktionsdatum(parsed.datum);
+      // if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
     })();
   }, [recognizedText, setBelopp, setTransaktionsdatum]);
 
