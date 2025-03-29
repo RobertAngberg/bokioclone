@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "./start/Card";
 import { HomeChart } from "./start/HomeChart";
-import { fetchDataFromYear } from "./actions";
+import { fetchDataFromYear } from "./start/actions";
 
 type YearSummary = {
   totalInkomst: number;
