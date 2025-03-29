@@ -22,21 +22,31 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
   const [kostnadData, setKostnadData] = useState<number[]>([]);
 
   useEffect(() => {
-    const tempLabels: string[] = [];
-    const tempInkomst: number[] = [];
-    const tempKostnad: number[] = [];
+    const labelSet = new Set<string>();
+    const monthDataMap: { [key: string]: { inkomst: number; kostnad: number } } = {};
 
     chartData.forEach((row) => {
       const date = new Date(row.month);
       if (isNaN(date.getTime())) return;
-      tempLabels.push(date.toLocaleString("default", { month: "short" }));
-      tempInkomst.push(row.inkomst);
-      tempKostnad.push(-row.utgift);
+
+      const label = date.toLocaleString("default", { month: "short" });
+
+      labelSet.add(label);
+      if (!monthDataMap[label]) {
+        monthDataMap[label] = { inkomst: 0, kostnad: 0 };
+      }
+
+      monthDataMap[label].inkomst += row.inkomst;
+      monthDataMap[label].kostnad += row.utgift;
     });
 
-    setLabels(tempLabels);
-    setInkomstData(tempInkomst);
-    setKostnadData(tempKostnad);
+    const finalLabels = Array.from(labelSet);
+    const inkomstValues = finalLabels.map((label) => monthDataMap[label].inkomst);
+    const kostnadValues = finalLabels.map((label) => -monthDataMap[label].kostnad);
+
+    setLabels(finalLabels);
+    setInkomstData(inkomstValues);
+    setKostnadData(kostnadValues);
   }, [chartData]);
 
   const data = {
@@ -69,7 +79,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
         ticks: {
           color: "white",
           font: { size: 14 },
-          padding: 20, // 🔥 more bottom margin
+          padding: 20,
         },
         grid: {
           color: "rgba(255, 255, 255, 0.05)",

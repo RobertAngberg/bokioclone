@@ -68,13 +68,19 @@ function Grundbok() {
       </div>
 
       <div className="w-full">
-        <Table
-          historyData={historyData}
-          handleRowClick={handleRowClick}
-          activeId={activeId}
-          details={details}
-          isLoading={isLoading}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full h-64">
+            <div className="w-16 h-16 border-t-4 border-cyan-600 border-solid rounded-full animate-spin" />
+          </div>
+        ) : (
+          <Table
+            historyData={historyData}
+            handleRowClick={handleRowClick}
+            activeId={activeId}
+            details={details}
+            isLoading={false}
+          />
+        )}
       </div>
     </main>
   );

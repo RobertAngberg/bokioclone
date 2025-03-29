@@ -77,19 +77,10 @@ function Step2({
           </button>
         </div>
 
-        <div className="relative flex flex-col items-center justify-center w-full h-auto md:w-3/5">
+        <div className="relative flex flex-col items-center justify-center w-full h-auto border-2 border-dashed border-cyan-500 md:w-3/5 md:ml-2 mb-4 md:mb-0">
           {!pdfUrl && !fil && <p className="text-gray-500">Ditt underlag kommer att visas här</p>}
 
-          {pdfUrl && (
-            <iframe
-              src={pdfUrl}
-              className="w-full h-auto max-w-full"
-              style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
-              title="PDF Viewer"
-            />
-          )}
-
-          {fil && fil.type.startsWith("image/") && (
+          {fil?.type.startsWith("image/") && (
             <img
               src={URL.createObjectURL(fil)}
               alt="Uploaded"
@@ -98,8 +89,17 @@ function Step2({
             />
           )}
 
+          {pdfUrl && !fil?.type.startsWith("image/") && (
+            <iframe
+              src={pdfUrl}
+              className="w-full h-auto max-w-full"
+              style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
+              title="PDF Viewer"
+            />
+          )}
+
           {(fil || pdfUrl) && (
-            <>
+            <div className="hidden md:block">
               <button
                 onClick={handleZoomIn}
                 className="absolute z-10 flex items-center justify-center w-12 h-12 mb-2 text-white rounded-full top-2 right-2 bg-cyan-600 hover:bg-cyan-700"
@@ -112,7 +112,7 @@ function Step2({
               >
                 🔍-
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>

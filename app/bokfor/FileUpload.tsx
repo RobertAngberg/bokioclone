@@ -12,19 +12,31 @@ interface FileUploadProps {
   fil: File | null;
 }
 
-function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp, fil }: FileUploadProps) {
+function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp }: FileUploadProps) {
   const [recognizedText, setRecognizedText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [timeoutTriggered, setTimeoutTriggered] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const fileUrl = URL.createObjectURL(file);
-    setPdfUrl(fileUrl); // For preview
-    setFil(file); // For form submission
+    setPdfUrl(fileUrl);
+    setFil(file);
 
     if (file.type.startsWith("image/")) {
+      setIsLoading(true);
+      setTimeoutTriggered(false);
+
+      // Timeout fallback after 7s
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+        setTimeoutTriggered(true);
+      }, 7000);
+
       Tesseract.recognize(file, "swe").then((result) => {
+        clearTimeout(timeout); // Cancel timeout if done in time
         setRecognizedText(result.data.text);
       });
     }
@@ -34,9 +46,13 @@ function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp, fil }:
     if (!recognizedText) return;
 
     (async () => {
-      const parsed = await extractDataFromOCR(recognizedText);
-      if (parsed?.datum) setTransaktionsdatum(parsed.datum);
-      if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
+      try {
+        const parsed = await extractDataFromOCR(recognizedText);
+        if (parsed?.datum) setTransaktionsdatum(parsed.datum);
+        if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
+      } finally {
+        setIsLoading(false);
+      }
     })();
   }, [recognizedText, setBelopp, setTransaktionsdatum]);
 
@@ -52,10 +68,23 @@ function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp, fil }:
       />
       <label
         htmlFor="fileUpload"
-        className="flex items-center justify-center px-4 py-2 mb-6 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
+        className="flex items-center justify-center px-4 py-2 mb-2 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
       >
         Välj fil
       </label>
+
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center mb-6 text-white">
+          <div className="w-6 h-6 mb-2 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-cyan-200">Analyserar underlaget...</span>
+        </div>
+      )}
+
+      {timeoutTriggered && (
+        <div className="mb-6 text-sm text-center text-yellow-300">
+          ⏱️ Tolkningen tog för lång tid – fyll i uppgifterna manuellt.
+        </div>
+      )}
     </>
   );
 }
