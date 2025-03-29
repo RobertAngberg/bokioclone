@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import OpenAI from "openai";
 
 // ✅ SERVER ACTION: Save transaction
 export async function saveTransaction(formData: FormData) {
@@ -91,28 +92,38 @@ export async function searchAccount(searchText: string) {
   }
 }
 
-/* 
-// ❌ TEMPORARILY DISABLED OCR ACTION
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
-// import OpenAI from "openai";
+export async function extractDataFromOCR(text: string) {
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content:
+            'Extract date and amount from OCR text. Respond with *raw* JSON only (no markdown, no triple backticks). Format: { "datum": "YYYY-MM-DD", "belopp": 1234.56 }.',
+        },
+        { role: "user", content: text },
+      ],
+    });
 
-// export async function extractDataFromOCR(text: string) {
-//   const openai = new OpenAI({
-//     apiKey: process.env.OPENAI_API_KEY,
-//   });
+    const content = response.choices[0]?.message?.content?.trim();
 
-//   const response = await openai.chat.completions.create({
-//     model: "gpt-4",
-//     messages: [
-//       {
-//         role: "system",
-//         content: "Extract date and amount from OCR text. Return { datum: 'YYYY-MM-DD', belopp: 1234.56 }.",
-//       },
-//       { role: "user", content: text },
-//     ],
-//   });
+    // Try to parse only if it's a valid JSON string
+    if (content && content.startsWith("{")) {
+      return JSON.parse(content);
+    }
 
-//   const content = response.choices[0]?.message?.content ?? "{}";
-//   return content;
-// }
-*/
+    console.log("🔍 GPT response:", content);
+
+    // fallback if it's not a parsable JSON string
+    console.warn("⚠️ Unrecognized content:", content);
+    return { datum: "", belopp: 0 };
+  } catch (error) {
+    console.error("❌ extractDataFromOCR error:", error);
+    return { datum: "", belopp: 0 };
+  }
+}

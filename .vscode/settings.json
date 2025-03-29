@@ -10,24 +10,19 @@
     "strings": true
   },
   "files.exclude": {
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
-    "**/.DS_Store": true,
-    "**/Thumbs.db": true,
-    "**/CVS": true,
     ".eslintrc.json": true,
-    ".git": true,
-    ".gitignore": true,
     ".next": true,
     ".vercel": true,
     ".vscode": true,
+    "**/.DS_Store": true,
+    "**/.git": true,
+    "**/.hg": true,
+    "**/.svn": true,
     "**/*.cs.meta": true,
-    "app/.vscode": true,
-    "globals.css": true,
-    "postcss.config.js": true,
-    "tailwind.config.ts": true,
-    "tsconfig.json": true
+    "**/CVS": true,
+    "**/Thumbs.db": true,
+    "app/.vscode": true
   },
-  "hide-files.files": []
+  "hide-files.files": [],
+  "explorer.excludeGitIgnore": true
 }

@@ -6,7 +6,8 @@
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
     "**/CVS": true,
-    "globals.css": true
+    "globals.css": true,
+    ".vscode": true
   },
-  "hide-files.files": ["globals.css"]
+  "hide-files.files": ["globals.css", ".vscode"]
 }
