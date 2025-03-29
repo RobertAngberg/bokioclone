@@ -28,6 +28,7 @@ function AccountSearch({
   const [searchResult, setSearchResult] = useState<FetchDataItem | null>(null);
 
   useEffect(() => {
+    // wtf?? timeout en 100 nedan, var 300...
     const delay = setTimeout(async () => {
       if (!searchText.trim()) return;
       try {
@@ -37,10 +38,10 @@ function AccountSearch({
           result?.kontonummer && result.kontobeskrivning && result.sökord ? result : null
         );
       } catch (error) {
-        console.error("❌ searchAccount failed:", error);
+        console.error("SearchAccount failed:", error);
         setSearchResult(null);
       }
-    }, 300);
+    }, 100);
 
     return () => clearTimeout(delay);
   }, [searchText]);
