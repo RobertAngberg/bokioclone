@@ -1,4 +1,6 @@
-import { useFetchPost } from "../hooks/useFetchPost";
+"use client";
+
+import { saveTransaction } from "./actions"; // ✅ import the server action
 
 interface Step3Props {
   kontonummer: string;
@@ -24,38 +26,26 @@ function Step3({
   const moms = parseFloat(((belopp ?? 0) * 0.2).toFixed(2));
   const beloppUtanMoms = parseFloat(((belopp ?? 0) * 0.8).toFixed(2));
 
-  // Fattar fortfarande inte helt
-  const postFormData = useFetchPost();
-
   const handleSubmit = async () => {
     const formData = new FormData();
 
-    const formFields = {
-      fil: fil || "",
-      transaktionsdatum,
-      kommentar,
-      kontonummer,
-      kontobeskrivning,
-      kontotyp,
-      belopp,
-      moms,
-      beloppUtanMoms,
-    };
+    formData.append("transaktionsdatum", transaktionsdatum);
+    formData.append("kommentar", kommentar);
+    formData.append("kontonummer", kontonummer);
+    formData.append("kontobeskrivning", kontobeskrivning);
+    formData.append("kontotyp", kontotyp);
+    formData.append("belopp", String(belopp));
+    formData.append("moms", String(moms));
+    formData.append("beloppUtanMoms", String(beloppUtanMoms));
+    if (fil) formData.append("fil", fil, fil.name);
 
-    // Loopar igenom alla värden i formFields och lägger till dem i formData
-    Object.entries(formFields).forEach(([key, value]) => {
-      if (value instanceof File) {
-        // Om det är en fil, lägg till filen i formData, tredje param är filens namn, sist append
-        formData.append(key, value, value.name);
-      } else {
-        // Om ej fil, konverterar värdet till en sträng och sen append
-        formData.append(key, value !== undefined ? String(value) : "");
-      }
-    });
+    const result = await saveTransaction(formData); // 👈 direct server action call
 
-    await postFormData("api/bokfor/", formData);
-
-    setCurrentStep(4);
+    if (result.success) {
+      setCurrentStep(4);
+    } else {
+      console.error("❌ Error saving transaction:", result.error);
+    }
   };
 
   return (

@@ -1,11 +1,10 @@
 interface SearchResultsProps {
   data: {
     kontonummer: string;
-    kontotyp: string;
     kontobeskrivning: string;
     sökord: string;
   };
-  onClick: (data: { kontonummer: string; kontotyp: string; kontobeskrivning: string }) => void;
+  onClick: (data: { kontonummer: string; kontobeskrivning: string; sökord: string }) => void;
 }
 
 function SearchResults({ data, onClick }: SearchResultsProps) {

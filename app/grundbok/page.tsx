@@ -35,7 +35,7 @@ function Grundbok() {
       fil?: string;
     }>
   >([]);
-  const [year, setYear] = useState("2023");
+  const [year, setYear] = useState("2024");
   const [activeTransId, setActiveTransId] = useState<number | null>(null);
   const [detailsUrl, setDetailsUrl] = useState<string | null>(null);
   const [details, setDetails] = useState<TransactionDetail[]>([]);

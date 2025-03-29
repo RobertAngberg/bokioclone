@@ -1,11 +1,13 @@
-import React, { useState } from "react";
-import { useFetchGet } from "../hooks/useFetchGet";
+"use client";
+
+import { useEffect, useState } from "react";
 import { SearchResults } from "./SearchResults";
+import { searchAccount } from "./actions";
 
 interface FetchDataItem {
   kontonummer: string;
-  kontotyp: string;
   kontobeskrivning: string;
+  sökord: string;
 }
 
 function AccountSearch({
@@ -13,41 +15,48 @@ function AccountSearch({
   searchText,
   setSearchText,
   setKontonummer,
-  setKontotyp,
   setKontobeskrivning,
 }: {
   setCurrentStep: (step: number) => void;
   searchText: string;
   setSearchText: (text: string) => void;
   setKontonummer: (kontonummer: string) => void;
-  setKontotyp: (kontotyp: "Intäkt" | "Kostnad" | undefined) => void;
   setKontobeskrivning: (kontobeskrivning: string) => void;
 }) {
-  const [showSearchResults, setShowSearchResults] = useState(true);
-  const { fetchData, error } = useFetchGet(`api/bokfor?q=${searchText}`);
+  const [searchResult, setSearchResult] = useState<FetchDataItem | null>(null);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (!searchText.trim()) return;
+      const result = await searchAccount(searchText);
+      console.log("🔥 RESULT:", result); // check encoding here
+      if (result?.kontonummer && result.kontobeskrivning && result.sökord) {
+        setSearchResult(result);
+      } else {
+        setSearchResult(null);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchText]);
 
   const handleSearchAccNum = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value.trim().toLowerCase();
-    setSearchText(inputValue);
+    const value = e.target.value.trim().toLowerCase();
+    setSearchText(value);
   };
 
-  const searchResultClick = (item: FetchDataItem): void => {
+  const handleResultClick = (item: FetchDataItem): void => {
     setKontonummer(item.kontonummer);
-    setKontotyp(
-      item.kontotyp === "Intäkt" || item.kontotyp === "Kostnad" ? item.kontotyp : undefined
-    );
     setKontobeskrivning(item.kontobeskrivning);
     setCurrentStep(2);
-    setShowSearchResults(false);
   };
 
   return (
     <div className="w-full">
       <h1 className="mb-4 text-4xl font-bold">Steg 1: Sök förval</h1>
-      <div className="mb-2">
-        <p>Skriv in vad du vill bokföra.</p>
-        <p>Systemet hittar rätt förval att använda.</p>
-      </div>
+      <p>Skriv in vad du vill bokföra.</p>
+      <p>Systemet hittar rätt förval att använda.</p>
+
       <input
         className="w-full p-3 mt-4 text-black border-2 rounded-lg border-slate-950"
         type="text"
@@ -58,9 +67,8 @@ function AccountSearch({
         onChange={handleSearchAccNum}
       />
 
-      {/* Div med sökresultat */}
-      {showSearchResults && fetchData && searchText && (
-        <SearchResults data={fetchData} onClick={searchResultClick} />
+      {searchResult && searchText && (
+        <SearchResults data={searchResult} onClick={handleResultClick} />
       )}
     </div>
   );

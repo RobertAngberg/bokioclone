@@ -45,12 +45,6 @@ function Navbar() {
       >
         <Link href="/faktura">Faktura</Link>
       </li>
-      <li
-        onClick={closeMenu}
-        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
-      >
-        <Link href="/sitebuilder">Hemsida</Link>
-      </li>
       {session?.user && (
         <li onClick={closeMenu} className="mb-6 md:mb-0 md:px-6">
           <LogoutButton />
