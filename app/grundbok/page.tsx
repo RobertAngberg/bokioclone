@@ -26,9 +26,11 @@ function Grundbok() {
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [details, setDetails] = useState<TransactionDetail[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadTransaktioner = async () => {
+      setIsLoading(true);
       const result = await fetchTransaktioner(year);
       if (result.success && Array.isArray(result.data)) {
         const adjusted = result.data.map((item) => ({
@@ -41,6 +43,7 @@ function Grundbok() {
         }));
         setHistoryData(adjusted);
       }
+      setIsLoading(false);
     };
 
     loadTransaktioner();
@@ -70,6 +73,7 @@ function Grundbok() {
           handleRowClick={handleRowClick}
           activeId={activeId}
           details={details}
+          isLoading={isLoading}
         />
       </div>
     </main>
