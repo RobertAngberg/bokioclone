@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { SearchResults } from "./SearchResults";
 import { searchAccount } from "./actions";
 
@@ -10,46 +10,56 @@ interface FetchDataItem {
   sökord: string;
 }
 
+interface AccountSearchProps {
+  setCurrentStep: (step: number) => void;
+  searchText: string;
+  setSearchText: (text: string) => void;
+  setKontonummer: (kontonummer: string) => void;
+  setKontobeskrivning: (kontobeskrivning: string) => void;
+}
+
 function AccountSearch({
   setCurrentStep,
   searchText,
   setSearchText,
   setKontonummer,
   setKontobeskrivning,
-}: {
-  setCurrentStep: (step: number) => void;
-  searchText: string;
-  setSearchText: (text: string) => void;
-  setKontonummer: (kontonummer: string) => void;
-  setKontobeskrivning: (kontobeskrivning: string) => void;
-}) {
+}: AccountSearchProps) {
   const [searchResult, setSearchResult] = useState<FetchDataItem | null>(null);
 
   useEffect(() => {
-    const delayDebounce = setTimeout(async () => {
+    const delay = setTimeout(async () => {
       if (!searchText.trim()) return;
-      const result = await searchAccount(searchText);
-      console.log("🔥 RESULT:", result); // check encoding here
-      if (result?.kontonummer && result.kontobeskrivning && result.sökord) {
-        setSearchResult(result);
-      } else {
+      try {
+        const result = await searchAccount(searchText);
+        console.log("🔥 RESULT:", result);
+        setSearchResult(
+          result?.kontonummer && result.kontobeskrivning && result.sökord ? result : null
+        );
+      } catch (error) {
+        console.error("❌ searchAccount failed:", error);
         setSearchResult(null);
       }
     }, 300);
 
-    return () => clearTimeout(delayDebounce);
+    return () => clearTimeout(delay);
   }, [searchText]);
 
-  const handleSearchAccNum = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim().toLowerCase();
-    setSearchText(value);
-  };
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchText(e.target.value.trim().toLowerCase());
+    },
+    [setSearchText]
+  );
 
-  const handleResultClick = (item: FetchDataItem): void => {
-    setKontonummer(item.kontonummer);
-    setKontobeskrivning(item.kontobeskrivning);
-    setCurrentStep(2);
-  };
+  const handleResultClick = useCallback(
+    (item: FetchDataItem) => {
+      setKontonummer(item.kontonummer);
+      setKontobeskrivning(item.kontobeskrivning);
+      setCurrentStep(2);
+    },
+    [setCurrentStep, setKontonummer, setKontobeskrivning]
+  );
 
   return (
     <div className="w-full">
@@ -64,7 +74,7 @@ function AccountSearch({
         name="searchInput"
         autoComplete="off"
         value={searchText}
-        onChange={handleSearchAccNum}
+        onChange={handleSearchChange}
       />
 
       {searchResult && searchText && (

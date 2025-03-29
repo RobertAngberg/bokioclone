@@ -1,84 +1,59 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useFetchGet } from "../hooks/useFetchGet";
 import { YearSelect } from "./YearSelect";
 import { Table } from "./Table";
+import { fetchTransaktioner, fetchTransactionDetails } from "./actions";
 
 interface HistoryItem {
   transaktions_id: number;
   transaktionsdatum: string;
   kontobeskrivning: string;
-  kontotyp: string;
-  belopp: string;
-  fil: string | null;
-  kommentar: string | null;
+  belopp: number;
+  kommentar?: string;
+  fil?: string;
 }
 
 interface TransactionDetail {
   transaktionspost_id: number;
-  transaktions_id: number;
-  konto_id: number;
   kontobeskrivning: string;
-  debet: string;
-  kredit: string;
+  debet: number;
+  kredit: number;
 }
 
 function Grundbok() {
-  const [historyData, setHistoryData] = useState<
-    Array<{
-      transaktions_id: string;
-      transaktionsdatum: string;
-      kontobeskrivning: string;
-      belopp: number;
-      kommentar?: string;
-      fil?: string;
-    }>
-  >([]);
   const [year, setYear] = useState("2024");
-  const [activeTransId, setActiveTransId] = useState<number | null>(null);
-  const [detailsUrl, setDetailsUrl] = useState<string | null>(null);
+  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [details, setDetails] = useState<TransactionDetail[]>([]);
-
-  const { fetchData: yearResult, error: yearError } = useFetchGet<{ yearData: HistoryItem[] }>(
-    `api/grundbok?q=${year}`
-  );
-
-  const { fetchData: detailsData, error: detailsError } = useFetchGet<TransactionDetail[]>(
-    detailsUrl || ""
-  );
+  const [activeId, setActiveId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (Array.isArray(yearResult?.yearData)) {
-      const adjusted = yearResult.yearData.map((item) => {
-        const date = new Date(item.transaktionsdatum);
-        date.setDate(date.getDate() + 1);
-        return {
-          transaktions_id: String(item.transaktions_id),
-          transaktionsdatum: date.toISOString().slice(0, 10),
-          kontobeskrivning: item.kontobeskrivning,
-          belopp: parseFloat(item.belopp),
-          kommentar: item.kommentar || undefined,
-          fil: item.fil || undefined,
-        };
-      });
-      setHistoryData(adjusted);
-    }
-  }, [yearResult]);
+    const loadTransaktioner = async () => {
+      const result = await fetchTransaktioner(year);
+      if (result.success && Array.isArray(result.data)) {
+        const adjusted = result.data.map((item) => ({
+          transaktions_id: item.transaktions_id,
+          transaktionsdatum: new Date(item.transaktionsdatum).toISOString().slice(0, 10),
+          kontobeskrivning: item.kontobeskrivning || "",
+          belopp: item.belopp ?? 0,
+          kommentar: item.kommentar ?? "",
+          fil: item.fil ?? "",
+        }));
+        setHistoryData(adjusted);
+      }
+    };
 
-  useEffect(() => {
-    if (detailsData) {
-      setDetails(detailsData);
-    }
-  }, [detailsData]);
+    loadTransaktioner();
+  }, [year]);
 
-  const handleRowClick = (transaktionsId: number) => {
-    if (transaktionsId === activeTransId) {
-      setActiveTransId(null);
+  const handleRowClick = async (id: number) => {
+    if (id === activeId) {
+      setActiveId(null);
       setDetails([]);
     } else {
-      setActiveTransId(transaktionsId);
-      setDetailsUrl(`api/grundbok?q=row${transaktionsId}`);
+      setActiveId(id);
+      const detailResult = await fetchTransactionDetails(id);
+      setDetails(detailResult);
     }
   };
 
@@ -89,16 +64,11 @@ function Grundbok() {
         <YearSelect setYear={setYear} />
       </div>
 
-      {yearError && <p className="text-red-400">⚠️ Error loading data: {yearError.message}</p>}
-      {detailsError && (
-        <p className="text-red-400">⚠️ Error loading details: {detailsError.message}</p>
-      )}
-
       <div className="w-full">
         <Table
           historyData={historyData}
           handleRowClick={handleRowClick}
-          activeId={activeTransId}
+          activeId={activeId}
           details={details}
         />
       </div>

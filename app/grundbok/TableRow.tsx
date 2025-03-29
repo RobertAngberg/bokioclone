@@ -1,16 +1,16 @@
 interface TableRowProps {
   item: {
-    transaktions_id: string;
+    transaktions_id: number;
     transaktionsdatum: string;
     fil?: string;
     kontobeskrivning: string;
     belopp: number;
     kommentar?: string;
   };
-  handleRowClick: (id: string) => void;
-  activeId: string | null;
+  handleRowClick: (id: number) => void;
+  activeId: number | null;
   details: {
-    transaktionspost_id: string;
+    transaktionspost_id: number;
     kontobeskrivning: string;
     debet: number;
     kredit: number;
@@ -20,7 +20,6 @@ interface TableRowProps {
 function TableRow({ item, handleRowClick, activeId, details }: TableRowProps) {
   return (
     <>
-      {/* Detta är foldat / minimerat */}
       <tr
         key={item.transaktions_id}
         onClick={() => handleRowClick(item.transaktions_id)}
@@ -33,7 +32,7 @@ function TableRow({ item, handleRowClick, activeId, details }: TableRowProps) {
         <td className="p-5">{item.belopp}</td>
         <td className="hidden p-5 md:table-cell">{item.kommentar}</td>
       </tr>
-      {/* Detta är unfoldat / maximerat */}
+
       {activeId === item.transaktions_id && (
         <tr className="text-left bg-gray-800">
           <td colSpan={6}>

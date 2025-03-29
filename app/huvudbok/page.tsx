@@ -1,11 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useFetchGet } from "../hooks/useFetchGet";
-
-type GroupedTransactions = {
-  [key: string]: TransactionItem[];
-};
+import { useEffect, useState } from "react";
+import { fetchHuvudbok } from "./actions";
 
 type TransactionItem = {
   kontobeskrivning: string;
@@ -16,48 +12,48 @@ type TransactionItem = {
   kredit: number;
 };
 
+type GroupedTransactions = {
+  [key: string]: TransactionItem[];
+};
+
 function Huvudbok() {
-  const { fetchData } = useFetchGet("api/huvudbok");
   const [groupedData, setGroupedData] = useState<GroupedTransactions>({});
   const [expandedAccInfo, setExpandedAccInfo] = useState<string | null>(null);
 
   useEffect(() => {
-    if (fetchData) {
-      const groupedFinished: GroupedTransactions = fetchData.reduce(
-        (groupedTransactions: GroupedTransactions, item: TransactionItem) => {
-          const key: string = item.kontobeskrivning;
-          if (!groupedTransactions[key]) {
-            groupedTransactions[key] = [];
-          }
-          groupedTransactions[key].push(item);
-          return groupedTransactions;
-        },
-        {}
-      );
-      setGroupedData(groupedFinished);
-    }
-  }, [fetchData]);
+    (async () => {
+      const result = await fetchHuvudbok();
+      const grouped: GroupedTransactions = result.reduce((acc, item) => {
+        const key = item.kontobeskrivning;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {} as GroupedTransactions);
 
-  const toggleAccInfo = (description: string) => {
-    setExpandedAccInfo(expandedAccInfo === description ? null : description);
-  };
+      setGroupedData(grouped);
+    })();
+  }, []);
+
+  const toggleAccInfo = (desc: string) =>
+    setExpandedAccInfo(expandedAccInfo === desc ? null : desc);
 
   return (
     <main className="flex justify-center min-h-screen bg-slate-950">
       <div className="w-full max-w-4xl px-4 text-left">
         <h1 className="py-10 text-4xl font-bold text-center text-white">Huvudbok</h1>
-        {Object.keys(groupedData).map((description, index) => (
-          <div key={index} className="mb-4">
+        {Object.entries(groupedData).map(([desc, items]) => (
+          <div key={desc} className="mb-4">
             <div
-              onClick={() => toggleAccInfo(description)}
-              className="flex items-center justify-between py-2 pr-10 text-white rounded-tl-lg rounded-tr-lg cursor-pointer bg-cyan-950 "
+              onClick={() => toggleAccInfo(desc)}
+              className="flex items-center justify-between py-2 pr-10 text-white rounded-tl-lg rounded-tr-lg cursor-pointer bg-cyan-950"
             >
-              <span className="flex items-center justify-between p-5 pl-10 text-lg font-bold text-white cursor-pointer bg-cyan-950">
-                {groupedData[description][0].kontonummer} - {description}
+              <span className="flex items-center justify-between p-5 pl-10 text-lg font-bold">
+                {items[0].kontonummer} - {desc}
               </span>
-              <span>{expandedAccInfo === description ? "▽" : "▷"}</span>
+              <span>{expandedAccInfo === desc ? "▽" : "▷"}</span>
             </div>
-            {expandedAccInfo === description && (
+
+            {expandedAccInfo === desc && (
               <table className="w-full text-white">
                 <thead className="bg-gray-700">
                   <tr>
@@ -69,8 +65,8 @@ function Huvudbok() {
                   </tr>
                 </thead>
                 <tbody>
-                  {groupedData[description].map((item, index) => (
-                    <tr className="even:bg-gray-950 odd:bg-gray-900 hover:bg-gray-700" key={index}>
+                  {items.map((item, index) => (
+                    <tr key={index} className="even:bg-gray-950 odd:bg-gray-900 hover:bg-gray-700">
                       <td className="p-2">{item.transaktionsdatum.slice(0, 10)}</td>
                       <td className="p-2">{item.kontobeskrivning}</td>
                       <td className="hidden p-2 sm:table-cell">{item.fil}</td>

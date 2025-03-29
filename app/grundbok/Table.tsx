@@ -1,17 +1,26 @@
 import { TableRow } from "./TableRow";
 
+interface HistoryItem {
+  transaktions_id: number;
+  transaktionsdatum: string;
+  kontobeskrivning: string;
+  belopp: number;
+  kommentar?: string;
+  fil?: string;
+}
+
+interface TransactionDetail {
+  transaktionspost_id: number;
+  kontobeskrivning: string;
+  debet: number;
+  kredit: number;
+}
+
 interface TableProps {
-  historyData: Array<{
-    transaktions_id: string;
-    transaktionsdatum: string;
-    fil?: string;
-    kontobeskrivning: string;
-    belopp: number;
-    kommentar?: string;
-  }>;
+  historyData: HistoryItem[];
   handleRowClick: (id: number) => void;
   activeId: number | null;
-  details: any; // Replace `any` with the appropriate type if known
+  details: TransactionDetail[];
 }
 
 function Table({ historyData, handleRowClick, activeId, details }: TableProps) {
@@ -32,8 +41,8 @@ function Table({ historyData, handleRowClick, activeId, details }: TableProps) {
           <TableRow
             key={item.transaktions_id}
             item={item}
-            handleRowClick={(id: string) => handleRowClick(Number(id))}
-            activeId={activeId !== null ? String(activeId) : null}
+            handleRowClick={handleRowClick}
+            activeId={activeId}
             details={details}
           />
         ))}

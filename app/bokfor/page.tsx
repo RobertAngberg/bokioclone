@@ -27,7 +27,6 @@ function Bokför() {
             setSearchText={setSearchText}
             setKontonummer={setKontonummer}
             setKontobeskrivning={setKontobeskrivning}
-            setKontotyp={setKontotyp}
             setCurrentStep={setCurrentStep}
           />
         </div>

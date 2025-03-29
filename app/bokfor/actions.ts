@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
-// Save transaction (with kontotyp stored in transaktioner table)
+// ✅ SERVER ACTION: Save transaction
 export async function saveTransaction(formData: FormData) {
   const transaktionsdatum = formData.get("transaktionsdatum")?.toString() || "";
   const kommentar = formData.get("kommentar")?.toString() || "";
@@ -63,7 +63,7 @@ export async function saveTransaction(formData: FormData) {
   }
 }
 
-// Search account
+// ✅ SERVER ACTION: Search account
 export async function searchAccount(searchText: string) {
   if (!searchText) return null;
 
@@ -81,7 +81,7 @@ export async function searchAccount(searchText: string) {
 
     return {
       kontonummer: result.kontonummer,
-      kontotyp: undefined, // leave this blank since it's not in Konto table
+      kontotyp: undefined, // not stored in konto table
       kontobeskrivning: result.kontobeskrivning ?? "",
       sökord: result.sökord ?? "",
     };
@@ -90,3 +90,29 @@ export async function searchAccount(searchText: string) {
     return null;
   }
 }
+
+/* 
+// ❌ TEMPORARILY DISABLED OCR ACTION
+
+// import OpenAI from "openai";
+
+// export async function extractDataFromOCR(text: string) {
+//   const openai = new OpenAI({
+//     apiKey: process.env.OPENAI_API_KEY,
+//   });
+
+//   const response = await openai.chat.completions.create({
+//     model: "gpt-4",
+//     messages: [
+//       {
+//         role: "system",
+//         content: "Extract date and amount from OCR text. Return { datum: 'YYYY-MM-DD', belopp: 1234.56 }.",
+//       },
+//       { role: "user", content: text },
+//     ],
+//   });
+
+//   const content = response.choices[0]?.message?.content ?? "{}";
+//   return content;
+// }
+*/

@@ -1,6 +1,8 @@
 "use client";
 
-import { saveTransaction } from "./actions"; // ✅ import the server action
+import { saveTransaction } from "./actions";
+import { useRef } from "react";
+import { useFormStatus } from "react-dom";
 
 interface Step3Props {
   kontonummer: string;
@@ -13,6 +15,25 @@ interface Step3Props {
   setCurrentStep: (step: number) => void;
 }
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={`flex items-center justify-center gap-2 w-full px-4 py-6 font-bold text-white rounded ${
+        pending ? "bg-gray-400 cursor-not-allowed" : "bg-cyan-600 hover:bg-cyan-700"
+      }`}
+    >
+      {pending && (
+        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+      )}
+      {pending ? "Bokför..." : "Bokför"}
+    </button>
+  );
+}
+
 function Step3({
   kontonummer,
   kontobeskrivning,
@@ -23,24 +44,13 @@ function Step3({
   kommentar,
   setCurrentStep,
 }: Step3Props) {
+  const formRef = useRef<HTMLFormElement>(null);
   const moms = parseFloat(((belopp ?? 0) * 0.2).toFixed(2));
   const beloppUtanMoms = parseFloat(((belopp ?? 0) * 0.8).toFixed(2));
 
-  const handleSubmit = async () => {
-    const formData = new FormData();
-
-    formData.append("transaktionsdatum", transaktionsdatum);
-    formData.append("kommentar", kommentar);
-    formData.append("kontonummer", kontonummer);
-    formData.append("kontobeskrivning", kontobeskrivning);
-    formData.append("kontotyp", kontotyp);
-    formData.append("belopp", String(belopp));
-    formData.append("moms", String(moms));
-    formData.append("beloppUtanMoms", String(beloppUtanMoms));
-    if (fil) formData.append("fil", fil, fil.name);
-
-    const result = await saveTransaction(formData); // 👈 direct server action call
-
+  const handleSubmit = async (formData: FormData) => {
+    if (fil) formData.set("fil", fil);
+    const result = await saveTransaction(formData);
     if (result.success) {
       setCurrentStep(4);
     } else {
@@ -56,40 +66,48 @@ function Step3({
         <p className="w-full mb-6">
           {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
         </p>
-        <table className="w-full mb-8 text-left border border-gray-300">
-          <thead>
-            <tr>
-              <th className="p-4 border-b">Konto</th>
-              <th className="p-4 border-b">Debet</th>
-              <th className="p-4 border-b">Kredit</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="p-4">Företagskonto</td>
-              <td className="p-4">{kontotyp === "Intäkt" ? belopp : 0}</td>
-              <td className="p-4">{kontotyp === "Kostnad" ? belopp : 0}</td>
-            </tr>
-            <tr>
-              <td className="p-4">{kontotyp === "Kostnad" ? "Ingående moms" : "Utgående moms"}</td>
-              <td className="p-4">{kontotyp === "Kostnad" ? moms : 0}</td>
-              <td className="p-4">{kontotyp === "Intäkt" ? moms : 0}</td>
-            </tr>
-            <tr>
-              <td className="p-4">{kontonummer}</td>
-              <td className="p-4">{kontotyp === "Kostnad" ? beloppUtanMoms : 0}</td>
-              <td className="p-4">{kontotyp === "Intäkt" ? beloppUtanMoms : 0}</td>
-            </tr>
-          </tbody>
-        </table>
 
-        <button
-          type="submit"
-          className="flex items-center justify-center w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-          onClick={handleSubmit}
-        >
-          Bokför
-        </button>
+        <form ref={formRef} action={handleSubmit}>
+          <input type="hidden" name="transaktionsdatum" value={transaktionsdatum} />
+          <input type="hidden" name="kommentar" value={kommentar} />
+          <input type="hidden" name="kontonummer" value={kontonummer} />
+          <input type="hidden" name="kontobeskrivning" value={kontobeskrivning} />
+          <input type="hidden" name="kontotyp" value={kontotyp} />
+          <input type="hidden" name="belopp" value={String(belopp)} />
+          <input type="hidden" name="moms" value={String(moms)} />
+          <input type="hidden" name="beloppUtanMoms" value={String(beloppUtanMoms)} />
+
+          <table className="w-full mb-8 text-left border border-gray-300">
+            <thead>
+              <tr>
+                <th className="p-4 border-b">Konto</th>
+                <th className="p-4 border-b">Debet</th>
+                <th className="p-4 border-b">Kredit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="p-4">Företagskonto</td>
+                <td className="p-4">{kontotyp === "Intäkt" ? belopp : 0}</td>
+                <td className="p-4">{kontotyp === "Kostnad" ? belopp : 0}</td>
+              </tr>
+              <tr>
+                <td className="p-4">
+                  {kontotyp === "Kostnad" ? "Ingående moms" : "Utgående moms"}
+                </td>
+                <td className="p-4">{kontotyp === "Kostnad" ? moms : 0}</td>
+                <td className="p-4">{kontotyp === "Intäkt" ? moms : 0}</td>
+              </tr>
+              <tr>
+                <td className="p-4">{kontonummer}</td>
+                <td className="p-4">{kontotyp === "Kostnad" ? beloppUtanMoms : 0}</td>
+                <td className="p-4">{kontotyp === "Intäkt" ? beloppUtanMoms : 0}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <SubmitButton />
+        </form>
       </div>
     </main>
   );

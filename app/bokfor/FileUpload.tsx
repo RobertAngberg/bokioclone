@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import Tesseract from "tesseract.js";
+import { extractDataFromOCR } from "./actions";
 
 interface FileUploadProps {
   setFil: (file: File | null) => void;
@@ -13,77 +16,29 @@ function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp, fil }:
   const [recognizedText, setRecognizedText] = useState("");
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-      // PDF
-      if (file.type === "application/pdf") {
-        const fileUrl = URL.createObjectURL(file);
-        setPdfUrl(fileUrl);
+    const fileUrl = URL.createObjectURL(file);
+    setPdfUrl(fileUrl); // For preview
+    setFil(file); // For form submission
 
-        // Image
-      } else if (file.type === "image/jpeg" || file.type === "image/png") {
-        setFil(file);
-      }
+    if (file.type.startsWith("image/")) {
+      Tesseract.recognize(file, "swe").then((result) => {
+        setRecognizedText(result.data.text);
+      });
     }
   };
 
   useEffect(() => {
-    const scanImage = async () => {
-      if (fil) {
-        const result = await Tesseract.recognize(fil, "swe");
-        setRecognizedText(result.data.text);
-      }
-    };
+    if (!recognizedText) return;
 
-    scanImage();
-  }, [fil]);
-
-  useEffect(() => {
-    const chatGPT = async () => {
-      if (recognizedText) {
-        try {
-          const response = await fetch("/api/chatgpt", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: recognizedText }), // Updated to send 'text' key
-          });
-
-          if (!response.ok) {
-            // Handle HTTP errors
-            const errorData = await response.json();
-            console.error("Error from API:", errorData.error);
-            return;
-          }
-
-          const data = await response.json();
-
-          // Parse the JSON response from the server
-          const parsedData = JSON.parse(data.text);
-
-          // Validate and set datum
-          const parsedDate = new Date(parsedData.datum);
-
-          if (!isNaN(parsedDate.getTime())) {
-            setTransaktionsdatum(parsedData.datum);
-          } else {
-            setTransaktionsdatum("");
-          }
-
-          // Validate and set belopp
-          if (!isNaN(parseFloat(parsedData.belopp))) {
-            setBelopp(parsedData.belopp);
-          } else {
-            setBelopp(0);
-          }
-        } catch (error) {
-          console.error("Error fetching from API:", error);
-        }
-      }
-    };
-
-    chatGPT();
-  }, [recognizedText]);
+    (async () => {
+      const parsed = await extractDataFromOCR(recognizedText);
+      if (parsed?.datum) setTransaktionsdatum(parsed.datum);
+      if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
+    })();
+  }, [recognizedText, setBelopp, setTransaktionsdatum]);
 
   return (
     <>
