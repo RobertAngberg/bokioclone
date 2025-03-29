@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 
 interface InvoiceCanvasProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
   textFields: { [key: string]: string };
   logoImage: HTMLImageElement | null;
   saveAsJPG: () => void;
