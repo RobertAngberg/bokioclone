@@ -1,5 +1,4 @@
 import { TableRow } from "./TableRow";
-import { SkeletonRow } from "./SkeletonRow";
 
 interface HistoryItem {
   transaktions_id: number;

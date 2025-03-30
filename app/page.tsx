@@ -37,20 +37,11 @@ function Home() {
   return (
     <main className="items-center text-center bg-slate-950">
       <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
-        {/* Cards with Skeleton Loader */}
-        {isLoading ? (
-          <>
-            <div className="w-48 h-24 shimmer rounded-md" />
-            <div className="w-48 h-24 shimmer rounded-md" />
-            <div className="w-48 h-24 shimmer rounded-md" />
-          </>
-        ) : (
-          <>
-            <Card title="Inkomster" data={data?.totalInkomst || 0} />
-            <Card title="Utgifter" data={data?.totalUtgift || 0} />
-            <Card title="Resultat" data={data?.totalResultat || 0} />
-          </>
-        )}
+        <>
+          <Card title="Inkomster" data={data?.totalInkomst || 0} />
+          <Card title="Utgifter" data={data?.totalUtgift || 0} />
+          <Card title="Resultat" data={data?.totalResultat || 0} />
+        </>
       </div>
 
       {/* Chart with Spinner */}
