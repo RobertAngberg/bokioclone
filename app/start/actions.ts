@@ -35,7 +35,7 @@ export async function fetchDataFromYear(year: string) {
       if (row.kontotyp === "Intäkt") {
         grouped[key].inkomst += row.belopp || 0;
         totalInkomst += row.belopp || 0;
-      } else if (row.kontotyp === "Kostnad") {
+      } else if (row.kontotyp === "Utgift") {
         grouped[key].utgift += row.belopp || 0;
         totalUtgift += row.belopp || 0;
       }

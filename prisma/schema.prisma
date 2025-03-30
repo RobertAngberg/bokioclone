@@ -16,7 +16,7 @@ model Transaktion {
   fil                  String?            @map("fil")
   kommentar            String?            @map("kommentar")
 
-  transaktionsposter   Transaktionspost[] 
+  transaktionsposter   Transaktionspost[]
 
   @@map("transaktioner")
 }
@@ -38,9 +38,10 @@ model Konto {
   konto_id           Int                 @id @default(autoincrement()) @map("konto_id")
   kontonummer        String              @map("kontonummer")
   kontobeskrivning   String?             @map("kontobeskrivning")
+  kontotyp           String?             @map("kontotyp") // ✅ Added field
   sökord             String?             @map("sökord")
 
-  transaktionsposter Transaktionspost[]  
+  transaktionsposter Transaktionspost[]
 
   @@map("konton")
 }

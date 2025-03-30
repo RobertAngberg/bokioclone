@@ -10,17 +10,17 @@
     "strings": true
   },
   "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/CVS": true,
     ".eslintrc.json": true,
     ".next": true,
     ".vercel": true,
     ".vscode": true,
-    "**/.DS_Store": true,
-    "**/.git": true,
-    "**/.hg": true,
-    "**/.svn": true,
     "**/*.cs.meta": true,
-    "**/CVS": true,
-    "**/Thumbs.db": true,
     "app/.vscode": true
   },
   "hide-files.files": [],
