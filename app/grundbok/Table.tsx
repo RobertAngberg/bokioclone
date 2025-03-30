@@ -39,18 +39,16 @@ function Table({ historyData, handleRowClick, activeId, details, isLoading }: Ta
         </tr>
       </thead>
       <tbody>
-        {isLoading
-          ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-          : historyData.map((item, index) => (
-              <TableRow
-                key={item.transaktions_id}
-                item={item}
-                handleRowClick={handleRowClick}
-                activeId={activeId}
-                details={details}
-                rowIndex={index} // Pass rowIndex here to TableRow component
-              />
-            ))}
+        {historyData.map((item, index) => (
+          <TableRow
+            key={item.transaktions_id}
+            item={item}
+            handleRowClick={handleRowClick}
+            activeId={activeId}
+            details={details}
+            rowIndex={index} // Pass rowIndex here to TableRow component
+          />
+        ))}
       </tbody>
     </table>
   );
