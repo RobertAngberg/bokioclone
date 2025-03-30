@@ -75,7 +75,7 @@ function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp }: File
 
       {isLoading && (
         <div className="flex flex-col items-center justify-center mb-6 text-white">
-          <div className="w-6 h-6 mb-2 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 mb-2 border-4 rounded-full border-cyan-400 border-t-transparent animate-spin" />
           <span className="text-sm text-cyan-200">Analyserar underlaget...</span>
         </div>
       )}

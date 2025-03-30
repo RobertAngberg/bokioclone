@@ -7,45 +7,71 @@ export async function fetchDataFromYear(year: string) {
   const end = new Date(`${+year + 1}-01-01`);
 
   try {
-    const allRows = await prisma.transaktion.findMany({
-      where: {
-        transaktionsdatum: {
-          gte: start,
-          lt: end,
-        },
+    console.log("🔍 År:", year);
+    console.log("📅 Datumintervall:", start, "→", end);
+
+    const rows = await prisma.transaktionsposter.findMany({
+      include: {
+        transaktion: true,
+        konto: true,
       },
-      orderBy: {
-        transaktionsdatum: "asc",
+      where: {
+        transaktion: {
+          transaktionsdatum: {
+            gte: start,
+            lt: end,
+          },
+        },
       },
     });
 
-    console.log("🔢 Rows found:", allRows.length);
+    console.log("📦 transaktionsposter hittade:", rows.length);
+
+    if (rows.length > 0) {
+      console.log("🧾 Exempelrad:", {
+        datum: rows[0].transaktion.transaktionsdatum,
+        kontotyp: rows[0].konto.kontotyp,
+        debet: rows[0].debet,
+        kredit: rows[0].kredit,
+      });
+    }
 
     const grouped: { [month: string]: { inkomst: number; utgift: number } } = {};
     let totalInkomst = 0;
     let totalUtgift = 0;
 
-    allRows.forEach((row) => {
-      const date = new Date(row.transaktionsdatum);
+    for (const row of rows) {
+      const date = new Date(row.transaktion.transaktionsdatum);
       date.setDate(1);
       const key = date.toISOString();
 
       if (!grouped[key]) grouped[key] = { inkomst: 0, utgift: 0 };
 
-      if (row.kontotyp === "Intäkt") {
-        grouped[key].inkomst += row.belopp || 0;
-        totalInkomst += row.belopp || 0;
-      } else if (row.kontotyp === "Utgift") {
-        grouped[key].utgift += row.belopp || 0;
-        totalUtgift += row.belopp || 0;
+      const kontotyp = row.konto.kontotyp;
+
+      if (kontotyp === "Intäkt") {
+        const belopp = row.kredit ?? 0;
+        grouped[key].inkomst += belopp;
+        totalInkomst += belopp;
+      } else if (kontotyp === "Utgift") {
+        const belopp = row.debet ?? 0;
+        grouped[key].utgift += belopp;
+        totalUtgift += belopp;
       }
-    });
+    }
 
     const yearData = Object.entries(grouped).map(([month, values]) => ({
       month,
-      inkomst: values.inkomst,
-      utgift: values.utgift,
+      inkomst: +values.inkomst.toFixed(2),
+      utgift: +values.utgift.toFixed(2),
     }));
+
+    console.log("📊 Resultat:", {
+      totalInkomst,
+      totalUtgift,
+      totalResultat: totalInkomst - totalUtgift,
+      yearDataCount: yearData.length,
+    });
 
     return {
       totalInkomst: +totalInkomst.toFixed(2),

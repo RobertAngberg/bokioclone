@@ -117,7 +117,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
         },
       },
       tooltip: {
-        mode: "index",
+        mode: "index" as const,
         intersect: false,
       },
     },
