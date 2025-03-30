@@ -17,20 +17,38 @@ export async function saveTransaction(formData: FormData) {
   const fil = formData.get("fil") as File | null;
   const filename = fil ? fil.name : "";
 
+  console.log("📥 Received form data:", {
+    transaktionsdatum,
+    kommentar,
+    kontonummer,
+    kontobeskrivning,
+    kontotyp,
+    belopp,
+    moms,
+    beloppUtanMoms,
+    filename,
+  });
+
   try {
     const konto = await prisma.konto.findFirst({ where: { kontonummer } });
-    if (!konto) throw new Error("⛔ Konto not found");
-
     const företagskonto = await prisma.konto.findFirst({ where: { kontonummer: "1930" } });
     const momsKonto = await prisma.konto.findFirst({ where: { kontonummer: "2640" } }); // ingående moms
     const utgåendeMomsKonto = await prisma.konto.findFirst({ where: { kontonummer: "2610" } });
 
+    console.log("🔎 Konton lookup:", {
+      konto: konto?.kontonummer,
+      företagskonto: företagskonto?.kontonummer,
+      momsKonto: momsKonto?.kontonummer,
+      utgåendeMomsKonto: utgåendeMomsKonto?.kontonummer,
+    });
+
+    if (!konto) throw new Error("⛔ Konto not found");
     if (!företagskonto || !momsKonto || !utgåendeMomsKonto) {
       throw new Error("⛔ Required standard accounts not found");
     }
 
     const transaktionsposter =
-      kontotyp === "Kostnad"
+      kontotyp === "Utgift"
         ? [
             { konto_id: företagskonto.konto_id, debet: 0, kredit: belopp },
             { konto_id: momsKonto.konto_id, debet: moms, kredit: 0 },
@@ -41,6 +59,8 @@ export async function saveTransaction(formData: FormData) {
             { konto_id: utgåendeMomsKonto.konto_id, debet: 0, kredit: moms },
             { konto_id: konto.konto_id, debet: 0, kredit: beloppUtanMoms },
           ];
+
+    console.log("📌 Transaction rows to create:", transaktionsposter);
 
     const transaktion = await prisma.transaktion.create({
       data: {
@@ -56,8 +76,22 @@ export async function saveTransaction(formData: FormData) {
       },
     });
 
+    console.log("✅ Saved transaction ID:", transaktion.transaktions_id);
+
     revalidatePath("/grundbok");
-    return { success: true, id: transaktion.transaktions_id };
+    return {
+      success: true,
+      id: transaktion.transaktions_id,
+      debug: {
+        transaktionsposter,
+        formData: {
+          transaktionsdatum,
+          kontonummer,
+          kontotyp,
+          belopp,
+        },
+      },
+    };
   } catch (error) {
     console.error("❌ saveTransaction error:", error);
     return { success: false, error };
@@ -78,11 +112,13 @@ export async function searchAccount(searchText: string) {
       },
     });
 
+    console.log("🔍 Search result:", result);
+
     if (!result) return null;
 
     return {
       kontonummer: result.kontonummer,
-      kontotyp: undefined, // not stored in konto table
+      kontotyp: undefined,
       kontobeskrivning: result.kontobeskrivning ?? "",
       sökord: result.sökord ?? "",
     };
@@ -112,15 +148,11 @@ export async function extractDataFromOCR(text: string) {
 
     const content = response.choices[0]?.message?.content?.trim();
 
-    // Try to parse only if it's a valid JSON string
     if (content && content.startsWith("{")) {
       return JSON.parse(content);
     }
 
-    console.log("🔍 GPT response:", content);
-
-    // fallback if it's not a parsable JSON string
-    console.warn("⚠️ Unrecognized content:", content);
+    console.warn("⚠️ GPT unstructured content:", content);
     return { datum: "", belopp: 0 };
   } catch (error) {
     console.error("❌ extractDataFromOCR error:", error);

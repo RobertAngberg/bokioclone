@@ -52,6 +52,7 @@ function Step3({
     if (fil) formData.set("fil", fil);
     const result = await saveTransaction(formData);
     if (result.success) {
+      console.log("✅ Transaction debug info:", result.debug);
       setCurrentStep(4);
     } else {
       console.error("❌ Error saving transaction:", result.error);
