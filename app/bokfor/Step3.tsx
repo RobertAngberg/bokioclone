@@ -55,7 +55,7 @@ function Step3({
       console.log("✅ Transaction debug info:", result.debug);
       setCurrentStep(4);
     } else {
-      console.error("❌ Error saving transaction:", result.error);
+      console.error("Error saving transaction:", result.error);
     }
   };
 
