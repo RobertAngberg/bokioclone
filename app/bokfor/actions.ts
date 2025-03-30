@@ -112,7 +112,7 @@ export async function searchAccount(searchText: string) {
       },
     });
 
-    console.log("🔍 Search result:", result);
+    console.log("🔍Search result:", result);
 
     if (!result) return null;
 
