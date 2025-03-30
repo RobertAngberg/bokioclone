@@ -19,34 +19,47 @@ type Props = {
 export function HomeChart({ year, onYearChange, chartData }: Props) {
   const [labels, setLabels] = useState<string[]>([]);
   const [inkomstData, setInkomstData] = useState<number[]>([]);
-  const [kostnadData, setKostnadData] = useState<number[]>([]);
+  const [utgiftData, setUtgiftData] = useState<number[]>([]);
 
   useEffect(() => {
-    const labelSet = new Set<string>();
-    const monthDataMap: { [key: string]: { inkomst: number; kostnad: number } } = {};
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const monthDataMap: { [key: string]: { inkomst: number; utgift: number } } = {};
 
     chartData.forEach((row) => {
       const date = new Date(row.month);
       if (isNaN(date.getTime())) return;
 
-      const label = date.toLocaleString("default", { month: "short" });
+      const month = date.getMonth();
+      const label = monthNames[month];
 
-      labelSet.add(label);
       if (!monthDataMap[label]) {
-        monthDataMap[label] = { inkomst: 0, kostnad: 0 };
+        monthDataMap[label] = { inkomst: 0, utgift: 0 };
       }
 
       monthDataMap[label].inkomst += row.inkomst;
-      monthDataMap[label].kostnad += row.utgift;
+      monthDataMap[label].utgift += row.utgift;
     });
 
-    const finalLabels = Array.from(labelSet);
+    const finalLabels = monthNames.filter((m) => monthDataMap[m]);
     const inkomstValues = finalLabels.map((label) => monthDataMap[label].inkomst);
-    const kostnadValues = finalLabels.map((label) => -monthDataMap[label].kostnad);
+    const utgiftValues = finalLabels.map((label) => monthDataMap[label].utgift);
 
     setLabels(finalLabels);
     setInkomstData(inkomstValues);
-    setKostnadData(kostnadValues);
+    setUtgiftData(utgiftValues);
   }, [chartData]);
 
   const data = {
@@ -57,14 +70,14 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
         data: inkomstData,
         backgroundColor: "rgb(0, 128, 128)",
         barPercentage: 0.5,
-        categoryPercentage: 1.0,
+        categoryPercentage: 0.8,
       },
       {
-        label: "Kostnader",
-        data: kostnadData,
+        label: "Utgifter",
+        data: utgiftData.map((v) => -v), // optionally show as negative
         backgroundColor: "rgb(255, 99, 132)",
         barPercentage: 0.5,
-        categoryPercentage: 1.0,
+        categoryPercentage: 0.8,
       },
     ],
   };
@@ -72,9 +85,9 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
   const options = {
     maintainAspectRatio: false,
     indexAxis: "x" as const,
+    responsive: true,
     scales: {
       x: {
-        offset: true,
         stacked: false,
         ticks: {
           color: "white",
@@ -86,6 +99,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
         },
       },
       y: {
+        stacked: false,
         ticks: {
           color: "white",
           font: { size: 14 },
@@ -101,6 +115,10 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
           color: "white",
           font: { size: 14 },
         },
+      },
+      tooltip: {
+        mode: "index",
+        intersect: false,
       },
     },
   };
