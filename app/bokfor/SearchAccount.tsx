@@ -55,8 +55,8 @@ function SearchAccount({
 
   const handleResultClick = useCallback(
     (item: FetchDataItem) => {
-      setKontonummer(item.kontonummer);
-      setKontobeskrivning(item.kontobeskrivning);
+      setKontonummer(item.kontonummer.trim());
+      setKontobeskrivning(item.kontobeskrivning.trim());
       setCurrentStep(2);
     },
     [setCurrentStep, setKontonummer, setKontobeskrivning]

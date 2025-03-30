@@ -11,7 +11,6 @@ function Bokför() {
   const [searchText, setSearchText] = useState("");
   const [kontonummer, setKontonummer] = useState<string>("");
   const [kontobeskrivning, setKontobeskrivning] = useState<string>();
-  const [kontotyp, setKontotyp] = useState<"Intäkt" | "Kostnad">();
   const [fil, setFil] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [belopp, setBelopp] = useState<number | null>(null);
@@ -52,7 +51,6 @@ function Bokför() {
         <Step3
           kontonummer={kontonummer}
           kontobeskrivning={kontobeskrivning || ""}
-          kontotyp={kontotyp ?? "Intäkt"}
           fil={fil || undefined}
           belopp={belopp ?? 0}
           transaktionsdatum={transaktionsdatum || ""}

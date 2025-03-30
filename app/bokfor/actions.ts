@@ -6,14 +6,13 @@ import OpenAI from "openai";
 
 // ✅ SERVER ACTION: Save transaction
 export async function saveTransaction(formData: FormData) {
-  const transaktionsdatum = formData.get("transaktionsdatum")?.toString() || "";
-  const kommentar = formData.get("kommentar")?.toString() || "";
-  const kontonummer = formData.get("kontonummer")?.toString() || "";
-  const kontobeskrivning = formData.get("kontobeskrivning")?.toString() || "";
-  const kontotyp = formData.get("kontotyp")?.toString() || "";
-  const belopp = parseFloat(formData.get("belopp")?.toString() || "0");
-  const moms = parseFloat(formData.get("moms")?.toString() || "0");
-  const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString() || "0");
+  const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
+  const kommentar = formData.get("kommentar")?.toString().trim() || "";
+  const kontonummer = formData.get("kontonummer")?.toString().trim() || "";
+  const kontobeskrivning = formData.get("kontobeskrivning")?.toString().trim() || "";
+  const belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
+  const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
+  const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString().trim() || "0");
   const fil = formData.get("fil") as File | null;
   const filename = fil ? fil.name : "";
 
@@ -22,7 +21,6 @@ export async function saveTransaction(formData: FormData) {
     kommentar,
     kontonummer,
     kontobeskrivning,
-    kontotyp,
     belopp,
     moms,
     beloppUtanMoms,
@@ -35,17 +33,14 @@ export async function saveTransaction(formData: FormData) {
     const momsKonto = await prisma.konto.findFirst({ where: { kontonummer: "2640" } }); // ingående moms
     const utgåendeMomsKonto = await prisma.konto.findFirst({ where: { kontonummer: "2610" } });
 
-    console.log("🔎 Konton lookup:", {
-      konto: konto?.kontonummer,
-      företagskonto: företagskonto?.kontonummer,
-      momsKonto: momsKonto?.kontonummer,
-      utgåendeMomsKonto: utgåendeMomsKonto?.kontonummer,
-    });
-
     if (!konto) throw new Error("⛔ Konto not found");
     if (!företagskonto || !momsKonto || !utgåendeMomsKonto) {
       throw new Error("⛔ Required standard accounts not found");
     }
+
+    // ✅ Använd kontotyp direkt från kontot i databasen
+    const kontotyp = konto.kontotyp;
+    console.log("🧠 Bestämd kontotyp från konto:", kontotyp);
 
     const transaktionsposter =
       kontotyp === "Utgift"
@@ -157,5 +152,22 @@ export async function extractDataFromOCR(text: string) {
   } catch (error) {
     console.error("❌ extractDataFromOCR error:", error);
     return { datum: "", belopp: 0 };
+  }
+}
+
+export async function getKontotyp(kontonummer: string) {
+  try {
+    const result = await prisma.konto.findFirst({
+      where: {
+        kontonummer: {
+          equals: kontonummer.trim(),
+        },
+      },
+    });
+    console.log("✅ Hittat konto:", result);
+    return result?.kontotyp ?? null;
+  } catch (err) {
+    console.error("❌ getKontotyp error:", err);
+    return null;
   }
 }

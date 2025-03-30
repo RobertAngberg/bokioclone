@@ -1,13 +1,12 @@
 "use client";
 
-import { saveTransaction } from "./actions";
-import { useRef } from "react";
+import { saveTransaction, getKontotyp } from "./actions";
+import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 interface Step3Props {
   kontonummer: string;
   kontobeskrivning: string;
-  kontotyp: "Intäkt" | "Kostnad";
   fil?: File;
   belopp: number;
   transaktionsdatum: string;
@@ -37,7 +36,6 @@ function SubmitButton() {
 function Step3({
   kontonummer,
   kontobeskrivning,
-  kontotyp,
   fil,
   belopp,
   transaktionsdatum,
@@ -45,8 +43,20 @@ function Step3({
   setCurrentStep,
 }: Step3Props) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [kontotyp, setKontotyp] = useState<"Intäkt" | "Utgift" | null>(null);
+
   const moms = parseFloat(((belopp ?? 0) * 0.2).toFixed(2));
   const beloppUtanMoms = parseFloat(((belopp ?? 0) * 0.8).toFixed(2));
+
+  useEffect(() => {
+    getKontotyp(kontonummer).then((typ) => {
+      if (typ === "Intäkt" || typ === "Utgift") {
+        setKontotyp(typ);
+      } else {
+        console.warn("⚠️ Okänd kontotyp:", typ);
+      }
+    });
+  }, [kontonummer]);
 
   const handleSubmit = async (formData: FormData) => {
     if (fil) formData.set("fil", fil);
@@ -58,6 +68,14 @@ function Step3({
       console.error("Error saving transaction:", result.error);
     }
   };
+
+  if (!kontotyp) {
+    return (
+      <main className="items-center min-h-screen text-center text-white bg-slate-950">
+        <p className="p-10">🔄 Hämtar kontoinformation...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="items-center min-h-screen text-center text-white bg-slate-950">
@@ -71,9 +89,8 @@ function Step3({
         <form ref={formRef} action={handleSubmit}>
           <input type="hidden" name="transaktionsdatum" value={transaktionsdatum} />
           <input type="hidden" name="kommentar" value={kommentar} />
-          <input type="hidden" name="kontonummer" value={kontonummer} />
+          <input type="hidden" name="kontonummer" value={kontonummer.trim()} />
           <input type="hidden" name="kontobeskrivning" value={kontobeskrivning} />
-          <input type="hidden" name="kontotyp" value={kontotyp} />
           <input type="hidden" name="belopp" value={String(belopp)} />
           <input type="hidden" name="moms" value={String(moms)} />
           <input type="hidden" name="beloppUtanMoms" value={String(beloppUtanMoms)} />
@@ -90,18 +107,16 @@ function Step3({
               <tr>
                 <td className="p-4">Företagskonto</td>
                 <td className="p-4">{kontotyp === "Intäkt" ? belopp : 0}</td>
-                <td className="p-4">{kontotyp === "Kostnad" ? belopp : 0}</td>
+                <td className="p-4">{kontotyp === "Utgift" ? belopp : 0}</td>
               </tr>
               <tr>
-                <td className="p-4">
-                  {kontotyp === "Kostnad" ? "Ingående moms" : "Utgående moms"}
-                </td>
-                <td className="p-4">{kontotyp === "Kostnad" ? moms : 0}</td>
+                <td className="p-4">{kontotyp === "Utgift" ? "Ingående moms" : "Utgående moms"}</td>
+                <td className="p-4">{kontotyp === "Utgift" ? moms : 0}</td>
                 <td className="p-4">{kontotyp === "Intäkt" ? moms : 0}</td>
               </tr>
               <tr>
-                <td className="p-4">{kontonummer}</td>
-                <td className="p-4">{kontotyp === "Kostnad" ? beloppUtanMoms : 0}</td>
+                <td className="p-4">{kontobeskrivning}</td>
+                <td className="p-4">{kontotyp === "Utgift" ? beloppUtanMoms : 0}</td>
                 <td className="p-4">{kontotyp === "Intäkt" ? beloppUtanMoms : 0}</td>
               </tr>
             </tbody>
