@@ -34,17 +34,29 @@ export async function fetchDataFromYear(year: string) {
     let totalUtgift = 0;
 
     rows.forEach((row, i) => {
-      const date = new Date(row.transaktion.transaktionsdatum);
+      const transaktion = row.transaktion;
+      const konto = row.konto;
+
+      // Skydda mot null-värden
+      const rawDate = transaktion?.transaktionsdatum;
+      const typ = konto?.kontotyp;
+      const kontonummer = konto?.kontonummer ?? "??";
+
+      if (!rawDate || !typ) {
+        console.warn(`⚠️ Skipping row ${i + 1} - saknar datum eller kontotyp`);
+        return;
+      }
+
+      const date = new Date(rawDate);
       date.setDate(1);
       const key = date.toISOString();
 
-      const kredit = Number(row.kredit || 0);
-      const debet = Number(row.debet || 0);
-      const typ = row.konto.kontotyp;
+      const kredit = Number(row.kredit ?? 0);
+      const debet = Number(row.debet ?? 0);
 
       console.log(
         `🧾 Rad ${i + 1}:`,
-        `Datum=${key}, Konto=${row.konto.kontonummer}, Typ=${typ}, Debet=${debet}, Kredit=${kredit}`
+        `Datum=${key}, Konto=${kontonummer}, Typ=${typ}, Debet=${debet}, Kredit=${kredit}`
       );
 
       if (!grouped[key]) grouped[key] = { inkomst: 0, utgift: 0 };
