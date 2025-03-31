@@ -46,7 +46,7 @@ export async function fetchTransactionDetails(transaktionsId: number) {
 
     return details.map((d) => ({
       transaktionspost_id: d.transaktionspost_id,
-      kontobeskrivning: d.konto.kontobeskrivning || "",
+      kontobeskrivning: d.konto?.kontobeskrivning ?? "",
       debet: d.debet,
       kredit: d.kredit,
     }));
