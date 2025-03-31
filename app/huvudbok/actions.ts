@@ -15,8 +15,8 @@ export async function fetchHuvudbok() {
     return rows.map((row) => ({
       kontonummer: row.konto?.kontonummer ?? "",
       kontobeskrivning: row.konto?.kontobeskrivning ?? "",
-      transaktionsdatum: row.transaktion.transaktionsdatum.toISOString(),
-      fil: row.transaktion.fil || "",
+      transaktionsdatum: row.transaktion?.transaktionsdatum?.toISOString() ?? "",
+      fil: row.transaktion?.fil ?? "",
       debet: row.debet,
       kredit: row.kredit,
     }));
