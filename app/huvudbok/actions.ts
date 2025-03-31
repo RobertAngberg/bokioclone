@@ -13,8 +13,8 @@ export async function fetchHuvudbok() {
     });
 
     return rows.map((row) => ({
-      kontonummer: row.konto.kontonummer,
-      kontobeskrivning: row.konto.kontobeskrivning || "",
+      kontonummer: row.konto?.kontonummer ?? "",
+      kontobeskrivning: row.konto?.kontobeskrivning ?? "",
       transaktionsdatum: row.transaktion.transaktionsdatum.toISOString(),
       fil: row.transaktion.fil || "",
       debet: row.debet,
