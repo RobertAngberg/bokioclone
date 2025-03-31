@@ -1,11 +1,17 @@
 "use server";
 
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import OpenAI from "openai";
 
-// ✅ SERVER ACTION: Save transaction
 export async function saveTransaction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen användare inloggad");
+  }
+  const userId = parseInt(session.user.id); // 👈 konvertera om dina user.id är Int
+
   const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
   const kommentar = formData.get("kommentar")?.toString().trim() || "";
   const kontonummer = formData.get("kontonummer")?.toString().trim() || "";
@@ -38,7 +44,6 @@ export async function saveTransaction(formData: FormData) {
       throw new Error("⛔ Required standard accounts not found");
     }
 
-    // ✅ Använd kontotyp direkt från kontot i databasen
     const kontotyp = konto.kontotyp;
     console.log("🧠 Bestämd kontotyp från konto:", kontotyp);
 
@@ -65,6 +70,7 @@ export async function saveTransaction(formData: FormData) {
         belopp,
         fil: filename,
         kommentar,
+        user: { connect: { id: userId } }, // 👈 Länkar till inloggad användare
         transaktionsposter: {
           create: transaktionsposter,
         },
@@ -79,6 +85,7 @@ export async function saveTransaction(formData: FormData) {
       id: transaktion.transaktions_id,
       debug: {
         transaktionsposter,
+        userId,
         formData: {
           transaktionsdatum,
           kontonummer,

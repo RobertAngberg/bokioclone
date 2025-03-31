@@ -1,11 +1,11 @@
-import { auth } from "@/auth";
+import { auth } from "./app/login/edge"; // ← rätt väg
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  const session = await auth();
+  const session = await auth(req);
 
-  if (!session?.user) {
+  if (!session?.email) {
     const signInUrl = new URL("/api/auth/signin", req.url);
     signInUrl.searchParams.set("callbackUrl", "/");
     return NextResponse.redirect(signInUrl);

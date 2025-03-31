@@ -10,6 +10,8 @@ function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
 
+  console.log("📧 Email från client:", session?.user?.email);
+
   const closeMenu = () => {
     setIsOpen(false);
   };
