@@ -37,7 +37,7 @@ model Konto {
   kontonummer        String             @map("kontonummer")
   kontobeskrivning   String?            @map("kontobeskrivning")
   kontotyp           String?            @map("kontotyp")
-  sökord            String?            @map("sökord")
+  sökord             String?            @map("sökord")
   transaktionsposter Transaktionspost[]
 
   @@map("konton")
@@ -45,8 +45,8 @@ model Konto {
 
 model Kunder {
   id                     Int       @id @default(autoincrement())
-  FöretagEllerPrivat    String?
-  Företagsnamn          String?
+  FöretagEllerPrivat     String?
+  Företagsnamn           String?
   Organisationsnummer    String?
   Momsnummer             BigInt?
   Kundnummer             BigInt?
@@ -55,11 +55,25 @@ model Kunder {
   Postnummer             Int?
   Stad                   String?
   BetalningsvillkorDagar Int?
-  Dröjsmålsränta      Decimal?  @db.Decimal(5, 2)
+  Dröjsmålsränta         Decimal?  @db.Decimal(5, 2)
   Leverans               String?
-  OmvändSkattskyldighet Boolean?
+  OmvändSkattskyldighet  Boolean?
   createdAt              DateTime? @default(now()) @db.Timestamp(6)
   updatedAt              DateTime? @default(now()) @db.Timestamp(6)
 
   @@map("kunder")
+}
+
+model Företagsuppgifter {
+  id                 Int    @id @default(autoincrement())
+  företagsnamn       String @map("företagsnamn")
+  organisationsnummer String @map("organisationsnummer")
+  momsnummer         String @map("momsnummer")
+  epost              String @map("epost")
+  adress             String @map("adress")
+  adress2            String? @map("adress2")
+  postnummer         String @map("postnummer")
+  stad               String @map("stad")
+
+  @@map("företagsuppgifter")
 }
