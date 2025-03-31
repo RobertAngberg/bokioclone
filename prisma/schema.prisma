@@ -9,7 +9,7 @@ datasource db {
 
 model Transaktion {
   transaktions_id    Int                @id @default(autoincrement()) @map("transaktions_id")
-  transaktionsdatum  DateTime           @map("transaktionsdatum")
+  transaktionsdatum  DateTime           @map("transaktionsdatum") @db.Timestamp(6)
   kontobeskrivning   String?            @map("kontobeskrivning")
   kontotyp           String?            @map("kontotyp")
   belopp             Float?             @map("belopp")
@@ -21,24 +21,45 @@ model Transaktion {
 }
 
 model Transaktionspost {
-  transaktionspost_id Int         @id @default(autoincrement()) @map("transaktionspost_id")
-  transaktions_id     Int         @map("transaktions_id")
-  konto_id            Int         @map("konto_id")
-  debet               Float       @map("debet")
-  kredit              Float       @map("kredit")
-  konto               Konto       @relation(fields: [konto_id], references: [konto_id], onDelete: Cascade)
-  transaktion         Transaktion @relation(fields: [transaktions_id], references: [transaktions_id], onDelete: Cascade)
+  transaktionspost_id Int          @id @default(autoincrement()) @map("transaktionspost_id")
+  transaktions_id     Int?         @map("transaktions_id")
+  konto_id            Int?         @map("konto_id")
+  debet               Float        @map("debet")
+  kredit              Float        @map("kredit")
+  konto               Konto?       @relation(fields: [konto_id], references: [konto_id], onDelete: Cascade, onUpdate: NoAction)
+  transaktion         Transaktion? @relation(fields: [transaktions_id], references: [transaktions_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("transaktionsposter")
 }
 
 model Konto {
-  konto_id            Int                @id @default(autoincrement()) @map("konto_id")
-  kontonummer         String             @map("kontonummer")
-  kontobeskrivning    String?            @map("kontobeskrivning")
-  kontotyp            String?            @map("kontotyp")
-  sökord              String?            @map("sökord")
-  transaktionsposter  Transaktionspost[]
+  konto_id           Int                @id @default(autoincrement()) @map("konto_id")
+  kontonummer        String             @map("kontonummer")
+  kontobeskrivning   String?            @map("kontobeskrivning")
+  kontotyp           String?            @map("kontotyp")
+  sökord            String?            @map("sökord")
+  transaktionsposter Transaktionspost[]
 
   @@map("konton")
+}
+
+model Kunder {
+  id                     Int       @id @default(autoincrement())
+  FöretagEllerPrivat    String?
+  Företagsnamn          String?
+  Organisationsnummer    String?
+  Momsnummer             BigInt?
+  Kundnummer             BigInt?
+  Postadress             String?
+  Postadress2            String?
+  Postnummer             Int?
+  Stad                   String?
+  BetalningsvillkorDagar Int?
+  Dröjsmålsränta      Decimal?  @db.Decimal(5, 2)
+  Leverans               String?
+  OmvändSkattskyldighet Boolean?
+  createdAt              DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt              DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("kunder")
 }

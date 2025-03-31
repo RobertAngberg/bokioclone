@@ -79,7 +79,7 @@ function Step2({
           </button>
         </div>
 
-        <div className="relative flex flex-col items-center justify-center w-full h-auto border-2 border-dashed border-cyan-500 md:w-3/5 md:ml-2 mb-4 md:mb-0">
+        <div className="relative flex flex-col items-center justify-center w-full h-auto border-2 border-dashed border-cyan-500 md:w-3/5 md:ml-4 mb-4 md:mb-0">
           {!pdfUrl && !fil && <p className="text-gray-500">Ditt underlag kommer att visas här</p>}
 
           {fil?.type.startsWith("image/") && (

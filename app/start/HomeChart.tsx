@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bar } from "react-chartjs-2";
+import { Chart } from "react-chartjs-2";
 import "chart.js/auto";
 import React from "react";
 
@@ -21,6 +21,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
   const [labels, setLabels] = useState<string[]>([]);
   const [inkomstData, setInkomstData] = useState<number[]>([]);
   const [utgiftData, setUtgiftData] = useState<number[]>([]);
+  const [resultData, setResultData] = useState<number[]>([]);
 
   useEffect(() => {
     const monthNames = [
@@ -56,29 +57,43 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
 
     const finalLabels = monthNames.filter((m) => monthDataMap[m]);
     const inkomstValues = finalLabels.map((label) => monthDataMap[label].inkomst);
-    const utgiftValues = finalLabels.map((label) => monthDataMap[label].utgift);
+    const utgiftValues = finalLabels.map((label) => -monthDataMap[label].utgift);
+    const resultValues = finalLabels.map(
+      (label) => monthDataMap[label].inkomst - monthDataMap[label].utgift
+    );
 
     setLabels(finalLabels);
     setInkomstData(inkomstValues);
     setUtgiftData(utgiftValues);
+    setResultData(resultValues);
   }, [chartData]);
 
   const data = {
     labels,
     datasets: [
       {
+        label: "Resultat",
+        data: resultData,
+        type: "line" as const,
+        borderColor: "rgb(255, 215, 0)",
+        backgroundColor: "rgb(255, 215, 0)",
+        fill: false,
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 4,
+        stack: undefined,
+      },
+      {
         label: "Inkomster",
         data: inkomstData,
         backgroundColor: "rgb(0, 128, 128)",
-        barPercentage: 0.5,
-        categoryPercentage: 0.8,
+        stack: "stack1",
       },
       {
         label: "Utgifter",
-        data: utgiftData.map((v) => -v), // optionally show as negative
+        data: utgiftData,
         backgroundColor: "rgb(255, 99, 132)",
-        barPercentage: 0.5,
-        categoryPercentage: 0.8,
+        stack: "stack1",
       },
     ],
   };
@@ -89,7 +104,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
     responsive: true,
     scales: {
       x: {
-        stacked: false,
+        stacked: true,
         ticks: {
           color: "white",
           font: { size: 14 },
@@ -100,7 +115,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
         },
       },
       y: {
-        stacked: false,
+        stacked: true,
         ticks: {
           color: "white",
           font: { size: 14 },
@@ -143,7 +158,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
       </select>
 
       <div className="relative p-10" style={{ height: "80vh" }}>
-        <Bar datasetIdKey="id" options={options} data={data} />
+        <Chart type="bar" datasetIdKey="id" options={options} data={data} />
       </div>
     </div>
   );

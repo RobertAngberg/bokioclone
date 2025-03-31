@@ -19,7 +19,7 @@ function Bokför() {
   const [kommentar, setKommentar] = useState<string | null>(null);
 
   return (
-    <main className="items-center min-h-screen px-6 pt-10 text-center bg-slate-950">
+    <main className="items-center min-h-screen pt-10 text-center bg-slate-950">
       {currentStep === 1 && (
         <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
           <SearchAccount
