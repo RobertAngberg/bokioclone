@@ -7,6 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                     Int       @id @default(autoincrement())
+  email                  String?   @unique
+  name                   String?
+  image                  String?
+
+  // Företagsinfo direkt i användaren
+  företagsnamn           String?
+  organisationsnummer    String?
+  momsnummer             String?
+  adress                 String?
+  adress2                String?
+  postnummer             String?
+  stad                   String?
+
+  // Relationer
+  transaktioner          Transaktion[]
+  kunder                 Kunder[]
+
+  @@map("användare")
+}
+
 model Transaktion {
   transaktions_id    Int                @id @default(autoincrement()) @map("transaktions_id")
   transaktionsdatum  DateTime           @map("transaktionsdatum") @db.Timestamp(6)
@@ -15,6 +37,9 @@ model Transaktion {
   belopp             Float?             @map("belopp")
   fil                String?            @map("fil")
   kommentar          String?            @map("kommentar")
+
+  userId             Int
+  user               User               @relation(fields: [userId], references: [id])
   transaktionsposter Transaktionspost[]
 
   @@map("transaktioner")
@@ -26,6 +51,7 @@ model Transaktionspost {
   konto_id            Int?         @map("konto_id")
   debet               Float        @map("debet")
   kredit              Float        @map("kredit")
+
   konto               Konto?       @relation(fields: [konto_id], references: [konto_id], onDelete: Cascade, onUpdate: NoAction)
   transaktion         Transaktion? @relation(fields: [transaktions_id], references: [transaktions_id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -38,6 +64,7 @@ model Konto {
   kontobeskrivning   String?            @map("kontobeskrivning")
   kontotyp           String?            @map("kontotyp")
   sökord             String?            @map("sökord")
+
   transaktionsposter Transaktionspost[]
 
   @@map("konton")
@@ -61,19 +88,8 @@ model Kunder {
   createdAt              DateTime? @default(now()) @db.Timestamp(6)
   updatedAt              DateTime? @default(now()) @db.Timestamp(6)
 
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
   @@map("kunder")
-}
-
-model Företagsuppgifter {
-  id                 Int    @id @default(autoincrement())
-  företagsnamn       String @map("företagsnamn")
-  organisationsnummer String @map("organisationsnummer")
-  momsnummer         String @map("momsnummer")
-  epost              String @map("epost")
-  adress             String @map("adress")
-  adress2            String? @map("adress2")
-  postnummer         String @map("postnummer")
-  stad               String @map("stad")
-
-  @@map("företagsuppgifter")
 }
