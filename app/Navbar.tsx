@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { LogoutButton } from "./start/LogoutButton";
+import React from "react";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);

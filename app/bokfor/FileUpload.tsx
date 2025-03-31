@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Tesseract from "tesseract.js";
 import { extractDataFromOCR } from "./actions";
+import React from "react";
 
 interface FileUploadProps {
   setFil: (file: File | null) => void;

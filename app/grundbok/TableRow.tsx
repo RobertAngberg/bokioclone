@@ -1,3 +1,5 @@
+import React from "react";
+
 interface TableRowProps {
   item: {
     transaktions_id: number;

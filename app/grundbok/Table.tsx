@@ -1,4 +1,5 @@
 import { TableRow } from "./TableRow";
+import React from "react";
 
 interface HistoryItem {
   transaktions_id: number;

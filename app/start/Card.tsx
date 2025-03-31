@@ -1,3 +1,5 @@
+import React from "react";
+
 interface FrontCardProps {
   title: string;
   data: number;

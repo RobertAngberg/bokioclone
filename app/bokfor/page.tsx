@@ -5,6 +5,7 @@ import { SearchAccount } from "./SearchAccount";
 import { Step2 } from "./Step2";
 import { Step3 } from "./Step3";
 import { Step4 } from "./Step4";
+import React from "react";
 
 function Bokför() {
   const [currentStep, setCurrentStep] = useState<number>(1);

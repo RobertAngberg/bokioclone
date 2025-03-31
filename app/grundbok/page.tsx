@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 import { useEffect, useState } from "react";
 import { YearSelect } from "./YearSelect";
 import { Table } from "./Table";

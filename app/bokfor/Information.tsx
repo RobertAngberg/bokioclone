@@ -4,6 +4,7 @@ import { sv } from "date-fns/locale/sv";
 registerLocale("sv", sv);
 import "react-datepicker/dist/react-datepicker.css";
 import { useEffect } from "react";
+import React from "react";
 
 interface InformationProps {
   belopp: number;

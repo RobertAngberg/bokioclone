@@ -1,3 +1,5 @@
+import React from "react";
+
 interface LogoUploadProps {
   handleFileUpload: (image: HTMLImageElement) => void;
 }

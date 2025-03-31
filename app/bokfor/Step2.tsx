@@ -4,6 +4,8 @@ import { useState } from "react";
 import { FileUpload } from "./FileUpload";
 import { Information } from "./Information";
 import { Comment } from "./Comment";
+import Image from "next/image";
+import React from "react";
 
 interface Step2Props {
   setCurrentStep: (step: number) => void;
@@ -49,7 +51,7 @@ function Step2({
   return (
     <>
       <h1 className="mb-10 text-4xl font-bold text-center text-white">Steg 2: Fyll i uppgifter</h1>
-      <div className="flex flex-col-reverse justify-between h-auto max-w-4xl px-4 mx-auto md:flex-row md:px-0">
+      <div className="flex flex-col-reverse justify-between h-auto max-w-4xl px-4 mx-auto md:flex-row">
         <div className="w-full mb-10 text-white md:w-2/5 md:mb-0">
           <FileUpload
             fil={fil}
@@ -81,7 +83,7 @@ function Step2({
           {!pdfUrl && !fil && <p className="text-gray-500">Ditt underlag kommer att visas här</p>}
 
           {fil?.type.startsWith("image/") && (
-            <img
+            <Image
               src={URL.createObjectURL(fil)}
               alt="Uploaded"
               className="object-contain object-left w-auto h-auto max-w-full"

@@ -1,3 +1,5 @@
+import React from "react";
+
 interface InputComponentProps {
   labelText: string;
   textFields: Record<string, string>;

@@ -1,3 +1,5 @@
+import React from "react";
+
 interface CommentProps {
   kommentar: string;
   setKommentar: (value: string) => void;

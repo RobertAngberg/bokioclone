@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchHuvudbok } from "./actions";
+import React from "react";
 
 type TransactionItem = {
   kontobeskrivning: string;
