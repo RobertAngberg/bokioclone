@@ -3,8 +3,8 @@
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
-    "moduleResolution": "bundler", // ✅ Required for modern Next.js + React
-    "jsx": "preserve", // ✅ Let Next.js handle JSX
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
     "strict": true,
     "noEmit": true,
     "allowJs": true,
@@ -13,8 +13,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
-    "allowSyntheticDefaultImports": true, // ✅ For cleaner imports
+    "allowSyntheticDefaultImports": true,
     "plugins": [{ "name": "next" }],
+    "baseUrl": ".", // 👈 Detta möjliggör "@/..." imports
     "paths": {
       "@/*": ["./*"]
     }

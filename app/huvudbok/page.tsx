@@ -65,9 +65,8 @@ function Huvudbok() {
                 <table className="w-full text-white">
                   <thead className="bg-gray-700">
                     <tr>
-                      <th className="p-2 text-left">Datum</th>
+                      <th className="p-2 pl-10 text-left">Datum</th>
                       <th className="p-2 text-left">Konto</th>
-                      <th className="hidden p-2 text-left sm:table-cell">Fil</th>
                       <th className="p-2 text-left">Debet</th>
                       <th className="p-2 text-left">Kredit</th>
                     </tr>
@@ -78,9 +77,8 @@ function Huvudbok() {
                         key={index}
                         className="even:bg-gray-950 odd:bg-gray-900 hover:bg-gray-700"
                       >
-                        <td className="p-2">{item.transaktionsdatum.slice(0, 10)}</td>
+                        <td className="p-2 pl-10">{item.transaktionsdatum.slice(0, 10)}</td>
                         <td className="p-2">{item.kontobeskrivning}</td>
-                        <td className="hidden p-2 sm:table-cell">{item.fil}</td>
                         <td className="p-2">{item.debet}</td>
                         <td className="p-2">{item.kredit}</td>
                       </tr>
