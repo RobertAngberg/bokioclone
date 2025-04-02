@@ -1,39 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useFakturaContext } from "./FakturaProvider";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { sv } from "date-fns/locale";
 
 export default function Villkor() {
   const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    fakturadatum: new Date(),
-    forfallodatum: addDays(new Date(), 30),
-    betalningsvillkor: "30",
-    drojsmalsranta: "12%",
-    leverans: "Fritt vårt lager",
-  });
+  const { formData, setFormData } = useFakturaContext();
 
-  function addDays(date: Date, days: number) {
+  const addDays = (date: Date, days: number) => {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
-  }
+  };
+
+  const fakturadatumDate = new Date(formData.fakturadatum);
+  const forfalloDate = new Date(formData.forfallodatum || addDays(fakturadatumDate, 30));
+
+  useEffect(() => {
+    const days = parseInt(formData.betalningsvillkor || "30");
+    const nyttDatum = addDays(new Date(formData.fakturadatum), days);
+    setFormData((prev) => ({
+      ...prev,
+      forfallodatum: nyttDatum.toISOString().slice(0, 10),
+    }));
+  }, [formData.fakturadatum, formData.betalningsvillkor, setFormData]);
 
   const handleFakturadatumChange = (date: Date) => {
-    setFormData({
-      ...formData,
-      fakturadatum: date,
-      forfallodatum: addDays(date, parseInt(formData.betalningsvillkor || "30")),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      fakturadatum: date.toISOString().slice(0, 10),
+    }));
   };
 
   const handleForfallodatumChange = (date: Date) => {
-    setFormData({
-      ...formData,
-      forfallodatum: date,
-    });
+    setFormData((prev) => ({
+      ...prev,
+      forfallodatum: date.toISOString().slice(0, 10),
+    }));
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +66,7 @@ export default function Villkor() {
             <div>
               <label className="block text-sm font-medium mb-1">Fakturadatum</label>
               <DatePicker
-                selected={formData.fakturadatum}
+                selected={fakturadatumDate}
                 onChange={handleFakturadatumChange}
                 dateFormat="yyyy-MM-dd"
                 locale={sv}
@@ -71,7 +77,7 @@ export default function Villkor() {
             <div>
               <label className="block text-sm font-medium mb-1">Förfallodatum</label>
               <DatePicker
-                selected={formData.forfallodatum}
+                selected={forfalloDate}
                 onChange={handleForfallodatumChange}
                 dateFormat="yyyy-MM-dd"
                 locale={sv}

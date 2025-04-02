@@ -1,50 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import { useFakturaContext } from "./FakturaProvider";
 
 export default function ArtiklarTjanster() {
   const [isOpen, setIsOpen] = useState(false);
-  const [rows, setRows] = useState<FormDataRow[]>([createEmptyRow()]);
-
-  type FormDataRow = {
-    beskrivning: string;
-    antal: string;
-    prisPerEnhet: string;
-    valuta: string;
-    moms: string;
-    typ: string;
-  };
-
-  function createEmptyRow(copy?: FormDataRow): FormDataRow {
-    return {
-      beskrivning: copy?.beskrivning || "",
-      antal: copy?.antal || "",
-      prisPerEnhet: copy?.prisPerEnhet || "",
-      valuta: copy?.valuta || "SEK",
-      moms: copy?.moms || "25",
-      typ: copy?.typ || "Varor",
-    };
-  }
+  const { formData, setFormData } = useFakturaContext();
 
   const handleChange = (
     index: number,
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setRows((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [name]: value };
-      return updated;
-    });
+    const updated = [...formData.artiklar];
+    updated[index] = { ...updated[index], [name]: value };
+    setFormData((prev) => ({ ...prev, artiklar: updated }));
   };
 
+  const createEmptyRow = (copy?: (typeof formData.artiklar)[number]) => ({
+    beskrivning: copy?.beskrivning || "",
+    antal: copy?.antal || "",
+    prisPerEnhet: copy?.prisPerEnhet || "",
+    valuta: copy?.valuta || "SEK",
+    moms: copy?.moms || "25",
+    typ: copy?.typ || "Varor",
+  });
+
   const addAnotherRow = () => {
-    const lastRow = rows[rows.length - 1];
-    setRows((prev) => [...prev, createEmptyRow(lastRow)]);
+    const last = formData.artiklar.at(-1);
+    const newRow = createEmptyRow(last);
+    setFormData((prev) => ({ ...prev, artiklar: [...prev.artiklar, newRow] }));
   };
 
   const removeRow = (index: number) => {
-    setRows((prev) => prev.filter((_, i) => i !== index));
+    const updated = formData.artiklar.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, artiklar: updated }));
   };
 
   const formatCurrency = (value: number, valuta: string) => {
@@ -57,7 +47,6 @@ export default function ArtiklarTjanster() {
       DKK: "da-DK",
     };
     const locale = localeMap[valuta] || "sv-SE";
-
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: valuta,
@@ -76,17 +65,17 @@ export default function ArtiklarTjanster() {
 
       {isOpen && (
         <div className="transition-all duration-300 ease-in-out bg-cyan-900 p-6 text-white space-y-6">
-          {rows.map((formData, index) => {
-            const antal = parseFloat(formData.antal || "0");
-            const pris = parseFloat(formData.prisPerEnhet || "0");
-            const momsProcent = parseFloat(formData.moms);
+          {formData.artiklar.map((row, index) => {
+            const antal = parseFloat(row.antal || "0");
+            const pris = parseFloat(row.prisPerEnhet || "0");
+            const momsProcent = parseFloat(row.moms);
             const totalExkl = antal * pris;
             const totalInkl = totalExkl * (1 + momsProcent / 100);
 
             return (
               <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 flex justify-end">
-                  {rows.length > 1 && (
+                  {formData.artiklar.length > 1 && (
                     <button
                       onClick={() => removeRow(index)}
                       className="text-sm text-red-400 hover:text-red-500"
@@ -100,7 +89,7 @@ export default function ArtiklarTjanster() {
                   <label className="block font-medium">Beskrivning</label>
                   <input
                     name="beskrivning"
-                    value={formData.beskrivning}
+                    value={row.beskrivning}
                     onChange={(e) => handleChange(index, e)}
                     className="w-full p-2 text-black"
                   />
@@ -110,7 +99,7 @@ export default function ArtiklarTjanster() {
                   <label className="block font-medium">Antal och enhet</label>
                   <input
                     name="antal"
-                    value={formData.antal}
+                    value={row.antal}
                     onChange={(e) => handleChange(index, e)}
                     className="w-full p-2 text-black"
                   />
@@ -120,7 +109,7 @@ export default function ArtiklarTjanster() {
                   <label className="block font-medium">Pris per enhet exkl. moms</label>
                   <input
                     name="prisPerEnhet"
-                    value={formData.prisPerEnhet}
+                    value={row.prisPerEnhet}
                     onChange={(e) => handleChange(index, e)}
                     className="w-full p-2 text-black"
                   />
@@ -130,7 +119,7 @@ export default function ArtiklarTjanster() {
                   <label className="block font-medium">Valuta</label>
                   <select
                     name="valuta"
-                    value={formData.valuta}
+                    value={row.valuta}
                     onChange={(e) => handleChange(index, e)}
                     className="w-full p-2 text-black"
                   >
@@ -147,7 +136,7 @@ export default function ArtiklarTjanster() {
                   <label className="block font-medium">Moms</label>
                   <select
                     name="moms"
-                    value={formData.moms}
+                    value={row.moms}
                     onChange={(e) => handleChange(index, e)}
                     className="w-full p-2 text-black"
                   >
@@ -166,7 +155,7 @@ export default function ArtiklarTjanster() {
                         type="radio"
                         name={`typ-${index}`}
                         value="Varor"
-                        checked={formData.typ === "Varor"}
+                        checked={row.typ === "Varor"}
                         onChange={(e) => handleChange(index, e)}
                       />
                       <span className="ml-1">Varor</span>
@@ -176,7 +165,7 @@ export default function ArtiklarTjanster() {
                         type="radio"
                         name={`typ-${index}`}
                         value="Tjänster"
-                        checked={formData.typ === "Tjänster"}
+                        checked={row.typ === "Tjänster"}
                         onChange={(e) => handleChange(index, e)}
                       />
                       <span className="ml-1">Tjänster</span>
@@ -186,10 +175,10 @@ export default function ArtiklarTjanster() {
 
                 <div className="md:col-span-2 mt-2">
                   <div>
-                    Totalt exkl. moms: <strong>{formatCurrency(totalExkl, formData.valuta)}</strong>
+                    Totalt exkl. moms: <strong>{formatCurrency(totalExkl, row.valuta)}</strong>
                   </div>
                   <div>
-                    Totalt inkl. moms: <strong>{formatCurrency(totalInkl, formData.valuta)}</strong>
+                    Totalt inkl. moms: <strong>{formatCurrency(totalInkl, row.valuta)}</strong>
                   </div>
                 </div>
               </div>

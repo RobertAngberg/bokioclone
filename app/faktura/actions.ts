@@ -67,3 +67,12 @@ export async function updateCustomerProfile(formData: FormData) {
   revalidatePath("/faktura");
   return { success: true };
 }
+
+export async function getUserInfo() {
+  const session = await auth();
+  if (!session?.user?.email) return null;
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+  return user;
+}

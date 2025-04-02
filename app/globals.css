@@ -26,3 +26,66 @@
         height: 100%;
     }
 }
+
+/* 🖨 Print styles */
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html,
+    body {
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 0;
+        background: white !important;
+        color: black !important;
+        overflow: visible;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    #print-area,
+    #print-area * {
+        visibility: visible !important;
+    }
+
+    #print-area {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+
+    /* Force Tailwind overrides */
+    .text-white {
+        color: black !important;
+    }
+
+    .bg-white {
+        background-color: white !important;
+    }
+
+    .shadow,
+    .shadow-lg,
+    .shadow-md {
+        box-shadow: none !important;
+    }
+
+    .print\\:hidden {
+        display: none !important;
+    }
+}
