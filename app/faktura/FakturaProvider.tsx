@@ -1,9 +1,13 @@
-// app/faktura/FakturaProvider.tsx
 "use client";
 
 import { createContext, useContext, useState } from "react";
 
 export type FakturaFormData = {
+  logo: string;
+  logoSize: number; // ← används för ev framtida scaling
+  logoUrl: string;
+  logoHeight: number;
+  logoWidth: number; // ← används aktivt i Forhandsgranskning
   företagsnamn: string;
   adress: string;
   postnummer: string;
@@ -35,6 +39,11 @@ export type FakturaFormData = {
 };
 
 const defaultFormData: FakturaFormData = {
+  logo: "",
+  logoSize: 200,
+  logoUrl: "",
+  logoHeight: 200,
+  logoWidth: 200,
   företagsnamn: "",
   adress: "",
   postnummer: "",

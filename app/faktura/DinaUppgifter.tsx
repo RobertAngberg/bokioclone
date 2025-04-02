@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 
 export default function DinaUppgifter() {
   const { data: session } = useSession();
   const { formData, setFormData } = useFakturaContext();
   const [isOpen, setIsOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
-  const image = session?.user?.image ?? "";
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -39,22 +38,49 @@ export default function DinaUppgifter() {
 
       {isOpen && (
         <div className="bg-cyan-900 p-6 text-white space-y-6">
-          {/* Profilbild + namn-badge */}
-          {image && (
-            <div className="flex flex-col items-center mb-4">
-              <div className="w-24 h-24 relative rounded-full overflow-hidden border-2 border-cyan-700 shadow-md">
-                <Image
-                  src={image}
-                  alt="Profilbild"
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                  priority
-                />
+          {/* Logotyp-upload + preview + remove-button */}
+          <div className="flex flex-col items-center justify-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const base64 = reader.result as string;
+                      setFormData((prev) => ({ ...prev, logo: base64 }));
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="hidden"
+              />
+              <span className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800">
+                🖼️ Ladda upp logotyp
+              </span>
+            </label>
+
+            {formData.logo && (
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-20 h-20 relative rounded shadow overflow-hidden">
+                  <img src={formData.logo} alt="Logotyp" className="object-contain w-full h-full" />
+                </div>
+                <button
+                  onClick={() => {
+                    setFormData((prev) => ({ ...prev, logo: "" }));
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800"
+                >
+                  🗑️ Ta bort logotyp
+                </button>
               </div>
-              <p className="mt-2 text-sm text-cyan-300">Inloggad som {name}</p>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

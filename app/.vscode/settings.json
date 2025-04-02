@@ -7,7 +7,8 @@
     "**/Thumbs.db": true,
     "**/CVS": true,
     "globals.css": true,
-    ".vscode": true
+    ".vscode": true,
+    "tsconfig.json": true
   },
-  "hide-files.files": [".vscode"]
+  "hide-files.files": [".vscode", "globals.css", "tsconfig.json"]
 }

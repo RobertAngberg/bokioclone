@@ -36,18 +36,19 @@
 
     html,
     body {
-        width: 210mm;
-        height: 297mm;
-        margin: 0;
-        padding: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        overflow: hidden !important;
         background: white !important;
         color: black !important;
-        overflow: visible;
     }
 
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        box-sizing: border-box !important;
     }
 
     body * {
@@ -60,17 +61,20 @@
     }
 
     #print-area {
-        position: absolute;
+        position: absolute !important;
         top: 0;
         left: 0;
-        width: 210mm;
-        height: 297mm;
-        margin: 0;
-        padding: 0;
-        background: white;
+        right: 0;
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        transform: translateX(-1mm);
+        /* 🛠 Kompenserar ev. utskriftsmarginaler */
     }
 
-    /* Force Tailwind overrides */
+    /* Tailwind overrides for print */
     .text-white {
         color: black !important;
     }
@@ -88,4 +92,18 @@
     .print\\:hidden {
         display: none !important;
     }
+}
+
+/* 💾 Export PDF background cleanup */
+.no-bg .shadow,
+.no-bg .shadow-md,
+.no-bg .shadow-lg {
+    box-shadow: none !important;
+}
+
+.no-bg table th {
+    vertical-align: middle !important;
+    line-height: 1.5 !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
 }
