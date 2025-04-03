@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FakturaProvider } from "./FakturaProvider";
+import { FakturaProvider, useFakturaContext } from "./FakturaProvider";
 import DinaUppgifter from "./DinaUppgifter";
 import ArtiklarTjanster from "./ArtiklarTjanster";
 import KundUppgifter from "./KundUppgifter";
@@ -10,51 +10,68 @@ import Ovrigt from "./Ovrigt";
 import Forhandsgranskning from "./Forhandsgranskning";
 import ExportPdfButton from "./ExportPdfButton";
 import ForhandsgranskaKnapp from "./ForhandsgranskaKnapp";
+import FakturorLista from "./FakturorLista";
+import { saveInvoice } from "./actions";
 
-export default function FakturaPage() {
+function InnerFakturaPage() {
   const [showPreview, setShowPreview] = useState(false);
+  const { formData } = useFakturaContext();
+
+  const handleSave = async () => {
+    const fd = new FormData();
+
+    for (const [key, value] of Object.entries(formData)) {
+      if (key === "artiklar") {
+        fd.append(key, JSON.stringify(value));
+      } else {
+        fd.append(key, String(value ?? ""));
+      }
+    }
+
+    const result = await saveInvoice(fd);
+    if (result.success) {
+      alert("✅ Faktura sparad!");
+    } else {
+      alert("❌ Kunde inte spara fakturan.");
+    }
+  };
 
   return (
-    <FakturaProvider>
-      <main className="flex justify-center p-4 print:hidden">
-        <div className="w-full max-w-3xl space-y-4 mx-auto">
-          <h1 className="mt-10 mb-10 text-4xl font-bold text-center text-white">
-            Skapa en faktura
-          </h1>
+    <main className="flex justify-center p-4 print:hidden">
+      <div className="w-full max-w-3xl space-y-4 mx-auto">
+        <h1 className="mt-10 mb-10 text-4xl font-bold text-center text-white">Skapa en faktura</h1>
+        <FakturorLista />
+        <DinaUppgifter />
+        <ArtiklarTjanster />
+        <KundUppgifter />
+        <Villkor />
+        <Ovrigt />
 
-          <DinaUppgifter />
-          <ArtiklarTjanster />
-          <KundUppgifter />
-          <Villkor />
-          <Ovrigt />
-
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-2">
-              <ExportPdfButton />
-              <button
-                onClick={() => console.log("💾 Spara")}
-                className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-              >
-                💾 Spara
-              </button>
-
-              <button
-                onClick={() => window.print()}
-                className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-              >
-                🖨️ Skriv ut
-              </button>
-            </div>
-
-            <ForhandsgranskaKnapp
-              onClick={() => setShowPreview(true)}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            <ExportPdfButton />
+            <button
+              onClick={handleSave}
               className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-            />
+            >
+              💾 Spara
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
+            >
+              🖨️ Skriv ut
+            </button>
           </div>
-        </div>
-      </main>
 
-      {/* Osynlig version för PDF-export (måste ha layout!) */}
+          <ForhandsgranskaKnapp
+            onClick={() => setShowPreview(true)}
+            className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
+          />
+        </div>
+      </div>
+
+      {/* Osynlig version för PDF-export */}
       <div style={{ position: "absolute", top: "-9999px", left: "-9999px" }}>
         <Forhandsgranskning />
       </div>
@@ -77,6 +94,14 @@ export default function FakturaPage() {
           </div>
         </div>
       )}
+    </main>
+  );
+}
+
+export default function FakturaPage() {
+  return (
+    <FakturaProvider>
+      <InnerFakturaPage />
     </FakturaProvider>
   );
 }

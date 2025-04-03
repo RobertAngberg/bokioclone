@@ -4,75 +4,81 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function updateUserProfile(formData: FormData) {
+export async function saveInvoice(formData: FormData) {
   const session = await auth();
-  if (!session?.user?.email) return { error: "Not authorized" };
+  if (!session?.user?.id) throw new Error("Ingen inloggad användare");
 
-  const data = {
-    företagsnamn: formData.get("företagsnamn")?.toString().trim() || null,
-    organisationsnummer: formData.get("organisationsnummer")?.toString().trim() || null,
-    momsnummer: formData.get("momsnummer")?.toString().trim() || null,
-    adress: formData.get("adress")?.toString().trim() || null,
-    adress2: formData.get("adress2")?.toString().trim() || null,
-    postnummer: formData.get("postnummer")?.toString().trim() || null,
-    stad: formData.get("stad")?.toString().trim() || null,
-  };
+  const userId = parseInt(session.user.id);
 
-  await prisma.user.update({
-    where: { email: session.user.email },
-    data,
-  });
+  try {
+    const artiklar = JSON.parse(formData.get("artiklar")?.toString() || "[]");
 
-  revalidatePath("/faktura");
-  return { success: true };
+    const faktura = await prisma.faktura.create({
+      data: {
+        userId,
+        fakturanummer: formData.get("fakturanummer")?.toString() || "",
+        fakturadatum: new Date(formData.get("fakturadatum")?.toString() || new Date()),
+        forfallodatum: new Date(formData.get("forfallodatum")?.toString() || new Date()),
+        betalningsmetod: formData.get("betalningsmetod")?.toString() || null,
+        betalningsvillkor: formData.get("betalningsvillkor")?.toString() || null,
+        drojsmalsranta: formData.get("drojsmalsranta")?.toString() || null,
+        leverans: formData.get("leverans")?.toString() || null,
+        kommentar: formData.get("kommentar")?.toString() || null,
+
+        företagsnamn: formData.get("företagsnamn")?.toString() || "",
+        adress: formData.get("adress")?.toString() || "",
+        postnummer: formData.get("postnummer")?.toString() || "",
+        stad: formData.get("stad")?.toString() || "",
+        email: formData.get("email")?.toString() || "",
+        logo: formData.get("logo")?.toString() || null,
+
+        kundnamn: formData.get("kundnamn")?.toString() || "",
+        kundadress: formData.get("kundadress")?.toString() || "",
+        kundpostnummer: formData.get("kundpostnummer")?.toString() || "",
+        kundstad: formData.get("kundstad")?.toString() || "",
+        kundemail: formData.get("kundemail")?.toString() || "",
+        kundtyp: formData.get("kundtyp")?.toString() || "",
+
+        artiklar: {
+          create: artiklar.map((rad: any) => ({
+            beskrivning: rad.beskrivning,
+            antal: rad.antal,
+            prisPerEnhet: rad.prisPerEnhet,
+            moms: rad.moms,
+            valuta: rad.valuta,
+            typ: rad.typ,
+          })),
+        },
+      },
+    });
+
+    console.log("✅ Sparad faktura:", faktura.id);
+    revalidatePath("/fakturor");
+    return { success: true, id: faktura.id };
+  } catch (error) {
+    console.error("❌ saveInvoice error:", error);
+    return { success: false, error };
+  }
 }
 
-export async function updateCustomerProfile(formData: FormData) {
+export async function getAllInvoices() {
   const session = await auth();
-  if (!session?.user?.id) return { error: "Not authorized" };
+  if (!session?.user?.id) return { success: false, invoices: [] };
 
-  const kundId = parseInt(formData.get("kundId")?.toString() || "0");
-  if (!kundId) return { error: "Ogiltigt kund-ID" };
+  const userId = parseInt(session.user.id);
 
-  const data = {
-    FöretagEllerPrivat: formData.get("FöretagEllerPrivat")?.toString().trim() || null,
-    Företagsnamn: formData.get("Företagsnamn")?.toString().trim() || null,
-    Organisationsnummer: formData.get("Organisationsnummer")?.toString().trim() || null,
-    Momsnummer: formData.get("Momsnummer") ? BigInt(formData.get("Momsnummer")!.toString()) : null,
-    Kundnummer: formData.get("Kundnummer") ? BigInt(formData.get("Kundnummer")!.toString()) : null,
-    Postadress: formData.get("Postadress")?.toString().trim() || null,
-    Postadress2: formData.get("Postadress2")?.toString().trim() || null,
-    Postnummer: formData.get("Postnummer")
-      ? parseInt(formData.get("Postnummer")!.toString())
-      : null,
-    Stad: formData.get("Stad")?.toString().trim() || null,
-    BetalningsvillkorDagar: formData.get("BetalningsvillkorDagar")
-      ? parseInt(formData.get("BetalningsvillkorDagar")!.toString())
-      : null,
-    Dröjsmålsränta: formData.get("Dröjsmålsränta")
-      ? parseFloat(formData.get("Dröjsmålsränta")!.toString())
-      : null,
-    Leverans: formData.get("Leverans")?.toString().trim() || null,
-    OmvändSkattskyldighet: formData.get("OmvändSkattskyldighet")?.toString() === "true",
-  };
+  try {
+    const fakturor = await prisma.faktura.findMany({
+      where: { userId },
+      include: {
+        artiklar: true, // 👈 inkluderar fakturarader
+      },
+      orderBy: { id: "desc" },
+    });
 
-  await prisma.kunder.update({
-    where: {
-      id: kundId,
-      userId: parseInt(session.user.id),
-    },
-    data,
-  });
-
-  revalidatePath("/faktura");
-  return { success: true };
-}
-
-export async function getUserInfo() {
-  const session = await auth();
-  if (!session?.user?.email) return null;
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  });
-  return user;
+    return { success: true, invoices: fakturor }; // Justera så att det är i rätt format
+  } catch (error) {
+    console.error("❌ Error fetching invoices:", error);
+    return { success: false, invoices: [] }; // Hantera eventuella fel
+  }
 }

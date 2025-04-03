@@ -107,8 +107,18 @@ export default function Forhandsgranskning() {
         <div className="grid grid-cols-5 gap-4 mb-10 text-[10pt]">
           {[
             ["Fakturanummer", formData.fakturanummer],
-            ["Fakturadatum", formData.fakturadatum],
-            ["Förfallodatum", formData.forfallodatum],
+            [
+              "Fakturadatum",
+              formData.fakturadatum
+                ? new Date(formData.fakturadatum).toLocaleDateString("sv-SE")
+                : "",
+            ],
+            [
+              "Förfallodatum",
+              formData.forfallodatum
+                ? new Date(formData.forfallodatum).toLocaleDateString("sv-SE")
+                : "",
+            ],
             ["Betalningsmetod", formData.betalningsmetod],
             ["Betalningsvillkor", `${formData.betalningsvillkor} dagar`],
           ].map(([label, value], i) => (
