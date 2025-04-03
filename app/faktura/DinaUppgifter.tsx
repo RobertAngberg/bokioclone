@@ -8,10 +8,13 @@ export default function DinaUppgifter() {
   const { data: session } = useSession();
   const { formData, setFormData } = useFakturaContext();
   const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
+
+  const MAX_SIZE_BYTES = 1024 * 1024; // 1MB
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -26,6 +29,56 @@ export default function DinaUppgifter() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+          },
+          "image/jpeg",
+          0.7
+        );
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setError(""); // clear previous error
+
+    let finalBlob: Blob = file;
+
+    if (file.size > MAX_SIZE_BYTES) {
+      finalBlob = await compressImage(file);
+    }
+
+    if (finalBlob.size > MAX_SIZE_BYTES) {
+      setError("Filen är fortfarande för stor efter komprimering (max 1 MB).");
+      return;
+    }
+
+    const base64 = await blobToBase64(finalBlob);
+    setFormData((prev) => ({ ...prev, logo: base64 }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   return (
     <div className="mb-4 rounded bg-cyan-950 p-1">
       <div
@@ -38,24 +91,15 @@ export default function DinaUppgifter() {
 
       {isOpen && (
         <div className="bg-cyan-900 p-6 text-white space-y-6">
-          {/* Logotyp-upload + preview + remove-button */}
           <div className="flex flex-col items-center justify-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={async (e) => {
+                onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      const base64 = reader.result as string;
-                      setFormData((prev) => ({ ...prev, logo: base64 }));
-                      if (fileInputRef.current) fileInputRef.current.value = "";
-                    };
-                    reader.readAsDataURL(file);
-                  }
+                  if (file) handleFileUpload(file);
                 }}
                 className="hidden"
               />
@@ -63,6 +107,8 @@ export default function DinaUppgifter() {
                 🖼️ Ladda upp logotyp
               </span>
             </label>
+
+            {error && <p className="text-red-400 text-sm">{error}</p>}
 
             {formData.logo && (
               <div className="flex flex-col items-center gap-2">
@@ -73,6 +119,7 @@ export default function DinaUppgifter() {
                   onClick={() => {
                     setFormData((prev) => ({ ...prev, logo: "" }));
                     if (fileInputRef.current) fileInputRef.current.value = "";
+                    setError("");
                   }}
                   className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800"
                 >

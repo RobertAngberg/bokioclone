@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
 
-interface InvoiceCanvasProps {
+interface FakturaCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   textFields: { [key: string]: string };
   logoImage: HTMLImageElement | null;
   saveAsJPG: () => void;
 }
 
-function InvoiceCanvas({ canvasRef, textFields, logoImage, saveAsJPG }: InvoiceCanvasProps) {
+function FakturaCanvas({ canvasRef, textFields, logoImage, saveAsJPG }: FakturaCanvasProps) {
   useEffect(() => {
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
@@ -121,4 +121,4 @@ function InvoiceCanvas({ canvasRef, textFields, logoImage, saveAsJPG }: InvoiceC
   return <canvas ref={canvasRef} width="715" height="1011" className="bg-white" />;
 }
 
-export { InvoiceCanvas };
+export { FakturaCanvas };
