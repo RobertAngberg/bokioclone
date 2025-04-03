@@ -4,15 +4,20 @@ import { createContext, useContext, useState } from "react";
 
 export type FakturaFormData = {
   logo: string;
-  logoSize: number; // ← används för ev framtida scaling
+  logoSize: number;
   logoUrl: string;
   logoHeight: number;
-  logoWidth: number; // ← används aktivt i Forhandsgranskning
+  logoWidth: number;
   företagsnamn: string;
   adress: string;
   postnummer: string;
   stad: string;
   email: string;
+  organisationsnummer: string;
+  momsregistreringsnummer: string;
+  telefonnummer: string;
+  bankinfo: string;
+  webbplats: string;
   kundtyp: string;
   kundnamn: string;
   kundadress: string;
@@ -49,6 +54,11 @@ const defaultFormData: FakturaFormData = {
   postnummer: "",
   stad: "",
   email: "",
+  organisationsnummer: "",
+  momsregistreringsnummer: "",
+  telefonnummer: "",
+  bankinfo: "",
+  webbplats: "",
   kundtyp: "Företag",
   kundnamn: "",
   kundadress: "",

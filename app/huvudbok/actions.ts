@@ -1,22 +1,35 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { Pool } from "pg";
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export async function fetchHuvudbok() {
   try {
-    const rows = await prisma.transaktionspost.findMany({
-      include: {
-        konto: true,
-        transaktion: true,
-      },
-      orderBy: [{ konto: { konto_id: "asc" } }, { transaktion: { transaktionsdatum: "asc" } }],
-    });
+    const client = await pool.connect();
 
-    return rows.map((row) => ({
-      kontonummer: row.konto?.kontonummer ?? "",
-      kontobeskrivning: row.konto?.kontobeskrivning ?? "",
-      transaktionsdatum: row.transaktion?.transaktionsdatum?.toISOString() ?? "",
-      fil: row.transaktion?.fil ?? "",
+    const query = `
+      SELECT 
+        k.kontonummer,
+        k.kontobeskrivning,
+        t.transaktionsdatum,
+        t.fil,
+        p.debet,
+        p.kredit
+      FROM transaktionsposter p
+      JOIN konton k ON p.konto_id = k.konto_id
+      JOIN transaktioner t ON p.transaktions_id = t.transaktions_id
+      ORDER BY k.konto_id ASC, t.transaktionsdatum ASC
+    `;
+
+    const res = await client.query(query);
+    client.release();
+
+    return res.rows.map((row) => ({
+      kontonummer: row.kontonummer,
+      kontobeskrivning: row.kontobeskrivning,
+      transaktionsdatum: row.transaktionsdatum?.toISOString?.() ?? "",
+      fil: row.fil ?? "",
       debet: row.debet,
       kredit: row.kredit,
     }));

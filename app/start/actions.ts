@@ -1,46 +1,41 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 export async function fetchDataFromYear(year: string) {
   const start = new Date(`${year}-01-01`);
   const end = new Date(`${+year + 1}-01-01`);
 
   try {
-    const rows = await prisma.transaktionspost.findMany({
-      include: {
-        transaktion: true,
-        konto: true,
-      },
-      where: {
-        transaktion: {
-          transaktionsdatum: {
-            gte: start,
-            lt: end,
-          },
-        },
-      },
-      orderBy: {
-        transaktion: {
-          transaktionsdatum: "asc",
-        },
-      },
-    });
+    const client = await pool.connect();
 
-    console.log("🔢 Antal poster:", rows.length);
+    const query = `
+      SELECT 
+        t.transaktionsdatum, 
+        t.kontotyp, 
+        tp.debet, 
+        tp.kredit 
+      FROM transaktioner t
+      JOIN transaktionsposter tp ON t.transaktions_id = tp.transaktions_id
+      WHERE t.transaktionsdatum >= $1 AND t.transaktionsdatum < $2
+      ORDER BY t.transaktionsdatum ASC
+    `;
+    const result = await client.query(query, [start, end]);
+    client.release();
+
+    const rows = result.rows;
 
     const grouped: { [month: string]: { inkomst: number; utgift: number } } = {};
     let totalInkomst = 0;
     let totalUtgift = 0;
 
     rows.forEach((row, i) => {
-      const transaktion = row.transaktion;
-      const konto = row.konto;
-
-      // Skydda mot null-värden
-      const rawDate = transaktion?.transaktionsdatum;
-      const typ = konto?.kontotyp;
-      const kontonummer = konto?.kontonummer ?? "??";
+      const rawDate = row.transaktionsdatum;
+      const typ = row.kontotyp;
 
       if (!rawDate || !typ) {
         console.warn(`⚠️ Skipping row ${i + 1} - saknar datum eller kontotyp`);
@@ -48,16 +43,10 @@ export async function fetchDataFromYear(year: string) {
       }
 
       const date = new Date(rawDate);
-      date.setDate(1);
-      const key = date.toISOString();
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
 
-      const kredit = Number(row.kredit ?? 0);
       const debet = Number(row.debet ?? 0);
-
-      console.log(
-        `🧾 Rad ${i + 1}:`,
-        `Datum=${key}, Konto=${kontonummer}, Typ=${typ}, Debet=${debet}, Kredit=${kredit}`
-      );
+      const kredit = Number(row.kredit ?? 0);
 
       if (!grouped[key]) grouped[key] = { inkomst: 0, utgift: 0 };
 
@@ -77,12 +66,6 @@ export async function fetchDataFromYear(year: string) {
       inkomst: values.inkomst,
       utgift: values.utgift,
     }));
-
-    console.log("📊 Summerat:", {
-      totalInkomst,
-      totalUtgift,
-      yearData,
-    });
 
     return {
       totalInkomst: +totalInkomst.toFixed(2),

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import { useSession } from "next-auth/react";
 
-export default function DinaUppgifter() {
+export default function Avsandare() {
   const { data: session } = useSession();
   const { formData, setFormData } = useFakturaContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +85,7 @@ export default function DinaUppgifter() {
         className="flex justify-between items-center bg-cyan-950 px-4 py-3 cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <h2 className="text-xl font-bold text-white">Dina uppgifter</h2>
+        <h2 className="text-xl font-bold text-white">Avsändare</h2>
         <span className="text-white">{isOpen ? "▲" : "▼"}</span>
       </div>
 
@@ -104,7 +104,7 @@ export default function DinaUppgifter() {
                 className="hidden"
               />
               <span className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800">
-                🖼️ Ladda upp logotyp
+                Ladda upp logotyp
               </span>
             </label>
 
@@ -189,6 +189,61 @@ export default function DinaUppgifter() {
                 type="text"
                 name="stad"
                 value={formData.stad}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Organisationsnummer</label>
+              <input
+                type="text"
+                name="organisationsnummer"
+                value={formData.organisationsnummer}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Momsregistreringsnummer</label>
+              <input
+                type="text"
+                name="momsregistreringsnummer"
+                value={formData.momsregistreringsnummer}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Telefonnummer</label>
+              <input
+                type="text"
+                name="telefonnummer"
+                value={formData.telefonnummer}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Bankinfo</label>
+              <input
+                type="text"
+                name="bankinfo"
+                value={formData.bankinfo}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Webbplats</label>
+              <input
+                type="text"
+                name="webbplats"
+                value={formData.webbplats}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />

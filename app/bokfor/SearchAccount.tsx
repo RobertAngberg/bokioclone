@@ -1,8 +1,4 @@
-"use client";
-
-import React from "react";
-
-import { useEffect, useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { SearchResults } from "./SearchResults";
 import { searchAccount } from "./actions";
 
@@ -30,36 +26,32 @@ function SearchAccount({
   const [searchResult, setSearchResult] = useState<FetchDataItem | null>(null);
 
   useEffect(() => {
-    // wtf?? timeout en 100 nedan, var 300...
     const delay = setTimeout(async () => {
-      if (!searchText.trim()) return;
+      if (!searchText.trim()) return; // Gör inget om sökfältet är tomt
       try {
-        const result = await searchAccount(searchText);
-        console.log("🔥 RESULT:", result);
-        setSearchResult(
-          result?.kontonummer && result.kontobeskrivning && result.sökord ? result : null
-        );
+        const result = await searchAccount(searchText); // Anropar backend för att få resultatet
+        setSearchResult(result); // Uppdaterar state med resultatet från backend
       } catch (error) {
         console.error("SearchAccount failed:", error);
-        setSearchResult(null);
+        setSearchResult(null); // Om det händer något fel, sätt resultatet till null
       }
-    }, 100);
+    }, 500); // Timeout för att minska antal anrop
 
     return () => clearTimeout(delay);
-  }, [searchText]);
+  }, [searchText]); // Kör om varje gång searchText ändras
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchText(e.target.value.trim().toLowerCase());
+      setSearchText(e.target.value.trim().toLowerCase()); // Uppdaterar söktexten
     },
     [setSearchText]
   );
 
   const handleResultClick = useCallback(
     (item: FetchDataItem) => {
-      setKontonummer(item.kontonummer.trim());
-      setKontobeskrivning(item.kontobeskrivning.trim());
-      setCurrentStep(2);
+      setKontonummer(item.kontonummer.trim()); // Sätter kontonummer
+      setKontobeskrivning(item.kontobeskrivning.trim()); // Sätter kontobeskrivning
+      setCurrentStep(2); // Går vidare till nästa steg
     },
     [setCurrentStep, setKontonummer, setKontobeskrivning]
   );
@@ -82,6 +74,10 @@ function SearchAccount({
 
       {searchResult && searchText && (
         <SearchResults data={searchResult} onClick={handleResultClick} />
+      )}
+
+      {!searchResult && searchText && (
+        <p className="text-red-500">Inget resultat hittades för: &quot;{searchText}&quot;</p>
       )}
     </div>
   );

@@ -1,84 +1,154 @@
 "use server";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { Pool } from "pg";
 
-export async function saveInvoice(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Ingen inloggad användare");
-
-  const userId = parseInt(session.user.id);
-
-  try {
-    const artiklar = JSON.parse(formData.get("artiklar")?.toString() || "[]");
-
-    const faktura = await prisma.faktura.create({
-      data: {
-        userId,
-        fakturanummer: formData.get("fakturanummer")?.toString() || "",
-        fakturadatum: new Date(formData.get("fakturadatum")?.toString() || new Date()),
-        forfallodatum: new Date(formData.get("forfallodatum")?.toString() || new Date()),
-        betalningsmetod: formData.get("betalningsmetod")?.toString() || null,
-        betalningsvillkor: formData.get("betalningsvillkor")?.toString() || null,
-        drojsmalsranta: formData.get("drojsmalsranta")?.toString() || null,
-        leverans: formData.get("leverans")?.toString() || null,
-        kommentar: formData.get("kommentar")?.toString() || null,
-
-        företagsnamn: formData.get("företagsnamn")?.toString() || "",
-        adress: formData.get("adress")?.toString() || "",
-        postnummer: formData.get("postnummer")?.toString() || "",
-        stad: formData.get("stad")?.toString() || "",
-        email: formData.get("email")?.toString() || "",
-        logo: formData.get("logo")?.toString() || null,
-
-        kundnamn: formData.get("kundnamn")?.toString() || "",
-        kundadress: formData.get("kundadress")?.toString() || "",
-        kundpostnummer: formData.get("kundpostnummer")?.toString() || "",
-        kundstad: formData.get("kundstad")?.toString() || "",
-        kundemail: formData.get("kundemail")?.toString() || "",
-        kundtyp: formData.get("kundtyp")?.toString() || "",
-
-        artiklar: {
-          create: artiklar.map((rad: any) => ({
-            beskrivning: rad.beskrivning,
-            antal: rad.antal,
-            prisPerEnhet: rad.prisPerEnhet,
-            moms: rad.moms,
-            valuta: rad.valuta,
-            typ: rad.typ,
-          })),
-        },
-      },
-    });
-
-    console.log("✅ Sparad faktura:", faktura.id);
-    revalidatePath("/fakturor");
-    return { success: true, id: faktura.id };
-  } catch (error) {
-    console.error("❌ saveInvoice error:", error);
-    return { success: false, error };
-  }
-}
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export async function getAllInvoices() {
   const session = await auth();
   if (!session?.user?.id) return { success: false, invoices: [] };
-
   const userId = parseInt(session.user.id);
 
   try {
-    const fakturor = await prisma.faktura.findMany({
-      where: { userId },
-      include: {
-        artiklar: true, // 👈 inkluderar fakturarader
-      },
-      orderBy: { id: "desc" },
-    });
+    const client = await pool.connect();
 
-    return { success: true, invoices: fakturor }; // Justera så att det är i rätt format
+    // dubbelkolla exakt citat runt kolumnnamn
+    const res = await client.query(`SELECT * FROM fakturor WHERE "userId" = $1 ORDER BY id DESC`, [
+      userId,
+    ]);
+    const fakturor = res.rows;
+
+    // hämta artiklar separat
+    for (const faktura of fakturor) {
+      const artiklarRes = await client.query(`SELECT * FROM fakturarad WHERE "fakturaId" = $1`, [
+        faktura.id,
+      ]);
+      faktura.artiklar = artiklarRes.rows;
+    }
+
+    client.release();
+    return { success: true, invoices: fakturor };
+  } catch (error: any) {
+    console.error("❌ Error fetching invoices:", error.message);
+    return { success: false, invoices: [] };
+  }
+}
+
+export async function saveInvoice(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Ingen inloggad användare");
+  const userId = parseInt(session.user.id);
+
+  const fakturaId = formData.get("id")?.toString();
+  const artiklar = JSON.parse(formData.get("artiklar")?.toString() || "[]");
+
+  const f = (key: string) => formData.get(key)?.toString() || null;
+  const d = (key: string) => new Date(formData.get(key)?.toString() || new Date());
+
+  const fakturaData = [
+    userId,
+    f("fakturanummer"),
+    d("fakturadatum"),
+    d("forfallodatum"),
+    f("betalningsmetod"),
+    f("betalningsvillkor"),
+    f("drojsmalsranta"),
+    f("leverans"),
+    f("kommentar"),
+    f("företagsnamn"),
+    f("adress"),
+    f("postnummer"),
+    f("stad"),
+    f("email"),
+    f("logo"),
+    f("organisationsnummer"),
+    f("momsregistreringsnummer"),
+    f("telefonnummer"),
+    f("bankinfo"),
+    f("webbplats"),
+    f("kundnamn"),
+    f("kundadress"),
+    f("kundpostnummer"),
+    f("kundstad"),
+    f("kundemail"),
+    f("kundtyp"),
+    f("kundnummer"),
+    f("kundmomsnummer"),
+  ];
+
+  try {
+    const client = await pool.connect();
+    let faktura;
+
+    if (fakturaId) {
+      await client.query(`DELETE FROM fakturarad WHERE fakturaId = $1`, [fakturaId]);
+      await client.query(
+        `UPDATE fakturor SET
+        "userId" = $1, fakturanummer = $2, fakturadatum = $3, forfallodatum = $4,
+        betalningsmetod = $5, betalningsvillkor = $6, drojsmalsranta = $7, leverans = $8, kommentar = $9,
+        företagsnamn = $10, adress = $11, postnummer = $12, stad = $13, email = $14, logo = $15,
+        organisationsnummer = $16, momsregistreringsnummer = $17, telefonnummer = $18, bankinfo = $19, webbplats = $20,
+        kundnamn = $21, kundadress = $22, kundpostnummer = $23, kundstad = $24, kundemail = $25, kundtyp = $26,
+        kundnummer = $27, kundmomsnummer = $28
+        WHERE id = $29`,
+        [...fakturaData, fakturaId]
+      );
+      faktura = { id: fakturaId };
+    } else {
+      const res = await client.query(
+        `INSERT INTO fakturor (
+          "userId", fakturanummer, fakturadatum, forfallodatum,
+          betalningsmetod, betalningsvillkor, drojsmalsranta, leverans, kommentar,
+          företagsnamn, adress, postnummer, stad, email, logo,
+          organisationsnummer, momsregistreringsnummer, telefonnummer, bankinfo, webbplats,
+          kundnamn, kundadress, kundpostnummer, kundstad, kundemail, kundtyp,
+          kundnummer, kundmomsnummer
+        ) VALUES (${Array.from({ length: 28 }, (_, i) => `$${i + 1}`).join(", ")}) RETURNING id`,
+        fakturaData
+      );
+      faktura = res.rows[0];
+    }
+
+    for (const rad of artiklar) {
+      await client.query(
+        `INSERT INTO fakturarad (fakturaId, beskrivning, antal, prisPerEnhet, moms, valuta, typ)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [faktura.id, rad.beskrivning, rad.antal, rad.prisPerEnhet, rad.moms, rad.valuta, rad.typ]
+      );
+    }
+
+    client.release();
+    revalidatePath("/fakturor");
+    return { success: true, id: faktura.id };
   } catch (error) {
-    console.error("❌ Error fetching invoices:", error);
-    return { success: false, invoices: [] }; // Hantera eventuella fel
+    console.error("❌ Error vid sparande av faktura:", error);
+    return { success: false, error };
+  }
+}
+
+export async function deleteInvoice(fakturaId: number) {
+  try {
+    const client = await pool.connect();
+    await client.query(`DELETE FROM fakturarad WHERE fakturaId = $1`, [fakturaId]);
+    await client.query(`DELETE FROM fakturor WHERE id = $1`, [fakturaId]);
+    client.release();
+    return { success: true };
+  } catch (error) {
+    console.error("❌ deleteInvoice error:", error);
+    return { success: false, error };
+  }
+}
+
+export async function updateFakturanummer(id: number, nyttNummer: string) {
+  try {
+    const client = await pool.connect();
+    await client.query(`UPDATE fakturor SET fakturanummer = $1 WHERE id = $2`, [nyttNummer, id]);
+    client.release();
+    return { success: true };
+  } catch (error) {
+    console.error("❌ updateFakturanummer error:", error);
+    return { success: false, error };
   }
 }

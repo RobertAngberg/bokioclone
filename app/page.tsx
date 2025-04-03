@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { fetchDataFromYear } from "./start/actions";
 import { Card } from "./start/Card";
 import { HomeChart } from "./start/HomeChart";
-import { fetchDataFromYear } from "./start/actions";
-import React from "react";
 
 type YearSummary = {
   totalInkomst: number;
@@ -45,7 +44,6 @@ function Home() {
         </>
       </div>
 
-      {/* Chart with Spinner */}
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>

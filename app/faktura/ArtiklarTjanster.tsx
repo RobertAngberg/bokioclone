@@ -74,17 +74,6 @@ export default function ArtiklarTjanster() {
 
             return (
               <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2 flex justify-end">
-                  {formData.artiklar.length > 1 && (
-                    <button
-                      onClick={() => removeRow(index)}
-                      className="text-sm text-red-400 hover:text-red-500"
-                    >
-                      Ta bort
-                    </button>
-                  )}
-                </div>
-
                 <div>
                   <label className="block font-medium">Beskrivning</label>
                   <input
@@ -173,13 +162,24 @@ export default function ArtiklarTjanster() {
                   </div>
                 </div>
 
-                <div className="md:col-span-2 mt-2">
+                <div className="md:col-span-2 mt-2 flex justify-between items-center">
                   <div>
-                    Totalt exkl. moms: <strong>{formatCurrency(totalExkl, row.valuta)}</strong>
+                    <div>
+                      Totalt exkl. moms: <strong>{formatCurrency(totalExkl, row.valuta)}</strong>
+                    </div>
+                    <div>
+                      Totalt inkl. moms: <strong>{formatCurrency(totalInkl, row.valuta)}</strong>
+                    </div>
                   </div>
-                  <div>
-                    Totalt inkl. moms: <strong>{formatCurrency(totalInkl, row.valuta)}</strong>
-                  </div>
+
+                  {formData.artiklar.length > 1 && (
+                    <button
+                      onClick={() => removeRow(index)}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded"
+                    >
+                      ❌ Ta bort
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -189,7 +189,7 @@ export default function ArtiklarTjanster() {
             <button
               type="button"
               onClick={addAnotherRow}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white"
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded"
             >
               Lägg till en till
             </button>

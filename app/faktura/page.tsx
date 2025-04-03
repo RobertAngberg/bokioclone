@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { FakturaProvider, useFakturaContext } from "./FakturaProvider";
-import DinaUppgifter from "./DinaUppgifter";
 import ArtiklarTjanster from "./ArtiklarTjanster";
+import Avsandare from "./Avsandare";
 import KundUppgifter from "./KundUppgifter";
 import Villkor from "./Villkor";
 import Ovrigt from "./Ovrigt";
@@ -39,23 +39,23 @@ function InnerFakturaPage() {
   return (
     <main className="flex justify-center p-4 print:hidden">
       <div className="w-full max-w-3xl space-y-4 mx-auto">
-        <h1 className="mt-10 mb-10 text-4xl font-bold text-center text-white">Skapa en faktura</h1>
+        <h1 className="mt-10 mb-10 text-4xl font-bold text-center text-white">Fakturor</h1>
         <FakturorLista />
-        <DinaUppgifter />
         <ArtiklarTjanster />
+        <Avsandare />
         <KundUppgifter />
         <Villkor />
         <Ovrigt />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
-            <ExportPdfButton />
             <button
               onClick={handleSave}
               className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
             >
               💾 Spara
             </button>
+            <ExportPdfButton />
             <button
               onClick={() => window.print()}
               className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"

@@ -131,50 +131,50 @@ model VerificationToken {
 }
 
 model Faktura {
-  id             Int       @id @default(autoincrement())
-  userId         Int
-  user           User      @relation(fields: [userId], references: [id])
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  user              User      @relation(fields: [userId], references: [id])
 
-  fakturanummer  String
-  fakturadatum   DateTime
-  forfallodatum  DateTime
-  betalningsmetod String?
+  fakturanummer     String
+  fakturadatum      DateTime
+  forfallodatum     DateTime
+  betalningsmetod   String?
   betalningsvillkor String?
-  drojsmalsranta String?
-  leverans       String?
-  kommentar      String?
+  drojsmalsranta    String?
+  leverans          String?
+  kommentar         String?
 
-  företagsnamn   String
-  adress         String
-  postnummer     String
-  stad           String
-  email          String
-  logo           String? // base64
+  företagsnamn      String
+  adress            String
+  postnummer        String
+  stad              String
+  email             String
+  logo              String?
 
-  kundnamn       String
-  kundadress     String
-  kundpostnummer String
-  kundstad       String
-  kundemail      String
-  kundtyp        String
+  kundnamn          String
+  kundadress        String
+  kundpostnummer    String
+  kundstad          String
+  kundemail         String
+  kundtyp           String
 
-  createdAt      DateTime @default(now())
-  artiklar       FakturaRad[]
+  createdAt         DateTime @default(now())
+  artiklar          FakturaRad[]
 
   @@map("fakturor")
 }
 
 model FakturaRad {
-  id             Int     @id @default(autoincrement())
-  fakturaId      Int
-  faktura        Faktura @relation(fields: [fakturaId], references: [id], onDelete: Cascade)
+  id            Int     @id @default(autoincrement())
+  fakturaId     Int
+  faktura       Faktura @relation(fields: [fakturaId], references: [id], onDelete: Cascade)
 
-  beskrivning    String
-  antal          String
-  prisPerEnhet   String
-  moms           String
-  valuta         String
-  typ            String
+  beskrivning   String
+  antal         String
+  prisPerEnhet  String
+  moms          String
+  valuta        String
+  typ           String
 
   @@map("fakturarad")
 }
