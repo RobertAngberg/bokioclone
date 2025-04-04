@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { fetchDataFromYear } from "./start/actions";
 import { Card } from "./start/Card";
 import { HomeChart } from "./start/HomeChart";
+import Info from "./Info";
 
 type YearSummary = {
   totalInkomst: number;
@@ -36,7 +37,8 @@ function Home() {
 
   return (
     <main className="items-center text-center bg-slate-950">
-      <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
+      <Info />
+      {/* <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
         <>
           <Card title="Inkomster" data={data?.totalInkomst || 0} />
           <Card title="Utgifter" data={data?.totalUtgift || 0} />
@@ -50,7 +52,7 @@ function Home() {
         </div>
       ) : (
         <HomeChart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
-      )}
+      )} */}
     </main>
   );
 }

@@ -14,13 +14,13 @@ export default function Avsandare() {
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
 
-  const MAX_SIZE_BYTES = 1024 * 1024; // 1MB
+  const MAX_SIZE_BYTES = 1024 * 1024;
 
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      företagsnamn: prev.företagsnamn || name,
-      email: prev.email || email,
+      företagsnamn: prev.företagsnamn ?? name,
+      email: prev.email ?? email,
     }));
   }, [name, email, setFormData]);
 
@@ -36,10 +36,8 @@ export default function Avsandare() {
         const canvas = document.createElement("canvas");
         canvas.width = img.width;
         canvas.height = img.height;
-
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(img, 0, 0);
-
         canvas.toBlob(
           (blob) => {
             if (blob) resolve(blob);
@@ -61,8 +59,7 @@ export default function Avsandare() {
   };
 
   const handleFileUpload = async (file: File) => {
-    setError(""); // clear previous error
-
+    setError("");
     let finalBlob: Blob = file;
 
     if (file.size > MAX_SIZE_BYTES) {
@@ -155,7 +152,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="företagsnamn"
-                value={formData.företagsnamn}
+                value={formData.företagsnamn ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -166,7 +163,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="adress"
-                value={formData.adress}
+                value={formData.adress ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -177,7 +174,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="postnummer"
-                value={formData.postnummer}
+                value={formData.postnummer ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -188,7 +185,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="stad"
-                value={formData.stad}
+                value={formData.stad ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -199,7 +196,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="organisationsnummer"
-                value={formData.organisationsnummer}
+                value={formData.organisationsnummer ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -210,7 +207,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="momsregistreringsnummer"
-                value={formData.momsregistreringsnummer}
+                value={formData.momsregistreringsnummer ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -221,7 +218,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="telefonnummer"
-                value={formData.telefonnummer}
+                value={formData.telefonnummer ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -232,7 +229,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="bankinfo"
-                value={formData.bankinfo}
+                value={formData.bankinfo ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
@@ -243,7 +240,7 @@ export default function Avsandare() {
               <input
                 type="text"
                 name="webbplats"
-                value={formData.webbplats}
+                value={formData.webbplats ?? ""}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-black"
               />
