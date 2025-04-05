@@ -6,6 +6,22 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+export async function fetchAllaForval() {
+  try {
+    const client = await pool.connect();
+    const res = await client.query("SELECT * FROM förval ORDER BY namn");
+    client.release();
+
+    return res.rows.map((rad) => ({
+      ...rad,
+      konton: typeof rad.konton === "string" ? JSON.parse(rad.konton) : rad.konton,
+    }));
+  } catch (err) {
+    console.error("❌ fetchAllaForval error:", err);
+    return [];
+  }
+}
+
 export async function fetchDataFromYear(year: string) {
   const start = new Date(`${year}-01-01`);
   const end = new Date(`${+year + 1}-01-01`);

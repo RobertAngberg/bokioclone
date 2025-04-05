@@ -108,23 +108,21 @@ export async function searchAccount(searchText: string) {
   try {
     const client = await pool.connect();
 
-    // Lägg till wildcard för ILIKE-sökning
-    const searchPattern = `%${searchText}%`;
-
-    const query = `
-      SELECT kontonummer, kontobeskrivning, sökord
-      FROM konton
-      WHERE sökord ILIKE $1
+    const res = await client.query(
+      `
+      SELECT id, namn, beskrivning, kategori, konton, typ
+      FROM förval
+      WHERE EXISTS (
+        SELECT 1 FROM unnest(sökord) AS s WHERE s ILIKE $1
+      )
       LIMIT 1
-    `;
-    const res = await client.query(query, [searchPattern]);
+      `,
+      [`%${searchText}%`]
+    );
 
     client.release();
 
-    if (res.rows.length === 0) {
-      console.warn("⛔ Inget resultat hittades för söktext:", searchText);
-      return null;
-    }
+    if (res.rows.length === 0) return null;
 
     return res.rows[0];
   } catch (error) {

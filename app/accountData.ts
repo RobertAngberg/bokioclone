@@ -790,7 +790,15 @@ export const accounts = [
     kontonummer: "6210",
     kontobeskrivning: "Telekommunikation",
     kontoklass: "Kostnader",
-    sökord: ["telekom", "telefon", "mobil", "abonnemang", "mobilabonnemang", "telefoni", "samtal"],
+    sökord: [
+      "mobiltelefon",
+      "telekom",
+      "telefon",
+      "mobil",
+      "abonnemang",
+      "mobilabonnemang",
+      "telefoni",
+    ],
     kategori: "Kontor & fastighet",
   },
   {

@@ -5,6 +5,7 @@ import { fetchDataFromYear } from "./start/actions";
 import { Card } from "./start/Card";
 import { HomeChart } from "./start/HomeChart";
 import Info from "./Info";
+import VisaForval from "./VisaForval";
 
 type YearSummary = {
   totalInkomst: number;
@@ -37,6 +38,7 @@ function Home() {
 
   return (
     <main className="items-center text-center bg-slate-950">
+      <VisaForval />
       <Info />
       {/* <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
         <>

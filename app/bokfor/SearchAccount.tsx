@@ -1,60 +1,59 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { SearchResults } from "./SearchResults";
-import { searchAccount } from "./actions";
+"use client";
 
-interface FetchDataItem {
-  kontonummer: string;
-  kontobeskrivning: string;
-  sökord: string;
-}
+import { useState, useEffect } from "react";
+import { fetchAllaForval } from "../start/actions";
 
-interface SearchAccountProps {
-  setCurrentStep: (step: number) => void;
-  searchText: string;
-  setSearchText: (text: string) => void;
-  setKontonummer: (kontonummer: string) => void;
-  setKontobeskrivning: (kontobeskrivning: string) => void;
-}
+type KontoRad = {
+  beskrivning: string;
+  kontonummer?: string;
+  debet?: string | boolean;
+  kredit?: string | boolean;
+};
 
-function SearchAccount({
-  setCurrentStep,
-  searchText,
-  setSearchText,
+type Forval = {
+  id: number;
+  namn: string;
+  beskrivning: string;
+  typ: string;
+  kategori: string;
+  konton: KontoRad[];
+  sökord: string[];
+};
+
+type Props = {
+  setKontonummer: (val: string) => void;
+  setKontobeskrivning: (val: string) => void;
+  setCurrentStep: (val: number) => void;
+};
+
+export default function SearchAccount({
   setKontonummer,
   setKontobeskrivning,
-}: SearchAccountProps) {
-  const [searchResult, setSearchResult] = useState<FetchDataItem | null>(null);
+  setCurrentStep,
+}: Props) {
+  const [searchText, setSearchText] = useState("");
+  const [results, setResults] = useState<Forval[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const delay = setTimeout(async () => {
-      if (!searchText.trim()) return; // Gör inget om sökfältet är tomt
-      try {
-        const result = await searchAccount(searchText); // Anropar backend för att få resultatet
-        setSearchResult(result); // Uppdaterar state med resultatet från backend
-      } catch (error) {
-        console.error("SearchAccount failed:", error);
-        setSearchResult(null); // Om det händer något fel, sätt resultatet till null
+      if (searchText.length < 3) {
+        setResults([]);
+        setLoading(false);
+        return;
       }
-    }, 500); // Timeout för att minska antal anrop
+
+      setLoading(true);
+      const alla = await fetchAllaForval();
+      const träffar = alla.filter((f: Forval) =>
+        f.sökord?.some((sök: string) => sök.toLowerCase().includes(searchText.toLowerCase()))
+      );
+      setResults(träffar);
+      setLoading(false);
+    }, 300);
 
     return () => clearTimeout(delay);
-  }, [searchText]); // Kör om varje gång searchText ändras
-
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchText(e.target.value.trim().toLowerCase()); // Uppdaterar söktexten
-    },
-    [setSearchText]
-  );
-
-  const handleResultClick = useCallback(
-    (item: FetchDataItem) => {
-      setKontonummer(item.kontonummer.trim()); // Sätter kontonummer
-      setKontobeskrivning(item.kontobeskrivning.trim()); // Sätter kontobeskrivning
-      setCurrentStep(2); // Går vidare till nästa steg
-    },
-    [setCurrentStep, setKontonummer, setKontobeskrivning]
-  );
+  }, [searchText]);
 
   return (
     <div className="w-full">
@@ -65,22 +64,74 @@ function SearchAccount({
       <input
         className="w-full p-3 mt-4 text-black border-2 rounded-lg border-slate-950"
         type="text"
-        id="search-account-number"
-        name="searchInput"
         autoComplete="off"
         value={searchText}
-        onChange={handleSearchChange}
+        onChange={(e) => setSearchText(e.target.value)}
       />
 
-      {searchResult && searchText && (
-        <SearchResults data={searchResult} onClick={handleResultClick} />
+      {loading && (
+        <div className="flex justify-center mt-6">
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-800 rounded-full animate-spin"></div>
+        </div>
       )}
 
-      {!searchResult && searchText && (
-        <p className="text-red-500">Inget resultat hittades för: &quot;{searchText}&quot;</p>
+      {!loading && results.length > 0 && (
+        <div className="grid gap-4 mt-6">
+          {results.map((f) => (
+            <div
+              key={f.id}
+              className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer"
+              onClick={() => {
+                const första = f.konton.find(
+                  (k) => typeof k.debet === "string" || typeof k.kredit === "string"
+                );
+                if (första?.kontonummer) {
+                  setKontonummer(första.kontonummer);
+                  setKontobeskrivning(första.beskrivning);
+                  setCurrentStep(2);
+                }
+              }}
+            >
+              <div className="text-lg font-semibold text-gray-800">✓ {f.namn}</div>
+              <div className="italic text-gray-600 mb-2">{f.beskrivning}</div>
+              <div className="text-sm text-gray-600 mb-1">
+                <strong>Kategori:</strong> {f.kategori}
+              </div>
+              <div className="text-sm text-gray-600 mb-1">
+                <strong>Typ:</strong> {f.typ}
+              </div>
+              <div className="text-sm text-gray-500 mb-4">
+                <strong>Sökord:</strong> {f.sökord.join(", ")}
+              </div>
+
+              <table className="w-full border border-gray-300 text-sm text-gray-700">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-2 py-1 text-left">Konto</th>
+                    <th className="border border-gray-300 px-2 py-1 text-left">Debet</th>
+                    <th className="border border-gray-300 px-2 py-1 text-left">Kredit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {f.konton.map((konto, i) => (
+                    <tr key={i}>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {konto.kontonummer} {konto.beskrivning}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {konto.debet === true ? "✓" : (konto.debet ?? "")}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
-
-export { SearchAccount };
