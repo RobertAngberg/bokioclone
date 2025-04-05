@@ -9,12 +9,14 @@ export type Konto = {
   kontoklass: string;
   sökord: string[];
   kategori: string;
+  kräverSpeciellUI?: boolean;
 };
 
 export default function Info() {
   const [query, setQuery] = useState("");
   const [kategori, setKategori] = useState("");
   const [klass, setKlass] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const allaKategorier: string[] = Array.from(
     new Set((accounts as Konto[]).map((k: Konto) => k.kategori))
@@ -23,16 +25,41 @@ export default function Info() {
     new Set((accounts as Konto[]).map((k: Konto) => k.kontoklass))
   ).sort();
 
-  const filtrerade: Konto[] = accounts.filter((konto: Konto) => {
-    const matchQuery: boolean =
-      konto.kontonummer.includes(query) ||
-      konto.kontobeskrivning.toLowerCase().includes(query.toLowerCase()) ||
-      konto.sökord.some((word: string) => word.toLowerCase().includes(query.toLowerCase()));
+  interface FilterCriteria {
+    matchQuery: boolean;
+    matchKategori: boolean;
+    matchKlass: boolean;
+  }
 
-    const matchKategori: boolean = kategori ? konto.kategori === kategori : true;
-    const matchKlass: boolean = klass ? konto.kontoklass === klass : true;
-    return matchQuery && matchKategori && matchKlass;
-  });
+  const filtrerade: Konto[] = accounts
+    .filter((konto: Konto): boolean => {
+      const matchQuery: boolean =
+        konto.kontonummer.includes(query) ||
+        konto.kontobeskrivning.toLowerCase().includes(query.toLowerCase()) ||
+        konto.sökord.some((word: string): boolean =>
+          word.toLowerCase().includes(query.toLowerCase())
+        );
+
+      const matchKategori: boolean = kategori ? konto.kategori === kategori : true;
+      const matchKlass: boolean = klass ? konto.kontoklass === klass : true;
+
+      const criteria: FilterCriteria = { matchQuery, matchKategori, matchKlass };
+      return criteria.matchQuery && criteria.matchKategori && criteria.matchKlass;
+    })
+    .sort((a: Konto, b: Konto): number => {
+      if (sortOrder === "asc") {
+        return a.kontonummer.localeCompare(b.kontonummer);
+      } else {
+        return b.kontonummer.localeCompare(a.kontonummer);
+      }
+    });
+
+  const kontoklassFärg: Record<string, string> = {
+    Intäkter: "bg-green-500",
+    Kostnader: "bg-red-500",
+    Tillgångar: "bg-blue-500",
+    Skulder: "bg-yellow-500",
+  };
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -73,6 +100,15 @@ export default function Info() {
         </select>
       </div>
 
+      <div className="flex justify-end mb-4">
+        <button
+          className="text-white text-sm underline"
+          onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
+        >
+          Sortera: {sortOrder === "asc" ? "Stigande" : "Fallande"}
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {filtrerade.map((konto) => (
           <div
@@ -83,7 +119,12 @@ export default function Info() {
               <span className="text-lg font-medium text-gray-800">
                 {konto.kontonummer} – {konto.kontobeskrivning}
               </span>
-              <span className="text-sm text-gray-500">{konto.kontoklass}</span>
+              <span
+                className={`w-3 h-3 rounded-full ml-2 ${
+                  kontoklassFärg[konto.kontoklass] || "bg-gray-400"
+                }`}
+                title={konto.kontoklass}
+              ></span>
             </div>
             <div className="text-sm text-gray-600 mb-1">
               <strong>Kategori:</strong> {konto.kategori}
