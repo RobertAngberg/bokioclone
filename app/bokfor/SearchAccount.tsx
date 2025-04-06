@@ -76,7 +76,7 @@ export default function SearchAccount({
       )}
 
       {!loading && results.length > 0 && (
-        <div className="grid gap-4 mt-6">
+        <div className="grid gap-4 mt-2">
           {results.map((f) => (
             <div
               key={f.id}
@@ -92,19 +92,19 @@ export default function SearchAccount({
                 }
               }}
             >
-              <div className="text-lg font-semibold text-gray-800">✓ {f.namn}</div>
-              <div className="italic text-gray-600 mb-2">{f.beskrivning}</div>
+              <div className="text-xl font-semibold text-gray-800 mt-2 mb-6">✓ {f.namn}</div>
+              <div className="italic text-gray-600 mb-4">{f.beskrivning}</div>
               <div className="text-sm text-gray-600 mb-1">
                 <strong>Kategori:</strong> {f.kategori}
               </div>
-              <div className="text-sm text-gray-600 mb-1">
+              <div className="text-sm text-gray-600 mb-4">
                 <strong>Typ:</strong> {f.typ}
               </div>
-              <div className="text-sm text-gray-500 mb-4">
+              <div className="text-sm text-gray-500 mb-8">
                 <strong>Sökord:</strong> {f.sökord.join(", ")}
               </div>
 
-              <table className="w-full border border-gray-300 text-sm text-gray-700">
+              <table className="w-full border border-gray-300 text-sm text-gray-700 mb-4">
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="border border-gray-300 px-2 py-1 text-left">Konto</th>
