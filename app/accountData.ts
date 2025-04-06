@@ -46,13 +46,7 @@ export const accounts = [
     kontonummer: "2012",
     kontobeskrivning: "Avräkning för skatter och avgifter (skattekonto)",
     kontoklass: "Tillgångar",
-    sökord: [
-      "skattekonto",
-      "skatteverket",
-      "preliminärskatt",
-      "skatteinbetalning",
-      "inbetalning skatt",
-    ],
+    sökord: ["insättning", "skattekonto", "skatteverket", "skatt", "inskott", "inbetalning"],
     kategori: "Övrigt",
   },
   {
@@ -1444,13 +1438,6 @@ export const accounts = [
     kontoklass: "Intäkter",
     sökord: ["eu", "vara", "försäljning", "moms"],
     kategori: "Varuförsäljning",
-  },
-  {
-    kontonummer: "2012",
-    kontobeskrivning: "Avräkning för skatter och avgifter (skattekonto)",
-    kontoklass: "Skulder",
-    sökord: ["skattekonto", "skatt", "avräkning", "skatteverket"],
-    kategori: "Eget kapital",
   },
   {
     kontonummer: "1513",
