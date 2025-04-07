@@ -1,11 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileUpload } from "./FileUpload";
 import { Information } from "./Information";
 import { Comment } from "./Comment";
 import Image from "next/image";
-import React from "react";
+
+type KontoRad = {
+  beskrivning: string;
+  kontonummer?: string;
+  debet?: string | boolean;
+  kredit?: string | boolean;
+};
+
+type Forval = {
+  id: number;
+  namn: string;
+  beskrivning: string;
+  typ: string;
+  kategori: string;
+  konton: KontoRad[];
+  sökord: string[];
+  extrafält?: any[];
+};
 
 interface Step2Props {
   setCurrentStep: (step: number) => void;
@@ -19,9 +36,10 @@ interface Step2Props {
   setTransaktionsdatum: (date: string | null) => void;
   kommentar: string | null;
   setKommentar: (comment: string | null) => void;
+  valdaFörval: Forval | null;
 }
 
-function Step2({
+export function Step2({
   setCurrentStep,
   fil,
   setFil,
@@ -33,24 +51,25 @@ function Step2({
   setTransaktionsdatum,
   kommentar,
   setKommentar,
+  valdaFörval,
 }: Step2Props) {
   const [zoomLevel, setZoomLevel] = useState(1);
+
+  useEffect(() => {
+    console.log("🧠 Steg 2 – mottagit valdaFörval:", valdaFörval);
+  }, [valdaFörval]);
 
   const handleSubmit = () => {
     setCurrentStep(3);
   };
 
-  const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(prev + 0.2, 3));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 0.2, 1));
-  };
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.2, 1));
 
   return (
     <>
-      <h1 className="mb-10 text-4xl font-bold text-center text-white">Steg 2: Fyll i uppgifter</h1>
+      <h1 className="mb-6 text-4xl font-bold text-center text-white">Steg 2: Fyll i uppgifter</h1>
+
       <div className="flex flex-col-reverse justify-between h-auto max-w-4xl px-4 mx-auto md:flex-row">
         <div className="w-full mb-10 text-white md:w-2/5 md:mb-0">
           <FileUpload
@@ -121,5 +140,3 @@ function Step2({
     </>
   );
 }
-
-export { Step2 };

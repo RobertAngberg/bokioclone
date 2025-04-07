@@ -18,21 +18,15 @@ type Forval = {
   kategori: string;
   konton: KontoRad[];
   sökord: string[];
+  extrafält?: any[];
 };
 
 type Props = {
-  setKontonummer: (val: string) => void;
-  setKontobeskrivning: (val: string) => void;
   setCurrentStep: (val: number) => void;
-  setValdaFörval: (val: Forval) => void; // ✅ FIXAT: props-typ
+  setValdaFörval: (val: Forval) => void;
 };
 
-export default function SearchAccount({
-  setKontonummer,
-  setKontobeskrivning,
-  setCurrentStep,
-  setValdaFörval, // ✅ FIXAT: inkluderad här också
-}: Props) {
+export default function SearchAccount({ setCurrentStep, setValdaFörval }: Props) {
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState<Forval[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,9 +55,6 @@ export default function SearchAccount({
   return (
     <div className="w-full">
       <h1 className="mb-4 text-4xl font-bold">Steg 1: Sök förval</h1>
-      <p>Skriv in vad du vill bokföra.</p>
-      <p>Systemet hittar rätt förval att använda.</p>
-
       <input
         className="w-full p-3 mt-4 text-black border-2 rounded-lg border-slate-950"
         type="text"
@@ -78,74 +69,55 @@ export default function SearchAccount({
         </div>
       )}
 
-      {!loading && results.length > 0 && (
-        <div className="grid gap-4 mt-2">
-          {results.map((f) => (
-            <div
-              key={f.id}
-              className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer"
-              onClick={() => {
-                console.log("🟢 Klickat förval:", f);
-                setValdaFörval(f);
+      {!loading &&
+        results.length > 0 &&
+        results.map((f) => (
+          <div
+            key={f.id}
+            className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer mt-4"
+            onClick={() => {
+              console.log("🟢 Klickat förval:", f);
+              setValdaFörval(f);
+              setCurrentStep(2);
+            }}
+          >
+            <div className="text-xl font-semibold text-gray-800 mb-2">✓ {f.namn}</div>
+            <p className="italic text-sm text-gray-600 mb-2">{f.beskrivning}</p>
+            <p className="text-sm text-gray-600">
+              <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
+              <strong>Kategori:</strong> {f.kategori}
+            </p>
+            <p className="text-sm text-gray-500 mt-2 mb-4">
+              <strong>Sökord:</strong> {f.sökord.join(", ")}
+            </p>
 
-                const första = f.konton.find(
-                  (k) => typeof k.debet === "string" || typeof k.kredit === "string"
-                );
-
-                if (första?.kontonummer) {
-                  console.log(
-                    "✅ Sätter kontonummer + beskrivning:",
-                    första.kontonummer,
-                    första.beskrivning
-                  );
-                  setKontonummer(första.kontonummer);
-                  setKontobeskrivning(första.beskrivning);
-                  setCurrentStep(3); // direkt till Step3
-                } else {
-                  console.warn("⚠️ Ingen giltig konto-rad hittades");
-                }
-              }}
-            >
-              <div className="text-xl font-semibold text-gray-800 mt-2 mb-6">✓ {f.namn}</div>
-              <div className="italic text-gray-600 mb-4">{f.beskrivning}</div>
-              <div className="text-sm text-gray-600 mb-1">
-                <strong>Kategori:</strong> {f.kategori}
-              </div>
-              <div className="text-sm text-gray-600 mb-4">
-                <strong>Typ:</strong> {f.typ}
-              </div>
-              <div className="text-sm text-gray-500 mb-8">
-                <strong>Sökord:</strong> {f.sökord.join(", ")}
-              </div>
-
-              <table className="w-full border border-gray-300 text-sm text-gray-700 mb-4">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-2 py-1 text-left">Konto</th>
-                    <th className="border border-gray-300 px-2 py-1 text-left">Debet</th>
-                    <th className="border border-gray-300 px-2 py-1 text-left">Kredit</th>
+            {/* Kontotabell här */}
+            <table className="w-full border border-gray-300 text-sm text-gray-700">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-2 py-1 text-left">Konto</th>
+                  <th className="border border-gray-300 px-2 py-1 text-left">Debet</th>
+                  <th className="border border-gray-300 px-2 py-1 text-left">Kredit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {f.konton.map((konto, i) => (
+                  <tr key={i}>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {konto.kontonummer} {konto.beskrivning}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {konto.debet === true ? "✓" : (konto.debet ?? "")}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1">
+                      {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {f.konton.map((konto, i) => (
-                    <tr key={i}>
-                      <td className="border border-gray-300 px-2 py-1">
-                        {konto.kontonummer} {konto.beskrivning}
-                      </td>
-                      <td className="border border-gray-300 px-2 py-1">
-                        {konto.debet === true ? "✓" : (konto.debet ?? "")}
-                      </td>
-                      <td className="border border-gray-300 px-2 py-1">
-                        {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
     </div>
   );
 }

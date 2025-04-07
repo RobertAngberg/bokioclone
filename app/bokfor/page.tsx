@@ -7,6 +7,24 @@ import { Step3 } from "./Step3";
 import { Step4 } from "./Step4";
 import React from "react";
 
+type KontoRad = {
+  beskrivning: string;
+  kontonummer?: string;
+  debet?: string | boolean;
+  kredit?: string | boolean;
+};
+
+type Forval = {
+  id: number;
+  namn: string;
+  beskrivning: string;
+  typ: string;
+  kategori: string;
+  konton: KontoRad[];
+  sökord: string[];
+  extrafält?: any[];
+};
+
 function Bokför() {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [searchText, setSearchText] = useState("");
@@ -17,18 +35,13 @@ function Bokför() {
   const [belopp, setBelopp] = useState<number | null>(null);
   const [transaktionsdatum, setTransaktionsdatum] = useState<string | null>(null);
   const [kommentar, setKommentar] = useState<string | null>(null);
-  const [valdaFörval, setValdaFörval] = useState<any | null>(null);
+  const [valdaFörval, setValdaFörval] = useState<Forval | null>(null);
 
   return (
     <main className="items-center min-h-screen pt-10 text-center bg-slate-950">
       {currentStep === 1 && (
         <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <SearchAccount
-            setKontonummer={setKontonummer}
-            setKontobeskrivning={setKontobeskrivning}
-            setCurrentStep={setCurrentStep}
-            setValdaFörval={setValdaFörval}
-          />
+          <SearchAccount setCurrentStep={setCurrentStep} setValdaFörval={setValdaFörval} />
         </div>
       )}
 
@@ -45,6 +58,7 @@ function Bokför() {
           setTransaktionsdatum={setTransaktionsdatum}
           kommentar={kommentar}
           setKommentar={setKommentar}
+          valdaFörval={valdaFörval}
         />
       )}
 
