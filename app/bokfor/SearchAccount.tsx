@@ -83,15 +83,25 @@ export default function SearchAccount({
               key={f.id}
               className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer"
               onClick={() => {
+                console.log("🔍 Klickat förval:", f);
+
                 const första = f.konton.find(
                   (k) => typeof k.debet === "string" || typeof k.kredit === "string"
                 );
-                console.log("första:", första);
+
+                console.log("📦 Första rad som har debet/kredit som string:", första);
 
                 if (första?.kontonummer) {
+                  console.log(
+                    "✅ Sätter kontonummer + beskrivning:",
+                    första.kontonummer,
+                    första.beskrivning
+                  );
                   setKontonummer(första.kontonummer);
                   setKontobeskrivning(första.beskrivning);
                   setCurrentStep(2);
+                } else {
+                  console.warn("⚠️ Ingen giltig konto-rad hittades");
                 }
               }}
             >
