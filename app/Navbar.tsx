@@ -4,48 +4,40 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { LogoutButton } from "./start/LogoutButton";
+import { usePathname } from "next/navigation";
 import React from "react";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
+  const pathname = usePathname();
 
-  console.log("📧 Email från client:", session?.user?.email);
+  // console.log("📧 Email från client:", session?.user?.email);
 
   const closeMenu = () => {
     setIsOpen(false);
   };
 
+  const linkClass = (path: string) =>
+    `mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:py-2 md:text-white md:font-bold ${
+      pathname === path ? "bg-cyan-800/60 rounded-full" : ""
+    }`;
+
   const renderMenuLinks = () => (
     <>
-      <li
-        onClick={closeMenu}
-        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
-      >
+      <li onClick={closeMenu} className={linkClass("/")}>
         <Link href="/">Hem</Link>
       </li>
-      <li
-        onClick={closeMenu}
-        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
-      >
+      <li onClick={closeMenu} className={linkClass("/bokfor")}>
         <Link href="/bokfor">Bokför</Link>
       </li>
-      <li
-        onClick={closeMenu}
-        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
-      >
+      <li onClick={closeMenu} className={linkClass("/grundbok")}>
         <Link href="/grundbok">Grundbok</Link>
       </li>
-      <li
-        onClick={closeMenu}
-        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
-      >
+      <li onClick={closeMenu} className={linkClass("/huvudbok")}>
         <Link href="/huvudbok">Huvudbok</Link>
       </li>
-      <li
-        onClick={closeMenu}
-        className="mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:text-white md:font-bold"
-      >
+      <li onClick={closeMenu} className={linkClass("/faktura")}>
         <Link href="/faktura">Fakturor</Link>
       </li>
       {session?.user && (

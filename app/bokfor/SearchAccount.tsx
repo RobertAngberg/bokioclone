@@ -48,6 +48,7 @@ export default function SearchAccount({
       const träffar = alla.filter((f: Forval) =>
         f.sökord?.some((sök: string) => sök.toLowerCase().includes(searchText.toLowerCase()))
       );
+      console.log("träffar:", träffar);
       setResults(träffar);
       setLoading(false);
     }, 300);
@@ -85,6 +86,8 @@ export default function SearchAccount({
                 const första = f.konton.find(
                   (k) => typeof k.debet === "string" || typeof k.kredit === "string"
                 );
+                console.log("första:", första);
+
                 if (första?.kontonummer) {
                   setKontonummer(första.kontonummer);
                   setKontobeskrivning(första.beskrivning);
