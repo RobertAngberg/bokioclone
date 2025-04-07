@@ -24,12 +24,14 @@ type Props = {
   setKontonummer: (val: string) => void;
   setKontobeskrivning: (val: string) => void;
   setCurrentStep: (val: number) => void;
+  setValdaFörval: (val: Forval) => void; // ✅ FIXAT: props-typ
 };
 
 export default function SearchAccount({
   setKontonummer,
   setKontobeskrivning,
   setCurrentStep,
+  setValdaFörval, // ✅ FIXAT: inkluderad här också
 }: Props) {
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState<Forval[]>([]);
@@ -48,7 +50,7 @@ export default function SearchAccount({
       const träffar = alla.filter((f: Forval) =>
         f.sökord?.some((sök: string) => sök.toLowerCase().includes(searchText.toLowerCase()))
       );
-      console.log("träffar:", träffar);
+      console.log("🔍 Träffar:", träffar);
       setResults(träffar);
       setLoading(false);
     }, 300);
@@ -83,13 +85,12 @@ export default function SearchAccount({
               key={f.id}
               className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer"
               onClick={() => {
-                console.log("🔍 Klickat förval:", f);
+                console.log("🟢 Klickat förval:", f);
+                setValdaFörval(f);
 
                 const första = f.konton.find(
                   (k) => typeof k.debet === "string" || typeof k.kredit === "string"
                 );
-
-                console.log("📦 Första rad som har debet/kredit som string:", första);
 
                 if (första?.kontonummer) {
                   console.log(
@@ -99,7 +100,7 @@ export default function SearchAccount({
                   );
                   setKontonummer(första.kontonummer);
                   setKontobeskrivning(första.beskrivning);
-                  setCurrentStep(2);
+                  setCurrentStep(3); // direkt till Step3
                 } else {
                   console.warn("⚠️ Ingen giltig konto-rad hittades");
                 }

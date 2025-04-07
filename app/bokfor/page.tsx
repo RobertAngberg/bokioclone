@@ -17,6 +17,7 @@ function Bokför() {
   const [belopp, setBelopp] = useState<number | null>(null);
   const [transaktionsdatum, setTransaktionsdatum] = useState<string | null>(null);
   const [kommentar, setKommentar] = useState<string | null>(null);
+  const [valdaFörval, setValdaFörval] = useState<any | null>(null);
 
   return (
     <main className="items-center min-h-screen pt-10 text-center bg-slate-950">
@@ -26,6 +27,7 @@ function Bokför() {
             setKontonummer={setKontonummer}
             setKontobeskrivning={setKontobeskrivning}
             setCurrentStep={setCurrentStep}
+            setValdaFörval={setValdaFörval}
           />
         </div>
       )}
