@@ -22,6 +22,7 @@ type Forval = {
   konton: KontoRad[];
   sökord: string[];
   extrafält?: any[];
+  momssats?: number;
 };
 
 interface Step3Props {
@@ -66,26 +67,58 @@ function Step3({
 }: Step3Props) {
   const formRef = useRef<HTMLFormElement>(null);
 
-  const moms = parseFloat((belopp * 0.2).toFixed(2));
-  const beloppUtanMoms = parseFloat((belopp * 0.8).toFixed(2));
+  const momssats = valdaFörval?.momssats ?? 0.25;
+  const moms = parseFloat((belopp * (momssats / (1 + momssats))).toFixed(2));
+  const beloppUtanMoms = parseFloat((belopp - moms).toFixed(2));
 
-  const [sumDebet, setSumDebet] = useState(0);
-  const [sumKredit, setSumKredit] = useState(0);
+  if (!valdaFörval) {
+    return (
+      <main className="min-h-screen p-10 text-center text-white bg-red-900">
+        <p className="mb-4">⚠️ Saknar vald förval. Gå tillbaka till Steg 1.</p>
+        <button onClick={() => setCurrentStep(1)} className="px-4 py-2 bg-white text-black rounded">
+          Tillbaka
+        </button>
+      </main>
+    );
+  }
 
-  useEffect(() => {
-    if (!valdaFörval) return;
+  const getBelopp = (konto: KontoRad, typ: "debet" | "kredit") => {
+    const andel = konto.andelAv;
 
-    let totalDebet = 0;
-    let totalKredit = 0;
+    if (andel === "moms") return moms.toFixed(2);
+    if (andel === "utanMoms") return beloppUtanMoms.toFixed(2);
+    if (andel === "hela") return belopp.toFixed(2);
 
-    valdaFörval.konton.forEach((konto) => {
-      if (konto.debet) totalDebet += parseFloat(getBelopp(konto, "debet") || "0");
-      if (konto.kredit) totalKredit += parseFloat(getBelopp(konto, "kredit") || "0");
-    });
+    if (!konto.kontonummer) return "";
 
-    setSumDebet(+totalDebet.toFixed(2));
-    setSumKredit(+totalKredit.toFixed(2));
-  }, [valdaFörval, belopp, moms, beloppUtanMoms]);
+    const prefix = konto.kontonummer.slice(0, 1);
+
+    if (typ === "debet") {
+      if (prefix === "1") return belopp.toFixed(2); // tillgångar
+      if (prefix === "2") return moms.toFixed(2); // ofta moms
+      return beloppUtanMoms.toFixed(2); // t.ex. kostnader
+    }
+
+    if (typ === "kredit") {
+      if (prefix === "3") return beloppUtanMoms.toFixed(2); // intäkter
+      if (prefix === "2") return moms.toFixed(2); // moms-kredit
+      return belopp.toFixed(2); // t.ex. företagskonto
+    }
+
+    return "";
+  };
+
+  const totalDebet = valdaFörval.konton.reduce((sum, k) => {
+    const belopp = k.debet ? parseFloat(getBelopp(k, "debet")) || 0 : 0;
+    return sum + belopp;
+  }, 0);
+
+  const totalKredit = valdaFörval.konton.reduce((sum, k) => {
+    const belopp = k.kredit ? parseFloat(getBelopp(k, "kredit")) || 0 : 0;
+    return sum + belopp;
+  }, 0);
+
+  const debetKreditMatchar = Math.abs(totalDebet - totalKredit) < 0.01;
 
   const handleSubmit = async (formData: FormData) => {
     if (fil) formData.set("fil", fil);
@@ -99,43 +132,6 @@ function Step3({
     }
   };
 
-  const getBelopp = (konto: KontoRad, typ: "debet" | "kredit") => {
-    const andel = konto.andelAv;
-
-    if (andel === "moms") return moms.toString();
-    if (andel === "utanMoms") return beloppUtanMoms.toString();
-    if (andel === "hela") return belopp.toString();
-
-    if (!konto.kontonummer) return "";
-
-    const prefix = konto.kontonummer.slice(0, 1);
-
-    if (typ === "debet") {
-      if (prefix === "1") return belopp.toString();
-      if (prefix === "2") return moms.toString();
-      return beloppUtanMoms.toString();
-    }
-
-    if (typ === "kredit") {
-      if (prefix === "3") return beloppUtanMoms.toString();
-      if (prefix === "2") return moms.toString();
-      return belopp.toString(); // fallback för t.ex. 1930
-    }
-
-    return "";
-  };
-
-  if (!valdaFörval) {
-    return (
-      <main className="min-h-screen p-10 text-center text-white bg-red-900">
-        <p className="mb-4">⚠️ Saknar vald förval. Gå tillbaka till Steg 1.</p>
-        <button onClick={() => setCurrentStep(1)} className="px-4 py-2 bg-white text-black rounded">
-          Tillbaka
-        </button>
-      </main>
-    );
-  }
-
   return (
     <main className="items-center min-h-screen text-center text-white bg-slate-950">
       <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
@@ -145,13 +141,9 @@ function Step3({
           {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
         </p>
 
-        {sumDebet !== sumKredit && (
-          <div className="mb-6 p-4 bg-red-200 text-red-800 rounded text-left">
-            <strong>⚠️ Debet/Kredit matchar inte.</strong>
-            <br />
-            Totalt debet: {sumDebet.toFixed(2)} kr
-            <br />
-            Totalt kredit: {sumKredit.toFixed(2)} kr
+        {!debetKreditMatchar && (
+          <div className="mb-6 p-4 bg-red-100 text-red-800 rounded text-left">
+            <strong>⚠️ Debet och Kredit matchar inte. Något är fel med Förvalet.</strong>
           </div>
         )}
 
