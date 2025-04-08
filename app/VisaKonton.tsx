@@ -12,7 +12,7 @@ export type Konto = {
   kräverSpeciellUI?: boolean;
 };
 
-export default function Info() {
+export default function VisaKonton() {
   const [query, setQuery] = useState("");
   const [kategori, setKategori] = useState("");
   const [klass, setKlass] = useState("");

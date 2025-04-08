@@ -52,12 +52,12 @@ export default function VisaForval() {
             </div>
 
             {Array.isArray(f.sökord) && f.sökord.length > 0 && (
-              <div className="text-sm text-gray-500 mb-10">
+              <div className="text-sm text-gray-500 mb-5">
                 <strong>Sökord:</strong> {f.sökord.join(", ")}
               </div>
             )}
 
-            <table className="w-full border border-gray-300 text-sm text-gray-700 mb-6">
+            <table className="w-full border border-gray-300 text-sm text-gray-700 mb-2">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-gray-300 px-2 py-1 text-left">Konto</th>

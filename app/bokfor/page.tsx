@@ -10,8 +10,8 @@ import React from "react";
 type KontoRad = {
   beskrivning: string;
   kontonummer?: string;
-  debet?: string | boolean;
-  kredit?: string | boolean;
+  debet?: boolean;
+  kredit?: boolean;
 };
 
 type Forval = {
@@ -65,11 +65,12 @@ function Bokför() {
       {currentStep === 3 && (
         <Step3
           kontonummer={kontonummer}
-          kontobeskrivning={kontobeskrivning || ""}
-          fil={fil || undefined}
+          kontobeskrivning={kontobeskrivning ?? ""}
+          fil={fil ?? undefined}
           belopp={belopp ?? 0}
-          transaktionsdatum={transaktionsdatum || ""}
-          kommentar={kommentar || ""}
+          transaktionsdatum={transaktionsdatum ?? ""}
+          kommentar={kommentar ?? ""}
+          valdaFörval={valdaFörval}
           setCurrentStep={setCurrentStep}
         />
       )}

@@ -62,7 +62,6 @@ export const accounts = [
     kontoklass: "Kostnader",
     sökord: ["varor", "inköp", "material", "lager"],
     kategori: "Inköp varor & material",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "5061",
@@ -243,7 +242,6 @@ export const accounts = [
     kontoklass: "Kostnader",
     sökord: ["milersättning", "bilersättning", "körjournal", "privat bil"],
     kategori: "Bil och transport",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "7332",
@@ -434,7 +432,6 @@ export const accounts = [
     kontoklass: "Kostnader",
     sökord: ["hotell", "boende", "sverige", "logi", "12% moms"],
     kategori: "Resa & logi",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "5832",
@@ -442,7 +439,6 @@ export const accounts = [
     kontoklass: "Kostnader",
     sökord: ["hotell", "övernattning", "utlandet", "resa"],
     kategori: "Resa & logi",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "7321",
@@ -459,7 +455,6 @@ export const accounts = [
       "kostnadsersättning",
     ],
     kategori: "Resa & logi",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "7322",
@@ -475,7 +470,6 @@ export const accounts = [
       "ersättning",
     ],
     kategori: "Resa & logi",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "7323",
@@ -492,7 +486,6 @@ export const accounts = [
       "dygn",
     ],
     kategori: "Resa & logi",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "7324",
@@ -508,7 +501,6 @@ export const accounts = [
       "dygnsersättning",
     ],
     kategori: "Resa & logi",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "7332",
@@ -563,7 +555,6 @@ export const accounts = [
       "gåva",
     ],
     kategori: "Möten, konferens & nöjen",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "7699",
@@ -707,7 +698,6 @@ export const accounts = [
     kontoklass: "Intäkter",
     sökord: ["tjänst", "försäljning", "intäkt", "konsult"],
     kategori: "Försäljning / Intäkter",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "3041",
@@ -715,7 +705,6 @@ export const accounts = [
     kontoklass: "Intäkter",
     sökord: ["artist", "kultur", "konsert", "undervisning"],
     kategori: "Försäljning / Intäkter",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "2018",
@@ -862,7 +851,6 @@ export const accounts = [
     kontoklass: "Kostnader",
     sökord: ["utanför EU", "omvänd moms", "import tjänster", "fiktiv moms"],
     kategori: "Inköp tjänster",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "4535",
@@ -877,7 +865,6 @@ export const accounts = [
       "eu-leverantör",
     ],
     kategori: "Inköp tjänster",
-    kräverSpeciellUI: true,
   },
   {
     kontonummer: "5570",

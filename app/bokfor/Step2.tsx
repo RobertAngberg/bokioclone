@@ -9,8 +9,8 @@ import Image from "next/image";
 type KontoRad = {
   beskrivning: string;
   kontonummer?: string;
-  debet?: string | boolean;
-  kredit?: string | boolean;
+  debet?: boolean;
+  kredit?: boolean;
 };
 
 type Forval = {

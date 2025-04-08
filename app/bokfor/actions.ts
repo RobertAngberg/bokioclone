@@ -9,17 +9,13 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Funktion för att spara transaktion
 export async function saveTransaction(formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Ingen användare inloggad");
-  }
+  if (!session?.user?.id) throw new Error("Ingen användare inloggad");
   const userId = parseInt(session.user.id);
 
   const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
   const kommentar = formData.get("kommentar")?.toString().trim() || "";
-  const kontonummer = formData.get("kontonummer")?.toString().trim() || "";
   const kontobeskrivning = formData.get("kontobeskrivning")?.toString().trim() || "";
   const belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
   const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
@@ -27,54 +23,23 @@ export async function saveTransaction(formData: FormData) {
   const fil = formData.get("fil") as File | null;
   const filename = fil ? fil.name : "";
 
+  const valdaFörvalRaw = formData.get("valdaFörval")?.toString();
+  if (!valdaFörvalRaw) throw new Error("⛔ Saknar valda förval");
+  const valdaFörval = JSON.parse(valdaFörvalRaw);
+
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
-    const kontoRes = await client.query("SELECT * FROM konton WHERE kontonummer = $1", [
-      kontonummer,
-    ]);
-    const företagskontoRes = await client.query("SELECT * FROM konton WHERE kontonummer = $1", [
-      "1930",
-    ]);
-    const momsKontoRes = await client.query("SELECT * FROM konton WHERE kontonummer = $1", [
-      "2640",
-    ]);
-    const utgåendeMomsKontoRes = await client.query("SELECT * FROM konton WHERE kontonummer = $1", [
-      "2610",
-    ]);
-
-    if (kontoRes.rows.length === 0) throw new Error("⛔ Konto not found");
-    if (
-      företagskontoRes.rows.length === 0 ||
-      momsKontoRes.rows.length === 0 ||
-      utgåendeMomsKontoRes.rows.length === 0
-    ) {
-      throw new Error("⛔ Required standard accounts not found");
-    }
-
-    const kontotyp = kontoRes.rows[0].kontotyp;
-
-    const transaktionsposter =
-      kontotyp === "Utgift"
-        ? [
-            { konto_id: företagskontoRes.rows[0].konto_id, debet: 0, kredit: belopp },
-            { konto_id: momsKontoRes.rows[0].konto_id, debet: moms, kredit: 0 },
-            { konto_id: kontoRes.rows[0].konto_id, debet: beloppUtanMoms, kredit: 0 },
-          ]
-        : [
-            { konto_id: företagskontoRes.rows[0].konto_id, debet: belopp, kredit: 0 },
-            { konto_id: utgåendeMomsKontoRes.rows[0].konto_id, debet: 0, kredit: moms },
-            { konto_id: kontoRes.rows[0].konto_id, debet: 0, kredit: beloppUtanMoms },
-          ];
-
     const insertTransactionQuery = `
-INSERT INTO transaktioner (
-  transaktionsdatum, kontobeskrivning, kontotyp, belopp, fil, kommentar, "userId"
-) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING transaktions_id
+      INSERT INTO transaktioner (
+        transaktionsdatum, kontobeskrivning, kontotyp, belopp, fil, kommentar, "userId"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING transaktions_id
     `;
+
     const res = await client.query(insertTransactionQuery, [
       new Date(transaktionsdatum),
       kontobeskrivning,
-      kontotyp,
+      valdaFörval.typ,
       belopp,
       filename,
       kommentar,
@@ -82,21 +47,47 @@ INSERT INTO transaktioner (
     ]);
     const transaktionsId = res.rows[0].transaktions_id;
 
-    for (let post of transaktionsposter) {
+    for (const konto of valdaFörval.konton) {
+      const kontonummer = konto.kontonummer?.toString().trim();
+      console.log(
+        "🔍 Försöker hitta kontonummer:",
+        kontonummer,
+        typeof kontonummer,
+        kontonummer.length
+      );
+
+      if (!kontonummer) continue;
+
+      console.log("📦 Alla konton:", valdaFörval.konton);
+      console.log("🔍 Försöker hitta kontonummer:", kontonummer, typeof kontonummer);
+      console.log("Kontonummer:", kontonummer, "| typeof:", typeof kontonummer);
+
+      const kontoRes = await client.query(
+        "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
+        [kontonummer]
+      );
+
+      if (kontoRes.rows.length === 0) {
+        throw new Error(`⛔ Konto not found: ${kontonummer}`);
+      }
+
+      const konto_id = kontoRes.rows[0].konto_id;
+
+      const debet = konto.debet === true ? (kontonummer === "2640" ? moms : beloppUtanMoms) : 0;
+      const kredit = konto.kredit === true ? belopp : 0;
+
       await client.query(
         "INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit) VALUES ($1, $2, $3, $4)",
-        [transaktionsId, post.konto_id, post.debet, post.kredit]
+        [transaktionsId, konto_id, debet, kredit]
       );
     }
 
     client.release();
-
     revalidatePath("/grundbok");
-    return {
-      success: true,
-      id: transaktionsId,
-    };
+
+    return { success: true, id: transaktionsId };
   } catch (error) {
+    client.release();
     console.error("❌ saveTransaction error:", error);
     return { success: false, error };
   }
