@@ -37,6 +37,7 @@ interface Step3Props {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+
   return (
     <button
       type="submit"
@@ -51,62 +52,6 @@ function SubmitButton() {
       {pending ? "Bokför..." : "Bokför"}
     </button>
   );
-}
-
-// ✅ Flyttad UT hit för att fungera i både render + validering
-function getBelopp(
-  konto: KontoRad,
-  typ: "debet" | "kredit",
-  belopp: number,
-  moms: number,
-  beloppUtanMoms: number
-): string {
-  const andel = konto.andelAv;
-
-  if (andel === "moms") return moms.toFixed(2);
-  if (andel === "utanMoms") return beloppUtanMoms.toFixed(2);
-  if (andel === "hela") return belopp.toFixed(2);
-
-  if (!konto.kontonummer) return "";
-
-  const prefix = konto.kontonummer.slice(0, 1);
-
-  if (typ === "debet") {
-    if (prefix === "1") return belopp.toFixed(2);
-    if (prefix === "2") return moms.toFixed(2);
-    return beloppUtanMoms.toFixed(2);
-  }
-
-  if (typ === "kredit") {
-    if (prefix === "3") return beloppUtanMoms.toFixed(2);
-    if (prefix === "2") return moms.toFixed(2);
-    if (prefix === "1") return belopp.toFixed(2);
-  }
-
-  return "";
-}
-
-function validateForvalData(
-  förval: Forval,
-  belopp: number,
-  moms: number,
-  beloppUtanMoms: number
-): string[] {
-  const messages: string[] = [];
-
-  förval.konton.forEach((konto) => {
-    const debet = konto.debet ? getBelopp(konto, "debet", belopp, moms, beloppUtanMoms) : "";
-    const kredit = konto.kredit ? getBelopp(konto, "kredit", belopp, moms, beloppUtanMoms) : "";
-
-    if (konto.debet && !debet) {
-      messages.push(`⚠️ Konto ${konto.kontonummer} (${konto.beskrivning}) saknar debet-belopp`);
-    }
-    if (konto.kredit && !kredit) {
-      messages.push(`⚠️ Konto ${konto.kontonummer} (${konto.beskrivning}) saknar kredit-belopp`);
-    }
-  });
-
-  return messages;
 }
 
 function Step3({
@@ -124,25 +69,23 @@ function Step3({
   const moms = parseFloat((belopp * 0.2).toFixed(2));
   const beloppUtanMoms = parseFloat((belopp * 0.8).toFixed(2));
 
-  const [validationMessages, setValidationMessages] = useState<string[]>([]);
+  const [sumDebet, setSumDebet] = useState(0);
+  const [sumKredit, setSumKredit] = useState(0);
 
   useEffect(() => {
-    if (valdaFörval) {
-      const msgs = validateForvalData(valdaFörval, belopp, moms, beloppUtanMoms);
-      setValidationMessages(msgs);
-    }
-  }, [valdaFörval, belopp, moms, beloppUtanMoms]);
+    if (!valdaFörval) return;
 
-  if (!valdaFörval) {
-    return (
-      <main className="min-h-screen p-10 text-center text-white bg-red-900">
-        <p className="mb-4">⚠️ Saknar vald förval. Gå tillbaka till Steg 1.</p>
-        <button onClick={() => setCurrentStep(1)} className="px-4 py-2 bg-white text-black rounded">
-          Tillbaka
-        </button>
-      </main>
-    );
-  }
+    let totalDebet = 0;
+    let totalKredit = 0;
+
+    valdaFörval.konton.forEach((konto) => {
+      if (konto.debet) totalDebet += parseFloat(getBelopp(konto, "debet") || "0");
+      if (konto.kredit) totalKredit += parseFloat(getBelopp(konto, "kredit") || "0");
+    });
+
+    setSumDebet(+totalDebet.toFixed(2));
+    setSumKredit(+totalKredit.toFixed(2));
+  }, [valdaFörval, belopp, moms, beloppUtanMoms]);
 
   const handleSubmit = async (formData: FormData) => {
     if (fil) formData.set("fil", fil);
@@ -156,6 +99,43 @@ function Step3({
     }
   };
 
+  const getBelopp = (konto: KontoRad, typ: "debet" | "kredit") => {
+    const andel = konto.andelAv;
+
+    if (andel === "moms") return moms.toString();
+    if (andel === "utanMoms") return beloppUtanMoms.toString();
+    if (andel === "hela") return belopp.toString();
+
+    if (!konto.kontonummer) return "";
+
+    const prefix = konto.kontonummer.slice(0, 1);
+
+    if (typ === "debet") {
+      if (prefix === "1") return belopp.toString();
+      if (prefix === "2") return moms.toString();
+      return beloppUtanMoms.toString();
+    }
+
+    if (typ === "kredit") {
+      if (prefix === "3") return beloppUtanMoms.toString();
+      if (prefix === "2") return moms.toString();
+      return belopp.toString(); // fallback för t.ex. 1930
+    }
+
+    return "";
+  };
+
+  if (!valdaFörval) {
+    return (
+      <main className="min-h-screen p-10 text-center text-white bg-red-900">
+        <p className="mb-4">⚠️ Saknar vald förval. Gå tillbaka till Steg 1.</p>
+        <button onClick={() => setCurrentStep(1)} className="px-4 py-2 bg-white text-black rounded">
+          Tillbaka
+        </button>
+      </main>
+    );
+  }
+
   return (
     <main className="items-center min-h-screen text-center text-white bg-slate-950">
       <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
@@ -165,14 +145,13 @@ function Step3({
           {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
         </p>
 
-        {validationMessages.length > 0 && (
+        {sumDebet !== sumKredit && (
           <div className="mb-6 p-4 bg-red-200 text-red-800 rounded text-left">
-            <strong>⚠️ Kontrollera:</strong>
-            <ul className="list-disc ml-6 mt-2">
-              {validationMessages.map((msg, i) => (
-                <li key={i}>{msg}</li>
-              ))}
-            </ul>
+            <strong>⚠️ Debet/Kredit matchar inte.</strong>
+            <br />
+            Totalt debet: {sumDebet.toFixed(2)} kr
+            <br />
+            Totalt kredit: {sumKredit.toFixed(2)} kr
           </div>
         )}
 
@@ -196,12 +175,8 @@ function Step3({
             </thead>
             <tbody>
               {valdaFörval.konton.map((konto, i) => {
-                const debet = konto.debet
-                  ? getBelopp(konto, "debet", belopp, moms, beloppUtanMoms)
-                  : "";
-                const kredit = konto.kredit
-                  ? getBelopp(konto, "kredit", belopp, moms, beloppUtanMoms)
-                  : "";
+                const debet = konto.debet ? getBelopp(konto, "debet") : "";
+                const kredit = konto.kredit ? getBelopp(konto, "kredit") : "";
 
                 return (
                   <tr key={i}>
