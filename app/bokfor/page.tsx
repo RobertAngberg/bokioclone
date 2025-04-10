@@ -50,7 +50,12 @@ function Bokför() {
     <main className="items-center min-h-screen pt-10 text-center bg-slate-950">
       {currentStep === 1 && (
         <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <SearchAccount setCurrentStep={setCurrentStep} setvaltFörval={setValtFörval} />
+          <SearchAccount
+            setCurrentStep={setCurrentStep}
+            setvaltFörval={setValtFörval}
+            setKontonummer={setKontonummer}
+            setKontobeskrivning={setKontobeskrivning}
+          />
         </div>
       )}
 
@@ -75,7 +80,6 @@ function Bokför() {
 
       {currentStep === 3 && (
         <>
-          {console.log("📦 extrafält till Step3:", extrafält)}
           <Step3
             kontonummer={kontonummer}
             kontobeskrivning={kontobeskrivning ?? ""}

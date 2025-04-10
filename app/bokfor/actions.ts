@@ -204,3 +204,25 @@ const calculateBelopp = (
 
   return 0;
 };
+
+export async function getKontoklass(kontonummer: string) {
+  try {
+    const client = await pool.connect();
+    const query = "SELECT kontoklass FROM konton WHERE kontonummer = $1";
+    const res = await client.query(query, [kontonummer]);
+
+    console.log("🔎 SQL result:", res.rows);
+
+    client.release();
+
+    if (res.rows.length === 0) {
+      console.warn("⛔ Konto inte funnet för kontonummer:", kontonummer);
+      return null;
+    }
+
+    return res.rows[0].kontoklass;
+  } catch (error) {
+    console.error("❌ kontoklass error:", error);
+    return null;
+  }
+}

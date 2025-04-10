@@ -32,9 +32,16 @@ type Forval = {
 type Props = {
   setCurrentStep: (val: number) => void;
   setvaltFörval: (val: Forval) => void;
+  setKontonummer: (val: string) => void;
+  setKontobeskrivning: (val: string) => void;
 };
 
-export default function SearchAccount({ setCurrentStep, setvaltFörval }: Props) {
+export default function SearchAccount({
+  setCurrentStep,
+  setvaltFörval,
+  setKontonummer,
+  setKontobeskrivning,
+}: Props) {
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState<Forval[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +58,6 @@ export default function SearchAccount({ setCurrentStep, setvaltFörval }: Props)
       const träffar = alla.filter((f: Forval) =>
         f.sökord?.some((sök: string) => sök.toLowerCase().includes(searchText.toLowerCase()))
       );
-      console.log("🔍 Träffar:", träffar);
       setResults(träffar);
       setLoading(false);
     }, 300);
@@ -83,8 +89,24 @@ export default function SearchAccount({ setCurrentStep, setvaltFörval }: Props)
             key={f.id}
             className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer mt-4"
             onClick={() => {
-              console.log("🟢 Klickat förval:", f);
               setvaltFörval(f);
+
+              const huvudkonto = f.konton.find((k) => {
+                return (
+                  k.kontonummer !== "1930" && // ignorera företagskonto
+                  (k.kredit || k.debet) && // måste ha minst en av dem
+                  !!k.kontonummer // måste ha ett kontonummer
+                  // Nu tar den ut rätt huvudkonto...
+                );
+              });
+
+              if (huvudkonto) {
+                setKontonummer(huvudkonto.kontonummer ?? "");
+                setKontobeskrivning(huvudkonto.beskrivning ?? "");
+              } else {
+                console.warn("⚠️ Hittade inget huvudkonto i förval:", f);
+              }
+
               setCurrentStep(2);
             }}
           >

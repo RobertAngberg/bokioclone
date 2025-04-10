@@ -5,97 +5,91 @@ import { FileUpload } from "../FileUpload";
 import Image from "next/image";
 
 interface ImportmomsProps {
-  belopp: number | null;
-  setBelopp: (amount: number | null) => void;
   transaktionsdatum: string | null;
   setTransaktionsdatum: (date: string | null) => void;
   kommentar: string | null;
   setKommentar: (comment: string | null) => void;
-  setCurrentStep: (step: number) => void;
   fil: File | null;
   setFil: (file: File | null) => void;
   pdfUrl: string | null;
   setPdfUrl: (url: string | null) => void;
+  setCurrentStep: (step: number) => void;
   extrafält: Record<string, any>;
   setExtrafält: (fält: Record<string, any>) => void;
 }
 
-const extrafältDefinitioner = [
-  {
-    namn: "summa_att_betala",
-    label: "Summa att betala in",
-    konto: "1930",
-    beskrivning: "Företagskonto / affärskonto",
-    debet: false,
-    kredit: true,
-  },
-  {
-    namn: "tull_och_spedition",
-    label: "Tull- och speditionskostnader inkl. moms",
-    konto: "5720",
-    beskrivning: "Tull- och speditionskostnader m.m.",
-    debet: true,
-    kredit: false,
-  },
-  {
-    namn: "ingående_fiktiv_moms",
-    label: "Ingående fiktiv moms",
-    konto: "2645",
-    beskrivning: "Beräknad ingående moms på förvärv från utlandet",
-    debet: true,
-    kredit: false,
-  },
-  {
-    namn: "övriga_skatter",
-    label: "Övriga skatter och tillval utan moms",
-    konto: "4549",
-    beskrivning: "Motkonto beskattningsunderlag import",
-    debet: false,
-    kredit: true,
-  },
-];
+const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
 
 export default function Importmoms({
-  belopp,
-  setBelopp,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
   transaktionsdatum,
   setTransaktionsdatum,
   kommentar,
   setKommentar,
   setCurrentStep,
-  fil,
-  setFil,
-  pdfUrl,
-  setPdfUrl,
   setExtrafält,
 }: ImportmomsProps) {
-  const [fält, setFält] = useState<Record<string, string>>({});
-
-  const handleChange = (key: string, value: string) => {
-    const updated = {
-      ...fält,
-      [key]: value,
-    };
-    console.log("🟡 Uppdaterade fält:", updated);
-    setFält(updated);
-
-    const enriched: Record<string, any> = {};
-    for (const def of extrafältDefinitioner) {
-      enriched[def.namn] = {
-        ...def,
-        värde: updated[def.namn] || "0",
-      };
-    }
-
-    console.log("🟢 Enriched extrafält skickas vidare till parent:", enriched);
-    setExtrafält(enriched);
-  };
+  const [summaAttBetala, setSummaAttBetala] = useState("");
+  const [tullOchSpedition, setTullOchSpedition] = useState("");
+  const [ingFiktivMoms, setIngFiktivMoms] = useState("");
+  const [ovrigaSkatter, setOvrigaSkatter] = useState("");
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const handleSubmit = () => {
+    const val1930 = round(parseFloat(summaAttBetala || "0"));
+    const valTull = round(parseFloat(tullOchSpedition || "0"));
+    const valFiktiv = round(parseFloat(ingFiktivMoms || "0"));
+    const valOvriga = round(parseFloat(ovrigaSkatter || "0"));
+
+    const importVaror = round(valFiktiv * 4);
+    const momsPåTull = round(valTull * 0.2);
+    const nettobelopp5720 = round(valTull - momsPåTull);
+    const totalt5720 = round(nettobelopp5720 + valOvriga);
+
+    const extrafaltObj = {
+      "1930": {
+        label: "Företagskonto / affärskonto",
+        debet: 0,
+        kredit: val1930,
+      },
+      "2615": {
+        label: "Utgående moms import av varor, 25%",
+        debet: 0,
+        kredit: valFiktiv,
+      },
+      "2640": {
+        label: "Ingående moms",
+        debet: momsPåTull,
+        kredit: 0,
+      },
+      "2645": {
+        label: "Beräknad ingående moms på förvärv från utlandet",
+        debet: valFiktiv,
+        kredit: 0,
+      },
+      "4545": {
+        label: "Import av varor, 25 % moms",
+        debet: importVaror,
+        kredit: 0,
+      },
+      "4549": {
+        label: "Motkonto beskattningsunderlag import",
+        debet: 0,
+        kredit: importVaror,
+      },
+      "5720": {
+        label: "Tull- och speditionskostnader m.m.",
+        debet: totalt5720,
+        kredit: 0,
+      },
+    };
+
+    setExtrafält(extrafaltObj);
     setCurrentStep(3);
   };
-
-  const [zoomLevel, setZoomLevel] = useState(1);
 
   return (
     <div className="flex flex-col-reverse justify-between h-auto max-w-4xl px-4 mx-auto md:flex-row text-white">
@@ -107,20 +101,48 @@ export default function Importmoms({
           setFil={setFil}
           setPdfUrl={setPdfUrl}
           setTransaktionsdatum={setTransaktionsdatum}
-          setBelopp={setBelopp}
+          setBelopp={() => {}}
         />
 
-        {extrafältDefinitioner.map((f) => (
-          <div className="mb-4" key={f.namn}>
-            <label>{f.label}</label>
-            <input
-              type="number"
-              className="w-full p-2 rounded text-black"
-              value={fält[f.namn] || ""}
-              onChange={(e) => handleChange(f.namn, e.target.value)}
-            />
-          </div>
-        ))}
+        <div className="mb-4">
+          <label>Summa att betala in</label>
+          <input
+            type="number"
+            className="w-full p-2 rounded text-black"
+            value={summaAttBetala}
+            onChange={(e) => setSummaAttBetala(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label>Tull- och speditionskostnader m.m. (inkl. svensk moms)</label>
+          <input
+            type="number"
+            className="w-full p-2 rounded text-black"
+            value={tullOchSpedition}
+            onChange={(e) => setTullOchSpedition(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label>Ingående fiktiv moms på förvärv från utlandet</label>
+          <input
+            type="number"
+            className="w-full p-2 rounded text-black"
+            value={ingFiktivMoms}
+            onChange={(e) => setIngFiktivMoms(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label>Övriga skatter och tillval utan moms</label>
+          <input
+            type="number"
+            className="w-full p-2 rounded text-black"
+            value={ovrigaSkatter}
+            onChange={(e) => setOvrigaSkatter(e.target.value)}
+          />
+        </div>
 
         <div className="mb-4">
           <label>Kommentar</label>
@@ -132,7 +154,7 @@ export default function Importmoms({
         </div>
 
         <div className="mb-4">
-          <label>Betaldatum (ÅÅÅÅ-MM-DD)</label>
+          <label>Betaldatum</label>
           <input
             type="date"
             className="w-full p-2 rounded text-black"
