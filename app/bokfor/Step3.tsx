@@ -5,21 +5,20 @@ import { useFormStatus } from "react-dom";
 import { saveTransaction } from "./actions";
 
 type KontoRad = {
-  kontonummer?: string;
   beskrivning: string;
+  kontonummer?: string;
   debet?: boolean;
   kredit?: boolean;
-  andelAv?: "moms" | "utanMoms" | "hela";
 };
 
-type ExtrafältRad = {
+type EnrichedExtrafält = {
   namn: string;
-  värde: string;
+  label: string;
   konto: string;
   beskrivning: string;
   debet: boolean;
   kredit: boolean;
-  label: string;
+  värde: string;
 };
 
 type Forval = {
@@ -30,7 +29,6 @@ type Forval = {
   kategori: string;
   konton: KontoRad[];
   sökord?: string[];
-  extrafält?: ExtrafältRad[];
   momssats?: number;
 };
 
@@ -43,15 +41,7 @@ interface Step3Props {
   kommentar: string;
   valtFörval: Forval | null;
   setCurrentStep: (step: number) => void;
-  extrafält: Record<string, any>;
-}
-
-function formatSEK(amount: number) {
-  return new Intl.NumberFormat("sv-SE", {
-    style: "currency",
-    currency: "SEK",
-    minimumFractionDigits: 2,
-  }).format(amount);
+  extrafält: Record<string, EnrichedExtrafält>;
 }
 
 function SubmitButton() {
@@ -83,8 +73,22 @@ export function Step3({
   const formRef = useRef<HTMLFormElement>(null);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
   const momssats = valtFörval?.momssats ?? 0.25;
-  const moms = belopp * momssats;
-  const beloppUtanMoms = belopp - moms;
+  const moms = parseFloat((belopp * momssats).toFixed(2));
+  const beloppUtanMoms = parseFloat((belopp - moms).toFixed(2));
+
+  const formatSEK = (val: number) =>
+    val.toLocaleString("sv-SE", { style: "currency", currency: "SEK", minimumFractionDigits: 2 });
+
+  const calculateBelopp = (konto: KontoRad, typ: "debet" | "kredit") => {
+    const nr = konto.kontonummer || "";
+    if (nr === "2615" && typ === "kredit" && extrafält["ingående_fiktiv_moms"])
+      return parseFloat(extrafält["ingående_fiktiv_moms"].värde);
+    if (nr === "4545" && typ === "debet" && extrafält["tull_och_spedition"])
+      return parseFloat(extrafält["tull_och_spedition"].värde);
+    if (nr === "4549" && typ === "kredit" && extrafält["övriga_skatter"])
+      return parseFloat(extrafält["övriga_skatter"].värde);
+    return 0;
+  };
 
   useEffect(() => {
     if (!valtFörval) return;
@@ -98,73 +102,48 @@ export function Step3({
       const kredit = konto.kredit ? calculateBelopp(konto, "kredit") : 0;
       totalDebet += debet;
       totalKredit += kredit;
+
+      if (konto.debet && debet === 0)
+        messages.push(`⚠️ Konto ${konto.kontonummer} (${konto.beskrivning}) saknar debet-belopp`);
+      if (konto.kredit && kredit === 0)
+        messages.push(`⚠️ Konto ${konto.kontonummer} (${konto.beskrivning}) saknar kredit-belopp`);
     }
 
-    if (valtFörval.extrafält) {
-      for (const extra of valtFörval.extrafält) {
-        const belopp = parseFloat(extra.värde ?? "0");
-        if (extra.debet) totalDebet += belopp;
-        if (extra.kredit) totalKredit += belopp;
-      }
+    for (const fält of Object.values(extrafält)) {
+      const belopp = parseFloat(fält.värde || "0");
+      if (fält.debet) totalDebet += belopp;
+      if (fält.kredit) totalKredit += belopp;
     }
 
-    if (Math.abs(totalDebet - totalKredit) > 0.01) {
+    if (Math.abs(totalDebet - totalKredit) > 0.01)
       messages.unshift("⚠️ Debet och Kredit matchar inte. Något är fel med Förvalet.");
-    }
 
     setValidationMessages(messages);
-  }, [valtFörval]);
-
-  console.log("🔍 Extrafält i tabellrendering:", extrafält);
-
-  const calculateBelopp = (konto: KontoRad, typ: "debet" | "kredit") => {
-    const nr = konto.kontonummer || "";
-    const andel = konto.andelAv;
-    if (andel === "moms") return moms;
-    if (andel === "utanMoms") return beloppUtanMoms;
-    if (andel === "hela") return belopp;
-    return 0;
-  };
+    console.log("🧮 totalDebet:", totalDebet);
+    console.log("🧮 totalKredit:", totalKredit);
+  }, [valtFörval, extrafält]);
 
   const handleSubmit = async (formData: FormData) => {
     if (fil) formData.set("fil", fil);
     formData.set("valtFörval", JSON.stringify(valtFörval));
     formData.set("extrafält", JSON.stringify(extrafält));
-    formData.set("transaktionsdatum", transaktionsdatum);
-    formData.set("kommentar", kommentar);
-    formData.set("kontonummer", kontonummer);
-    formData.set("kontobeskrivning", kontobeskrivning);
-    formData.set("belopp", belopp.toString());
-    formData.set("moms", moms.toString());
-    formData.set("beloppUtanMoms", beloppUtanMoms.toString());
-
     const result = await saveTransaction(formData);
-    if (result.success) {
-      setCurrentStep(4);
-    } else {
-      console.error("❌ Error saving transaction:", result.error);
-    }
+    if (result.success) setCurrentStep(4);
+    else console.error("❌ Error saving transaction:", result.error);
   };
 
-  if (!valtFörval) return null;
+  if (!valtFörval) {
+    return (
+      <main className="min-h-screen p-10 text-center text-white bg-red-900">
+        <p className="mb-4">⚠️ Saknar vald förval. Gå tillbaka till Steg 1.</p>
+        <button onClick={() => setCurrentStep(1)} className="px-4 py-2 bg-white text-black rounded">
+          Tillbaka
+        </button>
+      </main>
+    );
+  }
 
-  const totalDebet =
-    valtFörval.konton.reduce((sum, k) => {
-      return sum + (k.debet ? calculateBelopp(k, "debet") : 0);
-    }, 0) +
-    (valtFörval.extrafält?.reduce(
-      (sum, e) => sum + (e.debet ? parseFloat(e.värde ?? "0") : 0),
-      0
-    ) || 0);
-
-  const totalKredit =
-    valtFörval.konton.reduce((sum, k) => {
-      return sum + (k.kredit ? calculateBelopp(k, "kredit") : 0);
-    }, 0) +
-    (valtFörval.extrafält?.reduce(
-      (sum, e) => sum + (e.kredit ? parseFloat(e.värde ?? "0") : 0),
-      0
-    ) || 0);
+  console.log("📦 extrafält till Step3:", extrafält);
 
   return (
     <main className="items-center min-h-screen text-center text-white bg-slate-950">
@@ -183,6 +162,16 @@ export function Step3({
         )}
 
         <form ref={formRef} action={handleSubmit}>
+          <input type="hidden" name="transaktionsdatum" value={transaktionsdatum} />
+          <input type="hidden" name="kommentar" value={kommentar} />
+          <input type="hidden" name="kontonummer" value={kontonummer} />
+          <input type="hidden" name="kontobeskrivning" value={kontobeskrivning} />
+          <input type="hidden" name="belopp" value={belopp} />
+          <input type="hidden" name="moms" value={moms} />
+          <input type="hidden" name="beloppUtanMoms" value={beloppUtanMoms} />
+          <input type="hidden" name="valtFörval" value={JSON.stringify(valtFörval)} />
+          <input type="hidden" name="extrafält" value={JSON.stringify(extrafält)} />
+
           <table className="w-full mb-8 text-left border border-gray-300">
             <thead>
               <tr>
@@ -192,32 +181,38 @@ export function Step3({
               </tr>
             </thead>
             <tbody>
-              {Object.entries(extrafält).map(([key, val]: any) => {
-                if (!val?.konto || !val?.värde || parseFloat(val.värde) === 0) return null;
+              {valtFörval.konton.map((konto, i) => {
+                const debet = konto.debet ? calculateBelopp(konto, "debet") : 0;
+                const kredit = konto.kredit ? calculateBelopp(konto, "kredit") : 0;
+
+                console.log(`📒 Konto ${konto.kontonummer}`, "Debet:", debet, "Kredit:", kredit);
+
+                if (debet === 0 && kredit === 0) return null;
+
                 return (
-                  <tr key={key}>
+                  <tr key={i}>
                     <td className="p-4">
-                      {val.konto} {val.beskrivning}
+                      {konto.kontonummer} {konto.beskrivning}
                     </td>
-                    <td className="p-4">
-                      {val.debet ? `${parseFloat(val.värde).toFixed(2)} kr` : "0,00 kr"}
-                    </td>
-                    <td className="p-4">
-                      {val.kredit ? `${parseFloat(val.värde).toFixed(2)} kr` : "0,00 kr"}
-                    </td>
+                    <td className="p-4">{debet > 0 ? formatSEK(debet) : ""}</td>
+                    <td className="p-4">{kredit > 0 ? formatSEK(kredit) : ""}</td>
                   </tr>
                 );
               })}
 
-              {valtFörval.extrafält?.map((extra, i) => {
-                const amount = parseFloat(extra.värde ?? "0");
+              {Object.values(extrafält).map((fält, i) => {
+                const belopp = parseFloat(fält.värde || "0");
+                console.log(`🔍 Extrafält ${fält.konto} ${fält.beskrivning}`, belopp);
+
+                if (belopp === 0) return null;
+
                 return (
                   <tr key={`extra-${i}`}>
                     <td className="p-4">
-                      {extra.konto} {extra.beskrivning}
+                      {fält.konto} {fält.beskrivning}
                     </td>
-                    <td className="p-4">{extra.debet ? formatSEK(amount) : ""}</td>
-                    <td className="p-4">{extra.kredit ? formatSEK(amount) : ""}</td>
+                    <td className="p-4">{fält.debet ? formatSEK(belopp) : ""}</td>
+                    <td className="p-4">{fält.kredit ? formatSEK(belopp) : ""}</td>
                   </tr>
                 );
               })}
@@ -225,8 +220,28 @@ export function Step3({
             <tfoot>
               <tr className="font-bold bg-cyan-900 text-white">
                 <td className="p-4">Totalt</td>
-                <td className="p-4">{formatSEK(totalDebet)}</td>
-                <td className="p-4">{formatSEK(totalKredit)}</td>
+                <td className="p-4">
+                  {formatSEK(
+                    valtFörval.konton.reduce(
+                      (sum, k) => sum + (k.debet ? calculateBelopp(k, "debet") : 0),
+                      Object.values(extrafält).reduce(
+                        (sum, x) => sum + (x.debet ? parseFloat(x.värde || "0") : 0),
+                        0
+                      )
+                    )
+                  )}
+                </td>
+                <td className="p-4">
+                  {formatSEK(
+                    valtFörval.konton.reduce(
+                      (sum, k) => sum + (k.kredit ? calculateBelopp(k, "kredit") : 0),
+                      Object.values(extrafält).reduce(
+                        (sum, x) => sum + (x.kredit ? parseFloat(x.värde || "0") : 0),
+                        0
+                      )
+                    )
+                  )}
+                </td>
               </tr>
             </tfoot>
           </table>
