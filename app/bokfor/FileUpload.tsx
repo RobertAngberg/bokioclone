@@ -49,6 +49,9 @@ function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp }: File
     (async () => {
       try {
         const parsed = await extractDataFromOCR(recognizedText);
+
+        console.log("Parsed data:", parsed);
+
         if (parsed?.datum) setTransaktionsdatum(parsed.datum);
         if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
       } finally {

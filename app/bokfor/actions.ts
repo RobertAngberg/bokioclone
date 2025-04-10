@@ -23,31 +23,52 @@ export async function saveTransaction(formData: FormData) {
   const fil = formData.get("fil") as File | null;
   const filename = fil ? fil.name : "";
 
-  const valdaFörvalRaw = formData.get("valdaFörval")?.toString();
-  if (!valdaFörvalRaw) throw new Error("⛔ Saknar valda förval");
-  const valdaFörval = JSON.parse(valdaFörvalRaw);
+  const valtFörvalRaw = formData.get("valtFörval")?.toString();
+  if (!valtFörvalRaw) throw new Error("⛔ Saknar valda förval");
+  const valtFörval = JSON.parse(valtFörvalRaw);
 
-  const momssats = parseFloat(valdaFörval.momssats ?? 0.25);
+  // 🟡 Nytt: hämta extrafält
+  const extrafältRaw = formData.get("extrafält")?.toString();
+  const extrafält = extrafältRaw ? JSON.parse(extrafältRaw) : {};
 
+  // 🟢 Uppdaterad getBelopp med extrafält
   const getBelopp = (konto: any, typ: "debet" | "kredit") => {
+    const nr = konto.kontonummer?.toString() ?? "";
     const andel = konto.andelAv;
+
+    if (nr === "2615" && typ === "kredit" && extrafält["ingående fiktiv moms"]) {
+      return parseFloat(extrafält["ingående fiktiv moms"]);
+    }
+
+    if (nr === "4545" && typ === "debet" && extrafält["tull och spedition"]) {
+      return parseFloat(extrafält["tull och spedition"]);
+    }
+
+    if (nr === "4549" && typ === "kredit" && extrafält["övriga skatter"]) {
+      return parseFloat(extrafält["övriga skatter"]);
+    }
+
     if (andel === "moms") return moms;
     if (andel === "utanMoms") return beloppUtanMoms;
     if (andel === "hela") return belopp;
 
-    if (!konto.kontonummer) return 0;
-    const prefix = konto.kontonummer.slice(0, 1);
+    const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
+    if (alwaysFull.includes(nr)) return belopp;
+
+    const prefix = nr[0];
 
     if (typ === "debet") {
       if (prefix === "1") return belopp;
       if (prefix === "2") return moms;
       return beloppUtanMoms;
     }
+
     if (typ === "kredit") {
-      if (prefix === "3") return beloppUtanMoms;
+      if (prefix === "1") return belopp;
       if (prefix === "2") return moms;
-      return belopp;
+      if (prefix === "3") return beloppUtanMoms;
     }
+
     return 0;
   };
 
@@ -63,15 +84,16 @@ export async function saveTransaction(formData: FormData) {
     const res = await client.query(insertTransactionQuery, [
       new Date(transaktionsdatum),
       kontobeskrivning,
-      valdaFörval.typ,
+      valtFörval.typ,
       belopp,
       filename,
       kommentar,
       userId,
     ]);
+
     const transaktionsId = res.rows[0].transaktions_id;
 
-    for (const konto of valdaFörval.konton) {
+    for (const konto of valtFörval.konton) {
       const kontonummer = konto.kontonummer?.toString().trim();
       if (!kontonummer) continue;
 
@@ -85,10 +107,8 @@ export async function saveTransaction(formData: FormData) {
       }
 
       const konto_id = kontoRes.rows[0].konto_id;
-      const debet =
-        konto.debet === true || typeof konto.debet === "string" ? getBelopp(konto, "debet") : 0;
-      const kredit =
-        konto.kredit === true || typeof konto.kredit === "string" ? getBelopp(konto, "kredit") : 0;
+      const debet = konto.debet ? getBelopp(konto, "debet") : 0;
+      const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
 
       await client.query(
         "INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit) VALUES ($1, $2, $3, $4)",
@@ -107,42 +127,14 @@ export async function saveTransaction(formData: FormData) {
   }
 }
 
-export async function searchAccount(searchText: string) {
-  if (!searchText) return null;
-
-  try {
-    const client = await pool.connect();
-
-    const res = await client.query(
-      `
-      SELECT id, namn, beskrivning, kategori, konton, typ
-      FROM förval
-      WHERE EXISTS (
-        SELECT 1 FROM unnest(sökord) AS s WHERE s ILIKE $1
-      )
-      LIMIT 1
-      `,
-      [`%${searchText}%`]
-    );
-
-    client.release();
-
-    if (res.rows.length === 0) return null;
-
-    return res.rows[0];
-  } catch (error) {
-    console.error("❌ searchAccount error:", error);
-    return null;
-  }
-}
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
-
 export async function extractDataFromOCR(text: string) {
+  console.log("🧠 Extracting data from OCR text:", text);
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "",
+  });
+
   try {
-    const response = await client.chat.completions.create({
+    const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -168,76 +160,47 @@ export async function extractDataFromOCR(text: string) {
   }
 }
 
-export async function getKontotyp(kontonummer: string) {
-  try {
-    const client = await pool.connect();
-    const query = "SELECT kontotyp FROM konton WHERE kontonummer = $1";
-    const res = await client.query(query, [kontonummer]);
+const calculateBelopp = (
+  konto: any,
+  typ: "debet" | "kredit",
+  extrafält: Record<string, string>,
+  belopp: number,
+  moms: number,
+  beloppUtanMoms: number
+) => {
+  const nr = konto.kontonummer?.toString() ?? "";
+  const andel = konto.andelAv;
 
-    client.release();
-
-    if (res.rows.length === 0) {
-      console.warn("⛔ Konto inte funnet för kontonummer:", kontonummer);
-      return null;
-    }
-
-    return res.rows[0].kontotyp;
-  } catch (error) {
-    console.error("❌ getKontotyp error:", error);
-    return null;
+  if (nr === "2615" && typ === "kredit" && extrafält["ingående_fiktiv_moms"]) {
+    return parseFloat(extrafält["ingående_fiktiv_moms"]);
   }
-}
 
-export async function validateAllForval() {
-  const client = await pool.connect();
-
-  try {
-    const res = await client.query("SELECT * FROM förval ORDER BY namn");
-    const felaktiga: { namn: string; id: number; debet: number; kredit: number }[] = [];
-
-    for (const rad of res.rows) {
-      const konton = typeof rad.konton === "string" ? JSON.parse(rad.konton) : rad.konton;
-      const belopp = 100;
-      const moms = parseFloat(rad.momssats ?? 0.25) * belopp;
-      const utanMoms = belopp - moms;
-
-      let debetSum = 0;
-      let kreditSum = 0;
-
-      for (const konto of konton) {
-        const nr = konto.kontonummer?.toString().trim();
-        if (!nr) continue;
-        const prefix = nr.slice(0, 1);
-
-        let val = 0;
-        if (konto.andelAv === "moms") val = moms;
-        else if (konto.andelAv === "utanMoms") val = utanMoms;
-        else if (konto.andelAv === "hela") val = belopp;
-        else {
-          if (konto.kredit) val = prefix === "3" ? utanMoms : prefix === "2" ? moms : belopp;
-          if (konto.debet) val = prefix === "1" ? belopp : prefix === "2" ? moms : utanMoms;
-        }
-
-        if (konto.debet) debetSum += val;
-        if (konto.kredit) kreditSum += val;
-      }
-
-      // Jämför med max två decimaler
-      if (Math.abs(debetSum - kreditSum) > 0.01) {
-        felaktiga.push({
-          namn: rad.namn,
-          id: rad.id,
-          debet: +debetSum.toFixed(2),
-          kredit: +kreditSum.toFixed(2),
-        });
-      }
-    }
-
-    client.release();
-    return felaktiga;
-  } catch (err) {
-    client.release();
-    console.error("❌ validateAllForval error:", err);
-    return [];
+  if (nr === "4545" && typ === "debet" && extrafält["tull_och_spedition"]) {
+    return parseFloat(extrafält["tull_och_spedition"]);
   }
-}
+
+  if (nr === "4549" && typ === "kredit" && extrafält["övriga_skatter"]) {
+    return parseFloat(extrafält["övriga_skatter"]);
+  }
+
+  if (andel === "moms") return moms;
+  if (andel === "utanMoms") return beloppUtanMoms;
+  if (andel === "hela") return belopp;
+
+  const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
+  if (alwaysFull.includes(nr)) return belopp;
+
+  const prefix = nr[0];
+  if (typ === "debet") {
+    if (prefix === "1") return belopp;
+    if (prefix === "2") return moms;
+    return beloppUtanMoms;
+  }
+  if (typ === "kredit") {
+    if (prefix === "1") return belopp;
+    if (prefix === "2") return moms;
+    if (prefix === "3") return beloppUtanMoms;
+  }
+
+  return 0;
+};

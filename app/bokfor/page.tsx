@@ -14,6 +14,14 @@ type KontoRad = {
   kredit?: boolean;
 };
 
+type Extrafält = {
+  namn: string;
+  label: string;
+  konto: string;
+  debet: boolean;
+  kredit: boolean;
+};
+
 type Forval = {
   id: number;
   namn: string;
@@ -22,7 +30,7 @@ type Forval = {
   kategori: string;
   konton: KontoRad[];
   sökord: string[];
-  extrafält?: any[];
+  extrafält?: Extrafält[];
 };
 
 function Bokför() {
@@ -35,13 +43,14 @@ function Bokför() {
   const [belopp, setBelopp] = useState<number | null>(null);
   const [transaktionsdatum, setTransaktionsdatum] = useState<string | null>(null);
   const [kommentar, setKommentar] = useState<string | null>(null);
-  const [valdaFörval, setValdaFörval] = useState<Forval | null>(null);
+  const [valtFörval, setValtFörval] = useState<Forval | null>(null);
+  const [extrafält, setExtrafält] = useState<Record<string, string>>({});
 
   return (
     <main className="items-center min-h-screen pt-10 text-center bg-slate-950">
       {currentStep === 1 && (
         <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <SearchAccount setCurrentStep={setCurrentStep} setValdaFörval={setValdaFörval} />
+          <SearchAccount setCurrentStep={setCurrentStep} setvaltFörval={setValtFörval} />
         </div>
       )}
 
@@ -58,21 +67,27 @@ function Bokför() {
           setTransaktionsdatum={setTransaktionsdatum}
           kommentar={kommentar}
           setKommentar={setKommentar}
-          valdaFörval={valdaFörval}
+          valtFörval={valtFörval}
+          extrafält={extrafält}
+          setExtrafält={setExtrafält}
         />
       )}
 
       {currentStep === 3 && (
-        <Step3
-          kontonummer={kontonummer}
-          kontobeskrivning={kontobeskrivning ?? ""}
-          fil={fil ?? undefined}
-          belopp={belopp ?? 0}
-          transaktionsdatum={transaktionsdatum ?? ""}
-          kommentar={kommentar ?? ""}
-          valdaFörval={valdaFörval}
-          setCurrentStep={setCurrentStep}
-        />
+        <>
+          {console.log("📦 extrafält till Step3:", extrafält)}
+          <Step3
+            kontonummer={kontonummer}
+            kontobeskrivning={kontobeskrivning ?? ""}
+            fil={fil ?? undefined}
+            belopp={belopp ?? 0}
+            transaktionsdatum={transaktionsdatum ?? ""}
+            kommentar={kommentar ?? ""}
+            valtFörval={valtFörval}
+            setCurrentStep={setCurrentStep}
+            extrafält={extrafält}
+          />
+        </>
       )}
 
       {currentStep === 4 && <Step4 />}

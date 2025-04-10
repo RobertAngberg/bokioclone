@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FileUpload } from "./FileUpload";
 import { Information } from "./Information";
 import { Comment } from "./Comment";
+import Importmoms from "./SpecialFörval/Importmoms";
 import Image from "next/image";
 
 type KontoRad = {
@@ -13,7 +14,7 @@ type KontoRad = {
   kredit?: boolean;
 };
 
-type Forval = {
+type Förval = {
   id: number;
   namn: string;
   beskrivning: string;
@@ -21,7 +22,7 @@ type Forval = {
   kategori: string;
   konton: KontoRad[];
   sökord: string[];
-  extrafält?: any[];
+  specialtyp?: string | null;
 };
 
 interface Step2Props {
@@ -36,7 +37,9 @@ interface Step2Props {
   setTransaktionsdatum: (date: string | null) => void;
   kommentar: string | null;
   setKommentar: (comment: string | null) => void;
-  valdaFörval: Forval | null;
+  valtFörval: Förval | null;
+  extrafält: Record<string, string>;
+  setExtrafält: (fält: Record<string, string>) => void;
 }
 
 export function Step2({
@@ -51,13 +54,31 @@ export function Step2({
   setTransaktionsdatum,
   kommentar,
   setKommentar,
-  valdaFörval,
+  valtFörval,
+  extrafält,
+  setExtrafält,
 }: Step2Props) {
   const [zoomLevel, setZoomLevel] = useState(1);
 
-  useEffect(() => {
-    console.log("🧠 Steg 2 – mottagit valdaFörval:", valdaFörval);
-  }, [valdaFörval]);
+  if (valtFörval?.specialtyp === "Importmoms") {
+    return (
+      <Importmoms
+        belopp={belopp}
+        setBelopp={setBelopp}
+        transaktionsdatum={transaktionsdatum}
+        setTransaktionsdatum={setTransaktionsdatum}
+        kommentar={kommentar}
+        setKommentar={setKommentar}
+        setCurrentStep={setCurrentStep}
+        fil={fil}
+        setFil={setFil}
+        pdfUrl={pdfUrl}
+        setPdfUrl={setPdfUrl}
+        extrafält={extrafält}
+        setExtrafält={setExtrafält}
+      />
+    );
+  }
 
   const handleSubmit = () => {
     setCurrentStep(3);
@@ -105,7 +126,9 @@ export function Step2({
             <Image
               src={URL.createObjectURL(fil)}
               alt="Uploaded"
-              className="object-contain object-left w-auto h-auto max-w-full"
+              width={800}
+              height={600}
+              className="object-contain object-left max-w-full"
               style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
             />
           )}

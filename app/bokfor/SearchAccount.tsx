@@ -10,6 +10,14 @@ type KontoRad = {
   kredit?: boolean;
 };
 
+type Extrafält = {
+  namn: string;
+  label: string;
+  konto: string;
+  debet: boolean;
+  kredit: boolean;
+};
+
 type Forval = {
   id: number;
   namn: string;
@@ -18,15 +26,15 @@ type Forval = {
   kategori: string;
   konton: KontoRad[];
   sökord: string[];
-  extrafält?: any[];
+  extrafält?: Extrafält[];
 };
 
 type Props = {
   setCurrentStep: (val: number) => void;
-  setValdaFörval: (val: Forval) => void;
+  setvaltFörval: (val: Forval) => void;
 };
 
-export default function SearchAccount({ setCurrentStep, setValdaFörval }: Props) {
+export default function SearchAccount({ setCurrentStep, setvaltFörval }: Props) {
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState<Forval[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,7 +44,6 @@ export default function SearchAccount({ setCurrentStep, setValdaFörval }: Props
       if (searchText.length < 3) {
         setResults([]);
         setLoading(false);
-        return;
       }
 
       setLoading(true);
@@ -77,7 +84,7 @@ export default function SearchAccount({ setCurrentStep, setValdaFörval }: Props
             className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer mt-4"
             onClick={() => {
               console.log("🟢 Klickat förval:", f);
-              setValdaFörval(f);
+              setvaltFörval(f);
               setCurrentStep(2);
             }}
           >
