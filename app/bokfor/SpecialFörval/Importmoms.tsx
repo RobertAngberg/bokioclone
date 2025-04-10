@@ -5,17 +5,19 @@ import { FileUpload } from "../FileUpload";
 import Image from "next/image";
 
 interface ImportmomsProps {
+  belopp: number | null;
+  setBelopp: (amount: number | null) => void;
   transaktionsdatum: string | null;
   setTransaktionsdatum: (date: string | null) => void;
   kommentar: string | null;
   setKommentar: (comment: string | null) => void;
+  setCurrentStep: (step: number) => void;
   fil: File | null;
   setFil: (file: File | null) => void;
   pdfUrl: string | null;
   setPdfUrl: (url: string | null) => void;
-  setCurrentStep: (step: number) => void;
-  extrafält: Record<string, any>;
-  setExtrafält: (fält: Record<string, any>) => void;
+  extrafält: Record<string, { label: string; debet: number; kredit: number }>;
+  setExtrafält: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
 }
 
 const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;

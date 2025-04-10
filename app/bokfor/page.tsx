@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import SearchAccount from "./SearchAccount";
+import SokForval from "./SokForval";
 import { Step2 } from "./Step2";
 import { Step3 } from "./Step3";
 import { Step4 } from "./Step4";
@@ -44,13 +44,15 @@ function Bokför() {
   const [transaktionsdatum, setTransaktionsdatum] = useState<string | null>(null);
   const [kommentar, setKommentar] = useState<string | null>(null);
   const [valtFörval, setValtFörval] = useState<Forval | null>(null);
-  const [extrafält, setExtrafält] = useState<Record<string, string>>({});
+  const [extrafält, setExtrafält] = useState<
+    Record<string, { label: string; debet: number; kredit: number }>
+  >({});
 
   return (
     <main className="items-center min-h-screen pt-10 text-center bg-slate-950">
       {currentStep === 1 && (
         <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <SearchAccount
+          <SokForval
             setCurrentStep={setCurrentStep}
             setvaltFörval={setValtFörval}
             setKontonummer={setKontonummer}

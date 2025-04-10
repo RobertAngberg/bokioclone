@@ -38,8 +38,8 @@ interface Step2Props {
   kommentar: string | null;
   setKommentar: (comment: string | null) => void;
   valtFörval: Förval | null;
-  extrafält: Record<string, string>;
-  setExtrafält: (fält: Record<string, string>) => void;
+  extrafält: Record<string, { label: string; debet: number; kredit: number }>;
+  setExtrafält: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
 }
 
 export function Step2({

@@ -9,126 +9,15 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-export async function saveTransaction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Ingen användare inloggad");
-  const userId = parseInt(session.user.id);
-
-  const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
-  const kommentar = formData.get("kommentar")?.toString().trim() || "";
-  const kontobeskrivning = formData.get("kontobeskrivning")?.toString().trim() || "";
-  const belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
-  const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
-  const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString().trim() || "0");
-  const fil = formData.get("fil") as File | null;
-  const filename = fil ? fil.name : "";
-
-  const valtFörvalRaw = formData.get("valtFörval")?.toString();
-  if (!valtFörvalRaw) throw new Error("⛔ Saknar valda förval");
-  const valtFörval = JSON.parse(valtFörvalRaw);
-
-  // 🟡 Nytt: hämta extrafält
-  const extrafältRaw = formData.get("extrafält")?.toString();
-  const extrafält = extrafältRaw ? JSON.parse(extrafältRaw) : {};
-
-  // 🟢 Uppdaterad getBelopp med extrafält
-  const getBelopp = (konto: any, typ: "debet" | "kredit") => {
-    const nr = konto.kontonummer?.toString() ?? "";
-    const andel = konto.andelAv;
-
-    if (nr === "2615" && typ === "kredit" && extrafält["ingående fiktiv moms"]) {
-      return parseFloat(extrafält["ingående fiktiv moms"]);
-    }
-
-    if (nr === "4545" && typ === "debet" && extrafält["tull och spedition"]) {
-      return parseFloat(extrafält["tull och spedition"]);
-    }
-
-    if (nr === "4549" && typ === "kredit" && extrafält["övriga skatter"]) {
-      return parseFloat(extrafält["övriga skatter"]);
-    }
-
-    if (andel === "moms") return moms;
-    if (andel === "utanMoms") return beloppUtanMoms;
-    if (andel === "hela") return belopp;
-
-    const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
-    if (alwaysFull.includes(nr)) return belopp;
-
-    const prefix = nr[0];
-
-    if (typ === "debet") {
-      if (prefix === "1") return belopp;
-      if (prefix === "2") return moms;
-      return beloppUtanMoms;
-    }
-
-    if (typ === "kredit") {
-      if (prefix === "1") return belopp;
-      if (prefix === "2") return moms;
-      if (prefix === "3") return beloppUtanMoms;
-    }
-
-    return 0;
-  };
-
-  const client = await pool.connect();
-  try {
-    const insertTransactionQuery = `
-      INSERT INTO transaktioner (
-        transaktionsdatum, kontobeskrivning, kontotyp, belopp, fil, kommentar, "userId"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING transaktions_id
-    `;
-
-    const res = await client.query(insertTransactionQuery, [
-      new Date(transaktionsdatum),
-      kontobeskrivning,
-      valtFörval.typ,
-      belopp,
-      filename,
-      kommentar,
-      userId,
-    ]);
-
-    const transaktionsId = res.rows[0].transaktions_id;
-
-    for (const konto of valtFörval.konton) {
-      const kontonummer = konto.kontonummer?.toString().trim();
-      if (!kontonummer) continue;
-
-      const kontoRes = await client.query(
-        "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
-        [kontonummer]
-      );
-
-      if (kontoRes.rows.length === 0) {
-        throw new Error(`⛔ Konto not found: ${kontonummer}`);
-      }
-
-      const konto_id = kontoRes.rows[0].konto_id;
-      const debet = konto.debet ? getBelopp(konto, "debet") : 0;
-      const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
-
-      await client.query(
-        "INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit) VALUES ($1, $2, $3, $4)",
-        [transaktionsId, konto_id, debet, kredit]
-      );
-    }
-
-    client.release();
-    revalidatePath("/grundbok");
-
-    return { success: true, id: transaktionsId };
-  } catch (error) {
-    client.release();
-    console.error("❌ saveTransaction error:", error);
-    return { success: false, error };
-  }
-}
+type ExtrafältRad = {
+  debet?: number;
+  kredit?: number;
+  label?: string;
+};
 
 export async function extractDataFromOCR(text: string) {
   console.log("🧠 Extracting data from OCR text:", text);
+
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY || "",
   });
@@ -149,7 +38,9 @@ export async function extractDataFromOCR(text: string) {
     const content = response.choices[0]?.message?.content?.trim();
 
     if (content && content.startsWith("{")) {
-      return JSON.parse(content);
+      const parsed = JSON.parse(content);
+      console.log("✅ OCR extracted:", parsed);
+      return parsed;
     }
 
     console.warn("⚠️ GPT unstructured content:", content);
@@ -160,51 +51,6 @@ export async function extractDataFromOCR(text: string) {
   }
 }
 
-const calculateBelopp = (
-  konto: any,
-  typ: "debet" | "kredit",
-  extrafält: Record<string, string>,
-  belopp: number,
-  moms: number,
-  beloppUtanMoms: number
-) => {
-  const nr = konto.kontonummer?.toString() ?? "";
-  const andel = konto.andelAv;
-
-  if (nr === "2615" && typ === "kredit" && extrafält["ingående_fiktiv_moms"]) {
-    return parseFloat(extrafält["ingående_fiktiv_moms"]);
-  }
-
-  if (nr === "4545" && typ === "debet" && extrafält["tull_och_spedition"]) {
-    return parseFloat(extrafält["tull_och_spedition"]);
-  }
-
-  if (nr === "4549" && typ === "kredit" && extrafält["övriga_skatter"]) {
-    return parseFloat(extrafält["övriga_skatter"]);
-  }
-
-  if (andel === "moms") return moms;
-  if (andel === "utanMoms") return beloppUtanMoms;
-  if (andel === "hela") return belopp;
-
-  const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
-  if (alwaysFull.includes(nr)) return belopp;
-
-  const prefix = nr[0];
-  if (typ === "debet") {
-    if (prefix === "1") return belopp;
-    if (prefix === "2") return moms;
-    return beloppUtanMoms;
-  }
-  if (typ === "kredit") {
-    if (prefix === "1") return belopp;
-    if (prefix === "2") return moms;
-    if (prefix === "3") return beloppUtanMoms;
-  }
-
-  return 0;
-};
-
 export async function getKontoklass(kontonummer: string) {
   try {
     const client = await pool.connect();
@@ -212,7 +58,6 @@ export async function getKontoklass(kontonummer: string) {
     const res = await client.query(query, [kontonummer]);
 
     console.log("🔎 SQL result:", res.rows);
-
     client.release();
 
     if (res.rows.length === 0) {
@@ -222,7 +67,169 @@ export async function getKontoklass(kontonummer: string) {
 
     return res.rows[0].kontoklass;
   } catch (error) {
-    console.error("❌ kontoklass error:", error);
+    console.error("❌ getKontoklass error:", error);
     return null;
+  }
+}
+
+export async function saveTransaction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Ingen användare inloggad");
+  const userId = parseInt(session.user.id);
+
+  const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
+  const kommentar = formData.get("kommentar")?.toString().trim() || "";
+  const fil = formData.get("fil") as File | null;
+  const filename = fil ? fil.name : "";
+
+  const valtFörvalRaw = formData.get("valtFörval")?.toString();
+  if (!valtFörvalRaw) throw new Error("⛔ Saknar valda förval");
+  const valtFörval = JSON.parse(valtFörvalRaw);
+
+  const belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
+  const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
+  const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString().trim() || "0");
+
+  const extrafältRaw = formData.get("extrafält")?.toString();
+  const extrafält = extrafältRaw ? (JSON.parse(extrafältRaw) as Record<string, ExtrafältRad>) : {};
+
+  // 📦 Logga allt
+  console.log("📦 Spara transaktion...");
+  console.log("🗓️ Datum:", transaktionsdatum);
+  console.log("🧾 Kommentar:", kommentar);
+  console.log("📁 Filnamn:", filename);
+  console.log("💰 Belopp:", belopp);
+  console.log("🧮 Moms:", moms);
+  console.log("💡 Belopp utan moms:", beloppUtanMoms);
+  console.log("🗂️ valtFörval:", valtFörval);
+  console.log("🧩 extrafält:", extrafält);
+
+  const client = await pool.connect();
+  try {
+    // 📝 Kontobeskrivning = förvalets namn om specialtyp, annars kommer från formData
+    const kontobeskrivning =
+      valtFörval.specialtyp === "Importmoms"
+        ? valtFörval.namn
+        : formData.get("kontobeskrivning")?.toString().trim() || "";
+
+    const insertTransactionQuery = `
+      INSERT INTO transaktioner (
+        transaktionsdatum, kontobeskrivning, kontotyp, belopp, fil, kommentar, "userId"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING transaktions_id
+    `;
+
+    const res = await client.query(insertTransactionQuery, [
+      new Date(transaktionsdatum),
+      kontobeskrivning,
+      valtFörval.typ,
+      belopp,
+      filename,
+      kommentar,
+      userId,
+    ]);
+
+    const transaktionsId = res.rows[0].transaktions_id;
+    console.log("🆔 transaktions_id:", transaktionsId);
+
+    // ===================== SPECIALFALL: IMPORTMOMS =====================
+    if (valtFörval.specialtyp === "Importmoms") {
+      console.log("🟡 Hanterar specialförval: Importmoms");
+
+      for (const [kontonummer, data] of Object.entries(extrafält)) {
+        const kontoRes = await client.query(
+          "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
+          [kontonummer]
+        );
+
+        if (kontoRes.rows.length === 0) {
+          console.warn(`⛔ Konto ${kontonummer} hittades inte i databasen`);
+          continue;
+        }
+
+        const konto_id = kontoRes.rows[0].konto_id;
+        const debet = Number(data.debet ?? 0);
+        const kredit = Number(data.kredit ?? 0);
+
+        console.log(`📘 Konto ${kontonummer} (${data.label}) – Debet: ${debet}, Kredit: ${kredit}`);
+
+        await client.query(
+          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
+           VALUES ($1, $2, $3, $4)`,
+          [transaktionsId, konto_id, debet, kredit]
+        );
+      }
+
+      console.log("✅ Alla extrafält sparade");
+    }
+
+    // ===================== VANLIGA FÖRVAL =====================
+    else {
+      const getBelopp = (konto: any, typ: "debet" | "kredit") => {
+        const nr = konto.kontonummer?.toString() ?? "";
+        const andel = konto.andelAv;
+
+        if (andel === "moms") return moms;
+        if (andel === "utanMoms") return beloppUtanMoms;
+        if (andel === "hela") return belopp;
+
+        const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
+        if (alwaysFull.includes(nr)) return belopp;
+
+        const prefix = nr[0];
+        if (typ === "debet") {
+          if (prefix === "1") return belopp;
+          if (prefix === "2") return moms;
+          return beloppUtanMoms;
+        }
+        if (typ === "kredit") {
+          if (prefix === "1") return belopp;
+          if (prefix === "2") return moms;
+          if (prefix === "3") return beloppUtanMoms;
+        }
+
+        return 0;
+      };
+
+      console.log("🟢 Sparar normalt förval");
+
+      for (const konto of valtFörval.konton) {
+        const kontonummer = konto.kontonummer?.toString().trim();
+        if (!kontonummer) continue;
+
+        const kontoRes = await client.query(
+          "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
+          [kontonummer]
+        );
+
+        if (kontoRes.rows.length === 0) {
+          console.warn(`⛔ Konto ${kontonummer} hittades inte`);
+          continue;
+        }
+
+        const konto_id = kontoRes.rows[0].konto_id;
+        const debet = konto.debet ? getBelopp(konto, "debet") : 0;
+        const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
+
+        console.log(`📘 Konto ${kontonummer} – Debet: ${debet}, Kredit: ${kredit}`);
+
+        await client.query(
+          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
+           VALUES ($1, $2, $3, $4)`,
+          [transaktionsId, konto_id, debet, kredit]
+        );
+      }
+
+      console.log("✅ Vanliga rader sparade");
+    }
+
+    client.release();
+    revalidatePath("/grundbok");
+
+    return { success: true, id: transaktionsId };
+  } catch (error) {
+    client.release();
+    console.error("❌ saveTransaction error:", error);
+    return { success: false, error };
   }
 }

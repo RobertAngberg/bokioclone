@@ -92,8 +92,8 @@ export function Step3({
 
       setValidationMessages(messages);
     } else {
-      getKontoklass(kontonummer).then((typ) => {
-        const normalized = typ?.toLowerCase();
+      getKontoklass(kontonummer).then((typ: string | null) => {
+        const normalized: string | undefined = typ?.toLowerCase();
 
         if (normalized === "intäkter") {
           console.log("📦 Normaliserad kontoklass: Intäkt");
