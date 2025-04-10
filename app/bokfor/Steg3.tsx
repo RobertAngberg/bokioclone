@@ -46,7 +46,7 @@ function SubmitButton() {
   );
 }
 
-export function Step3({
+export default function Steg3({
   kontonummer,
   kontobeskrivning,
   fil,

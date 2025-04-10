@@ -46,18 +46,28 @@ export default function SearchAccount({
   const [results, setResults] = useState<Forval[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // 🔍 Fuzzy matching: ta bort mellanslag och gör lowercase
+  const normalize = (text: string) => text.toLowerCase().replace(/\s/g, "");
+
   useEffect(() => {
     const delay = setTimeout(async () => {
-      if (searchText.length < 3) {
+      const input = searchText.trim();
+
+      if (input.length < 2) {
         setResults([]);
         setLoading(false);
+        return;
       }
 
       setLoading(true);
       const alla = await fetchAllaForval();
-      const träffar = alla.filter((f: Forval) =>
-        f.sökord?.some((sök: string) => sök.toLowerCase().includes(searchText.toLowerCase()))
-      );
+      const normInput = normalize(input);
+
+      const träffar = alla.filter((f: Forval) => {
+        const combined = normalize(f.sökord.join(" "));
+        return combined.includes(normInput);
+      });
+
       setResults(träffar);
       setLoading(false);
     }, 300);
@@ -73,7 +83,7 @@ export default function SearchAccount({
         type="text"
         autoComplete="off"
         value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
+        onChange={(e) => setSearchText(e.target.value.trimStart())}
       />
 
       {loading && (
@@ -92,12 +102,7 @@ export default function SearchAccount({
               setvaltFörval(f);
 
               const huvudkonto = f.konton.find((k) => {
-                return (
-                  k.kontonummer !== "1930" && // ignorera företagskonto
-                  (k.kredit || k.debet) && // måste ha minst en av dem
-                  !!k.kontonummer // måste ha ett kontonummer
-                  // Nu tar den ut rätt huvudkonto...
-                );
+                return k.kontonummer !== "1930" && (k.kredit || k.debet) && !!k.kontonummer;
               });
 
               if (huvudkonto) {
@@ -120,7 +125,6 @@ export default function SearchAccount({
               <strong>Sökord:</strong> {f.sökord.join(", ")}
             </p>
 
-            {/* Kontotabell här */}
             <table className="w-full border border-gray-300 text-sm text-gray-700">
               <thead>
                 <tr className="bg-gray-100">

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FileUpload } from "./FileUpload";
+import { LaddaUppFil } from "./LaddaUppFil";
 import { Information } from "./Information";
-import { Comment } from "./Comment";
+import { Kommentar } from "./Kommentar";
 import Importmoms from "./SpecialFörval/Importmoms";
 import Image from "next/image";
 
@@ -42,7 +42,7 @@ interface Step2Props {
   setExtrafält: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
 }
 
-export function Step2({
+export default function Steg2({
   setCurrentStep,
   fil,
   setFil,
@@ -93,7 +93,7 @@ export function Step2({
 
       <div className="flex flex-col-reverse justify-between h-auto max-w-4xl px-4 mx-auto md:flex-row">
         <div className="w-full mb-10 text-white md:w-2/5 md:mb-0">
-          <FileUpload
+          <LaddaUppFil
             fil={fil}
             setFil={setFil}
             setPdfUrl={setPdfUrl}
@@ -108,7 +108,7 @@ export function Step2({
             setTransaktionsdatum={setTransaktionsdatum}
           />
 
-          <Comment kommentar={kommentar ?? ""} setKommentar={setKommentar} />
+          <Kommentar kommentar={kommentar ?? ""} setKommentar={setKommentar} />
 
           <button
             type="button"

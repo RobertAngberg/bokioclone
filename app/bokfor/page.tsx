@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import SokForval from "./SokForval";
-import { Step2 } from "./Step2";
-import { Step3 } from "./Step3";
-import { Step4 } from "./Step4";
+import Steg2 from "./Steg2";
+import Steg3 from "./Steg3";
+import Steg4 from "./Steg4";
 import React from "react";
 
 type KontoRad = {
@@ -62,7 +62,7 @@ function Bokför() {
       )}
 
       {currentStep === 2 && (
-        <Step2
+        <Steg2
           setCurrentStep={setCurrentStep}
           fil={fil}
           setFil={setFil}
@@ -82,7 +82,7 @@ function Bokför() {
 
       {currentStep === 3 && (
         <>
-          <Step3
+          <Steg3
             kontonummer={kontonummer}
             kontobeskrivning={kontobeskrivning ?? ""}
             fil={fil ?? undefined}
@@ -96,7 +96,7 @@ function Bokför() {
         </>
       )}
 
-      {currentStep === 4 && <Step4 />}
+      {currentStep === 4 && <Steg4 />}
     </main>
   );
 }

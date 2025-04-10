@@ -13,7 +13,7 @@ interface FileUploadProps {
   fil: File | null;
 }
 
-function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp }: FileUploadProps) {
+function LaddaUppFil({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp }: FileUploadProps) {
   const [recognizedText, setRecognizedText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [timeoutTriggered, setTimeoutTriggered] = useState(false);
@@ -93,4 +93,4 @@ function FileUpload({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp }: File
   );
 }
 
-export { FileUpload };
+export { LaddaUppFil };

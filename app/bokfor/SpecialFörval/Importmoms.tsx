@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileUpload } from "../FileUpload";
+import { LaddaUppFil } from "../LaddaUppFil";
 import Image from "next/image";
 
 interface ImportmomsProps {
@@ -98,7 +98,7 @@ export default function Importmoms({
       <div className="w-full mb-10 md:w-2/5 md:mb-0">
         <h1 className="text-3xl font-bold mb-6 text-center">Steg 2: Importmoms</h1>
 
-        <FileUpload
+        <LaddaUppFil
           fil={fil}
           setFil={setFil}
           setPdfUrl={setPdfUrl}

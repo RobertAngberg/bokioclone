@@ -5,7 +5,7 @@ interface CommentProps {
   setKommentar: (value: string) => void;
 }
 
-function Comment({ kommentar, setKommentar }: CommentProps) {
+function Kommentar({ kommentar, setKommentar }: CommentProps) {
   return (
     <div className="mb-4">
       <label htmlFor="kommentar">Kommentar:</label>
@@ -22,4 +22,4 @@ function Comment({ kommentar, setKommentar }: CommentProps) {
   );
 }
 
-export { Comment };
+export { Kommentar };

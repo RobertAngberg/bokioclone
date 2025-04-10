@@ -1,7 +1,7 @@
 import Link from "next/link";
 import React from "react";
 
-function Step4() {
+export default function Steg4() {
   return (
     <main className="text-white">
       <h1 className="mb-14 text-4xl font-bold">Bokföring genomförd!</h1>
@@ -15,5 +15,3 @@ function Step4() {
     </main>
   );
 }
-
-export { Step4 };
