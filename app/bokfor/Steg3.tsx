@@ -61,12 +61,10 @@ export default function Steg3({
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
   const [kontoklass, setKontoklass] = useState<"Intäkt" | "Kostnad" | null>(null);
 
-  const moms = parseFloat((belopp * 0.2).toFixed(2));
+  const momsSats = valtFörval?.momssats ?? 0;
+  const moms = parseFloat((belopp * momsSats).toFixed(2));
   const beloppUtanMoms = parseFloat((belopp - moms).toFixed(2));
-
-  // Function to round numbers to 2 decimal places
   const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-
   const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
   useEffect(() => {
@@ -82,7 +80,6 @@ export default function Steg3({
       }
 
       const messages: string[] = [];
-      // Round values before checking for differences
       totalDebet = round(totalDebet);
       totalKredit = round(totalKredit);
 
@@ -96,13 +93,9 @@ export default function Steg3({
         const normalized: string | undefined = typ?.toLowerCase();
 
         if (normalized === "intäkter") {
-          console.log("📦 Normaliserad kontoklass: Intäkt");
           setKontoklass("Intäkt");
         } else if (normalized === "kostnader") {
-          console.log("📦 Normaliserad kontoklass: Kostnad");
           setKontoklass("Kostnad");
-        } else {
-          console.warn("⚠️ Okänd kontoklass:", typ);
         }
       });
     }
@@ -122,7 +115,6 @@ export default function Steg3({
 
     const result = await saveTransaction(formData);
     if (result.success) setCurrentStep(4);
-    else console.error("❌ Error saving transaction:", result.error);
   };
 
   if (!valtFörval) {
@@ -136,7 +128,7 @@ export default function Steg3({
     );
   }
 
-  // =================== SPECIALFÖRVAL ===================
+  // ========== SPECIALFÖRVAL: IMPORTMOMS ==========
   if (valtFörval.specialtyp === "Importmoms") {
     let totalDebet = 0;
     let totalKredit = 0;
@@ -158,7 +150,6 @@ export default function Steg3({
       );
     });
 
-    // Round totals before displaying
     totalDebet = round(totalDebet);
     totalKredit = round(totalKredit);
 
@@ -203,7 +194,7 @@ export default function Steg3({
     );
   }
 
-  // =================== VANLIGT FÖRVAL ===================
+  // ========== VANLIGT FÖRVAL ==========
   if (!kontoklass) {
     return (
       <main className="items-center min-h-screen text-center text-white bg-slate-950">
@@ -244,13 +235,15 @@ export default function Steg3({
                 <td className="p-4">{kontoklass === "Intäkt" ? formatSEK(belopp) : ""}</td>
                 <td className="p-4">{kontoklass === "Kostnad" ? formatSEK(belopp) : ""}</td>
               </tr>
-              <tr>
-                <td className="p-4">
-                  {kontoklass === "Kostnad" ? "2640 Ingående moms" : "2610 Utgående moms"}
-                </td>
-                <td className="p-4">{kontoklass === "Kostnad" ? formatSEK(moms) : ""}</td>
-                <td className="p-4">{kontoklass === "Intäkt" ? formatSEK(moms) : ""}</td>
-              </tr>
+              {moms > 0 && (
+                <tr>
+                  <td className="p-4">
+                    {kontoklass === "Kostnad" ? "2640 Ingående moms" : "2610 Utgående moms"}
+                  </td>
+                  <td className="p-4">{kontoklass === "Kostnad" ? formatSEK(moms) : ""}</td>
+                  <td className="p-4">{kontoklass === "Intäkt" ? formatSEK(moms) : ""}</td>
+                </tr>
+              )}
               <tr>
                 <td className="p-4">
                   {kontonummer} {kontobeskrivning}

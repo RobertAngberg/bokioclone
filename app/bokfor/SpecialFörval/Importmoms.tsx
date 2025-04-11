@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LaddaUppFil } from "../LaddaUppFil";
-import Image from "next/image";
+import Forhandsgranskning from "../Forhandsgranskning";
 
 interface ImportmomsProps {
   belopp: number | null;
@@ -93,6 +93,9 @@ export default function Importmoms({
     setCurrentStep(3);
   };
 
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.2, 1));
+
   return (
     <div className="flex flex-col-reverse justify-between h-auto max-w-4xl px-4 mx-auto md:flex-row text-white">
       <div className="w-full mb-10 md:w-2/5 md:mb-0">
@@ -173,29 +176,13 @@ export default function Importmoms({
         </button>
       </div>
 
-      <div className="relative flex flex-col items-center justify-center w-full h-auto border-2 border-dashed border-cyan-500 md:w-3/5 md:ml-4 mb-4 md:mb-0">
-        {!pdfUrl && !fil && <p className="text-gray-500">Ditt underlag kommer att visas här</p>}
-
-        {fil?.type.startsWith("image/") && (
-          <Image
-            src={URL.createObjectURL(fil)}
-            alt="Uploaded"
-            width={800}
-            height={600}
-            className="object-contain object-left max-w-full"
-            style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
-          />
-        )}
-
-        {pdfUrl && !fil?.type.startsWith("image/") && (
-          <iframe
-            src={pdfUrl}
-            className="w-full h-auto max-w-full"
-            style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
-            title="PDF Viewer"
-          />
-        )}
-      </div>
+      <Forhandsgranskning
+        fil={fil}
+        pdfUrl={pdfUrl}
+        zoomLevel={zoomLevel}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+      />
     </div>
   );
 }
