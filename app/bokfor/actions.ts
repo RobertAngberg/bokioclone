@@ -86,7 +86,6 @@ export async function saveTransaction(formData: FormData) {
   if (!valtFörvalRaw) throw new Error("⛔ Saknar valda förval");
   const valtFörval = JSON.parse(valtFörvalRaw);
 
-  const belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
   const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
   const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString().trim() || "0");
 
@@ -98,11 +97,18 @@ export async function saveTransaction(formData: FormData) {
   console.log("🗓️ Datum:", transaktionsdatum);
   console.log("🧾 Kommentar:", kommentar);
   console.log("📁 Filnamn:", filename);
-  console.log("💰 Belopp:", belopp);
-  console.log("🧮 Moms:", moms);
+  console.log("💰 Moms:", moms);
   console.log("💡 Belopp utan moms:", beloppUtanMoms);
   console.log("🗂️ valtFörval:", valtFörval);
   console.log("🧩 extrafält:", extrafält);
+
+  let belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
+
+  // 🚨 Justera belopp för specialförval
+  if (valtFörval.specialtyp === "Importmoms" || valtFörval.specialtyp === "AmorteringBanklån") {
+    const specialBelopp = extrafält?.["1930"]?.kredit ?? extrafält?.["1930"]?.debet ?? 0;
+    belopp = parseFloat(specialBelopp.toString());
+  }
 
   const client = await pool.connect();
   try {

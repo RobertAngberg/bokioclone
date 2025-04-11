@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { LaddaUppFil } from "./LaddaUppFil";
 import { Information } from "./Information";
 import { Kommentar } from "./Kommentar";
 import Forhandsgranskning from "./Forhandsgranskning";
 import Importmoms from "./SpecialFörval/Importmoms";
-import Image from "next/image";
+import AmorteringBanklan from "./SpecialFörval/AmorteringBanklan";
+import DefaultSpecialFörvalSteg2 from "./SpecialFörval/DefaultSpecialFörvalSteg2";
 
 type KontoRad = {
   beskrivning: string;
@@ -59,8 +60,7 @@ export default function Steg2({
   extrafält,
   setExtrafält,
 }: Step2Props) {
-  const [zoomLevel, setZoomLevel] = useState(1);
-
+  // Hantera specialförval med egna komponenter
   if (valtFörval?.specialtyp === "Importmoms") {
     return (
       <Importmoms
@@ -81,12 +81,52 @@ export default function Steg2({
     );
   }
 
+  if (valtFörval?.specialtyp === "AmorteringBanklån") {
+    return (
+      <AmorteringBanklan
+        belopp={belopp}
+        setBelopp={setBelopp}
+        transaktionsdatum={transaktionsdatum}
+        setTransaktionsdatum={setTransaktionsdatum}
+        kommentar={kommentar}
+        setKommentar={setKommentar}
+        setCurrentStep={setCurrentStep}
+        fil={fil}
+        setFil={setFil}
+        pdfUrl={pdfUrl}
+        setPdfUrl={setPdfUrl}
+        extrafält={extrafält}
+        setExtrafält={setExtrafält}
+      />
+    );
+  }
+
+  // Hantera tysta specialförval med autogenererade extrafält
+  if (valtFörval?.specialtyp) {
+    return (
+      <DefaultSpecialFörvalSteg2
+        belopp={belopp}
+        setBelopp={setBelopp}
+        transaktionsdatum={transaktionsdatum}
+        setTransaktionsdatum={setTransaktionsdatum}
+        kommentar={kommentar}
+        setKommentar={setKommentar}
+        setCurrentStep={setCurrentStep}
+        fil={fil}
+        setFil={setFil}
+        pdfUrl={pdfUrl}
+        setPdfUrl={setPdfUrl}
+        extrafält={extrafält}
+        setExtrafält={setExtrafält}
+        specialtyp={valtFörval.specialtyp}
+      />
+    );
+  }
+
+  // Standardförval (utan specialtyp)
   const handleSubmit = () => {
     setCurrentStep(3);
   };
-
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 3));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.2, 1));
 
   return (
     <>
@@ -120,13 +160,7 @@ export default function Steg2({
           </button>
         </div>
 
-        <Forhandsgranskning
-          fil={fil}
-          pdfUrl={pdfUrl}
-          zoomLevel={zoomLevel}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-        />
+        <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
       </div>
     </>
   );

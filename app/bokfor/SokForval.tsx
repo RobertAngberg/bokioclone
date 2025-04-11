@@ -141,7 +141,10 @@ export default function SokForval({
             onClick={() => väljFörval(f)}
           >
             <div className="text-xl font-semibold text-gray-800 mb-2">✓ {f.namn}</div>
-            <p className="italic text-sm text-gray-600 mb-2">{f.beskrivning}</p>
+            <pre className="whitespace-pre-wrap text-sm italic text-gray-600 mb-2 font-sans">
+              {f.beskrivning}
+            </pre>
+
             <p className="text-sm text-gray-600">
               <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
               <strong>Kategori:</strong> {f.kategori}

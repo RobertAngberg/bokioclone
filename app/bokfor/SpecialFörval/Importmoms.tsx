@@ -38,7 +38,6 @@ export default function Importmoms({
   const [tullOchSpedition, setTullOchSpedition] = useState("");
   const [ingFiktivMoms, setIngFiktivMoms] = useState("");
   const [ovrigaSkatter, setOvrigaSkatter] = useState("");
-  const [zoomLevel, setZoomLevel] = useState(1);
 
   const handleSubmit = () => {
     const val1930 = round(parseFloat(summaAttBetala || "0"));
@@ -92,9 +91,6 @@ export default function Importmoms({
     setExtrafält(extrafaltObj);
     setCurrentStep(3);
   };
-
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 3));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.2, 1));
 
   return (
     <div className="flex flex-col-reverse justify-between h-auto max-w-4xl px-4 mx-auto md:flex-row text-white">
@@ -176,13 +172,7 @@ export default function Importmoms({
         </button>
       </div>
 
-      <Forhandsgranskning
-        fil={fil}
-        pdfUrl={pdfUrl}
-        zoomLevel={zoomLevel}
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-      />
+      <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
     </div>
   );
 }

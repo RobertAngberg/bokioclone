@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { saveTransaction, getKontoklass } from "./actions";
-import { useFormStatus } from "react-dom";
+import ImportmomsPreview from "./SpecialFörval/ImportmomsPreview";
+import AmorteringBanklanPreview from "./SpecialFörval/AmorteringBanklanPreview";
+import DefaultSpecialPreviewSteg3 from "./SpecialFörval/DefaultSpecialPreviewSteg3";
+import SubmitButton from "./SpecialFörval/SubmitButton";
 
 type Forval = {
   id: number;
@@ -27,26 +30,7 @@ interface Step3Props {
   extrafält: Record<string, any>;
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className={`flex items-center justify-center gap-2 w-full px-4 py-6 font-bold text-white rounded ${
-        pending ? "bg-gray-400 cursor-not-allowed" : "bg-cyan-600 hover:bg-cyan-700"
-      }`}
-    >
-      {pending && (
-        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-      )}
-      {pending ? "Bokför..." : "Bokför"}
-    </button>
-  );
-}
-
-export default function Steg3({
+export default function Step3({
   kontonummer,
   kontobeskrivning,
   fil,
@@ -57,7 +41,7 @@ export default function Steg3({
   setCurrentStep,
   extrafält,
 }: Step3Props) {
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLFormElement>(null!);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
   const [kontoklass, setKontoklass] = useState<"Intäkt" | "Kostnad" | null>(null);
 
@@ -79,24 +63,20 @@ export default function Steg3({
         totalKredit += parseFloat(data.kredit || "0");
       }
 
-      const messages: string[] = [];
       totalDebet = round(totalDebet);
       totalKredit = round(totalKredit);
 
+      const messages: string[] = [];
       if (Math.abs(totalDebet - totalKredit) > 0.01) {
         messages.push("⚠️ Debet och Kredit matchar inte. Något är fel i dina fält.");
       }
 
       setValidationMessages(messages);
     } else {
-      getKontoklass(kontonummer).then((typ: string | null) => {
-        const normalized: string | undefined = typ?.toLowerCase();
-
-        if (normalized === "intäkter") {
-          setKontoklass("Intäkt");
-        } else if (normalized === "kostnader") {
-          setKontoklass("Kostnad");
-        }
+      getKontoklass(kontonummer).then((typ) => {
+        const lower = typ?.toLowerCase();
+        if (lower === "intäkter") setKontoklass("Intäkt");
+        else if (lower === "kostnader") setKontoklass("Kostnad");
       });
     }
   }, [valtFörval, extrafält, kontonummer]);
@@ -128,73 +108,44 @@ export default function Steg3({
     );
   }
 
-  // ========== SPECIALFÖRVAL: IMPORTMOMS ==========
+  // SPECIALFÖRVAL: Importmoms
   if (valtFörval.specialtyp === "Importmoms") {
-    let totalDebet = 0;
-    let totalKredit = 0;
-
-    const rows = Object.entries(extrafält).map(([kontoNr, data]) => {
-      const d = parseFloat(data.debet || 0);
-      const c = parseFloat(data.kredit || 0);
-      totalDebet += d;
-      totalKredit += c;
-
-      return (
-        <tr key={kontoNr}>
-          <td className="p-4">
-            {kontoNr} {data.label}
-          </td>
-          <td className="p-4">{d > 0 ? formatSEK(round(d)) : ""}</td>
-          <td className="p-4">{c > 0 ? formatSEK(round(c)) : ""}</td>
-        </tr>
-      );
-    });
-
-    totalDebet = round(totalDebet);
-    totalKredit = round(totalKredit);
-
     return (
-      <main className="items-center min-h-screen text-center text-white bg-slate-950">
-        <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <h1 className="text-3xl font-bold mb-4">Steg 3: Kontrollera och slutför (Importmoms)</h1>
-
-          {validationMessages.length > 0 && (
-            <div className="mb-6 p-4 bg-red-200 text-red-800 rounded text-left">
-              <strong>⚠️ Kontrollera:</strong>
-              <ul className="list-disc ml-6 mt-2">
-                {validationMessages.map((msg, i) => (
-                  <li key={i}>{msg}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <form ref={formRef} action={handleSubmit}>
-            <table className="w-full mb-8 text-left border border-gray-300">
-              <thead>
-                <tr>
-                  <th className="p-4 border-b">Konto</th>
-                  <th className="p-4 border-b">Debet</th>
-                  <th className="p-4 border-b">Kredit</th>
-                </tr>
-              </thead>
-              <tbody>{rows}</tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4">Totalt</td>
-                  <td className="p-4">{formatSEK(totalDebet)}</td>
-                  <td className="p-4">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
-            <SubmitButton />
-          </form>
-        </div>
-      </main>
+      <ImportmomsPreview
+        formRef={formRef}
+        handleSubmit={handleSubmit}
+        extrafält={extrafält}
+        belopp={belopp}
+        validationMessages={validationMessages}
+      />
     );
   }
 
-  // ========== VANLIGT FÖRVAL ==========
+  // SPECIALFÖRVAL: Amortering
+  if (valtFörval.specialtyp === "AmorteringBanklån") {
+    return (
+      <AmorteringBanklanPreview
+        formRef={formRef}
+        handleSubmit={handleSubmit}
+        extrafält={extrafält}
+      />
+    );
+  }
+
+  // SPECIALFÖRVAL: Default (t.ex. Tjänst utanför EU)
+  if (valtFörval.specialtyp) {
+    return (
+      <DefaultSpecialPreviewSteg3
+        formRef={formRef}
+        handleSubmit={handleSubmit}
+        extrafält={extrafält}
+        specialtyp={valtFörval.specialtyp}
+        belopp={belopp}
+      />
+    );
+  }
+
+  // VANLIGT FÖRVAL
   if (!kontoklass) {
     return (
       <main className="items-center min-h-screen text-center text-white bg-slate-950">
@@ -213,14 +164,6 @@ export default function Steg3({
         </p>
 
         <form ref={formRef} action={handleSubmit}>
-          <input type="hidden" name="transaktionsdatum" value={transaktionsdatum} />
-          <input type="hidden" name="kommentar" value={kommentar} />
-          <input type="hidden" name="kontonummer" value={kontonummer.trim()} />
-          <input type="hidden" name="kontobeskrivning" value={kontobeskrivning} />
-          <input type="hidden" name="belopp" value={String(belopp)} />
-          <input type="hidden" name="moms" value={String(moms)} />
-          <input type="hidden" name="beloppUtanMoms" value={String(beloppUtanMoms)} />
-
           <table className="w-full mb-8 text-left border border-gray-300">
             <thead>
               <tr>
@@ -253,7 +196,6 @@ export default function Steg3({
               </tr>
             </tbody>
           </table>
-
           <SubmitButton />
         </form>
       </div>

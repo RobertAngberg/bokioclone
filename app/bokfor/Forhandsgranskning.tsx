@@ -1,22 +1,19 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 
-type ForhandsgranskningProps = {
+interface ForhandsgranskningProps {
   fil: File | null;
   pdfUrl: string | null;
-  zoomLevel: number;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-};
+}
 
-export default function Forhandsgranskning({
-  fil,
-  pdfUrl,
-  zoomLevel,
-  onZoomIn,
-  onZoomOut,
-}: ForhandsgranskningProps) {
+export default function Forhandsgranskning({ fil, pdfUrl }: ForhandsgranskningProps) {
+  const [zoomLevel, setZoomLevel] = useState(1);
+
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.2, 1));
+
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-auto border-2 border-dashed border-cyan-500 md:w-4/5 md:ml-4 mb-4 md:mb-0">
       {!pdfUrl && !fil && <p className="text-gray-500">Ditt underlag kommer att visas här</p>}
@@ -44,13 +41,13 @@ export default function Forhandsgranskning({
       {(fil || pdfUrl) && (
         <div className="hidden md:block">
           <button
-            onClick={onZoomIn}
+            onClick={handleZoomIn}
             className="absolute z-10 flex items-center justify-center w-12 h-12 mb-2 text-white rounded-full top-2 right-2 bg-cyan-600 hover:bg-cyan-700"
           >
             🔍+
           </button>
           <button
-            onClick={onZoomOut}
+            onClick={handleZoomOut}
             className="absolute z-10 flex items-center justify-center w-12 h-12 text-white rounded-full top-16 right-2 bg-cyan-600 hover:bg-cyan-700"
           >
             🔍-

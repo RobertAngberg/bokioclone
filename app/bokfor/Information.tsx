@@ -1,10 +1,12 @@
+"use client";
+
+import { useEffect } from "react";
+import React from "react";
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
 import { sv } from "date-fns/locale/sv";
 registerLocale("sv", sv);
 import "react-datepicker/dist/react-datepicker.css";
-import { useEffect } from "react";
-import React from "react";
 
 interface InformationProps {
   belopp: number;
@@ -19,8 +21,6 @@ function Information({
   transaktionsdatum,
   setTransaktionsdatum,
 }: InformationProps) {
-  // Av någon anledning tar inte react-datepicker upp full bredd
-  // Hax nedan för att fixa detta
   useEffect(() => {
     const datePickerEl = document.querySelector(".react-datepicker-wrapper");
     if (datePickerEl) {
@@ -31,7 +31,17 @@ function Information({
     if (inputEl) {
       (inputEl as HTMLElement).style.width = "100%";
     }
-  }, []);
+
+    // Förifyll dagens datum om null
+    if (!transaktionsdatum) {
+      setTransaktionsdatum(new Date().toISOString());
+    }
+
+    // Förifyll belopp 1000 om 0 eller null
+    if (!belopp || belopp === 0) {
+      setBelopp(1000);
+    }
+  }, [transaktionsdatum, belopp, setTransaktionsdatum, setBelopp]);
 
   return (
     <div className="padder">
@@ -54,9 +64,9 @@ function Information({
       <DatePicker
         className="w-full p-2 mb-4 text-black border-2 border-gray-600 border-solid rounded"
         id="datum"
-        selected={transaktionsdatum ? new Date(transaktionsdatum) : null} // String to Date
+        selected={transaktionsdatum ? new Date(transaktionsdatum) : new Date()}
         onChange={(date) => {
-          setTransaktionsdatum(date ? date.toISOString() : ""); // Date to String
+          setTransaktionsdatum(date ? date.toISOString() : "");
         }}
         dateFormat="yyyy-MM-dd"
         locale="sv"
