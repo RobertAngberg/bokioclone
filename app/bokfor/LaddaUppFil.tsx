@@ -69,6 +69,7 @@ function LaddaUppFil({ setFil, setPdfUrl, setTransaktionsdatum, setBelopp }: Fil
         onChange={handleFileChange}
         required
         style={{ display: "none" }}
+        autoFocus
       />
       <label
         htmlFor="fileUpload"

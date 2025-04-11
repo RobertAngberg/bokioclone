@@ -36,7 +36,7 @@ type Props = {
   setKontobeskrivning: (val: string) => void;
 };
 
-export default function SearchAccount({
+export default function SokForval({
   setCurrentStep,
   setvaltFörval,
   setKontonummer,
@@ -45,14 +45,13 @@ export default function SearchAccount({
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState<Forval[]>([]);
   const [loading, setLoading] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
 
-  // 🔍 Fuzzy matching: ta bort mellanslag och gör lowercase
-  const normalize = (text: string) => text.toLowerCase().replace(/\s/g, "");
+  const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
   useEffect(() => {
     const delay = setTimeout(async () => {
       const input = searchText.trim();
-
       if (input.length < 2) {
         setResults([]);
         setLoading(false);
@@ -61,19 +60,55 @@ export default function SearchAccount({
 
       setLoading(true);
       const alla = await fetchAllaForval();
-      const normInput = normalize(input);
+      const words = normalize(input).split(" ");
 
       const träffar = alla.filter((f: Forval) => {
-        const combined = normalize(f.sökord.join(" "));
-        return combined.includes(normInput);
+        const text = `${f.namn} ${f.beskrivning} ${f.typ} ${f.kategori} ${f.sökord.join(" ")}`;
+        const norm = normalize(text);
+        return words.every((w) => norm.includes(w));
       });
 
       setResults(träffar);
+      setHighlightedIndex(0);
       setLoading(false);
     }, 300);
 
     return () => clearTimeout(delay);
   }, [searchText]);
+
+  const väljFörval = (f: Forval) => {
+    setvaltFörval(f);
+    const huvudkonto = f.konton.find(
+      (k) => k.kontonummer !== "1930" && (k.kredit || k.debet) && !!k.kontonummer
+    );
+    if (huvudkonto) {
+      setKontonummer(huvudkonto.kontonummer ?? "");
+      setKontobeskrivning(huvudkonto.beskrivning ?? "");
+    } else {
+      console.warn("⚠️ Hittade inget huvudkonto i förval:", f);
+    }
+    setCurrentStep(2);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => Math.min(prev + 1, results.length - 1));
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => Math.max(prev - 1, 0));
+    }
+    if (e.key === "Enter") {
+      if (results[highlightedIndex]) {
+        väljFörval(results[highlightedIndex]);
+      }
+    }
+    if (e.key === "Escape") {
+      setSearchText("");
+      setResults([]);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -83,7 +118,8 @@ export default function SearchAccount({
         type="text"
         autoComplete="off"
         value={searchText}
-        onChange={(e) => setSearchText(e.target.value.trimStart())}
+        onChange={(e) => setSearchText(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
 
       {loading && (
@@ -94,26 +130,15 @@ export default function SearchAccount({
 
       {!loading &&
         results.length > 0 &&
-        results.map((f) => (
+        results.map((f, index) => (
           <div
             key={f.id}
-            className="bg-white border border-gray-300 rounded-xl p-4 shadow cursor-pointer mt-4"
-            onClick={() => {
-              setvaltFörval(f);
-
-              const huvudkonto = f.konton.find((k) => {
-                return k.kontonummer !== "1930" && (k.kredit || k.debet) && !!k.kontonummer;
-              });
-
-              if (huvudkonto) {
-                setKontonummer(huvudkonto.kontonummer ?? "");
-                setKontobeskrivning(huvudkonto.beskrivning ?? "");
-              } else {
-                console.warn("⚠️ Hittade inget huvudkonto i förval:", f);
-              }
-
-              setCurrentStep(2);
-            }}
+            className={`relative mt-4 rounded-xl p-4 shadow cursor-pointer transition-all ${
+              index === highlightedIndex
+                ? "border-2 border-dashed border-blue-500 bg-white"
+                : "border border-gray-300 bg-white"
+            }`}
+            onClick={() => väljFörval(f)}
           >
             <div className="text-xl font-semibold text-gray-800 mb-2">✓ {f.namn}</div>
             <p className="italic text-sm text-gray-600 mb-2">{f.beskrivning}</p>
@@ -149,6 +174,12 @@ export default function SearchAccount({
                 ))}
               </tbody>
             </table>
+
+            {index === highlightedIndex && (
+              <div className="mt-3 text-xs text-gray-500 text-right">
+                ⏎ Tryck Enter för att välja
+              </div>
+            )}
           </div>
         ))}
     </div>

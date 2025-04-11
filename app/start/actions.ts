@@ -99,3 +99,70 @@ export async function fetchDataFromYear(year: string) {
     };
   }
 }
+
+export async function hämtaAllaTransaktioner() {
+  try {
+    const client = await pool.connect();
+    const res = await client.query(`
+      SELECT 
+        transaktions_id,
+        transaktionsdatum,
+        kontobeskrivning,
+        kontotyp,
+        belopp,
+        fil,
+        kommentar,
+        "userId"
+      FROM transaktioner
+      ORDER BY transaktions_id DESC
+    `);
+    client.release();
+
+    console.log("Transaktioner:", res.rows);
+
+    return res.rows;
+  } catch (err) {
+    console.error("❌ hämtaAllaTransaktioner error:", err);
+    return [];
+  }
+}
+
+export async function getAllInvoices() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(`SELECT * FROM fakturor ORDER BY skapad ASC`);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteInvoice(id: number) {
+  const client = await pool.connect();
+  try {
+    await client.query(`DELETE FROM fakturor WHERE id = $1`, [id]);
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateFakturanummer(id: number, nyttNummer: string) {
+  const client = await pool.connect();
+  try {
+    await client.query(`UPDATE fakturor SET fakturanummer = $1 WHERE id = $2`, [nyttNummer, id]);
+  } finally {
+    client.release();
+  }
+}
+
+export async function saveInvoice(data: any) {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `INSERT INTO fakturor (fakturanummer, kundnamn, total, skapad) VALUES ($1, $2, $3, NOW())`,
+      [data.fakturanummer, data.kundnamn, data.total]
+    );
+  } finally {
+    client.release();
+  }
+}
