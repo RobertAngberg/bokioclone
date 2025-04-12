@@ -9,7 +9,12 @@ const pool = new Pool({
 export async function fetchAllaForval() {
   try {
     const client = await pool.connect();
-    const res = await client.query("SELECT * FROM förval ORDER BY namn");
+    const res = await client.query(`
+      SELECT id, namn, beskrivning, typ, kategori, konton, sökord, momssats, specialtyp
+      FROM förval
+      ORDER BY id
+    `);
+
     client.release();
 
     return res.rows.map((rad) => ({

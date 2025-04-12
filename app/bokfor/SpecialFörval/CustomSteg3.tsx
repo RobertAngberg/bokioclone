@@ -4,10 +4,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { Information } from "../Information";
+import Information from "../Information";
 import { Kommentar } from "../Kommentar";
 import Forhandsgranskning from "../Forhandsgranskning";
-import { LaddaUppFil } from "../LaddaUppFil";
+import LaddaUppFil from "../LaddaUppFil";
 
 interface Props {
   belopp: number | null;

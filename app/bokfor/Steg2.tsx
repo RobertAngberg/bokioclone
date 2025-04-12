@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { LaddaUppFil } from "./LaddaUppFil";
-import { Information } from "./Information";
-import { Kommentar } from "./Kommentar";
+import LaddaUppFil from "./LaddaUppFil";
+import Information from "./Information";
+import Kommentar from "./Kommentar";
 import Forhandsgranskning from "./Forhandsgranskning";
 import Importmoms from "./SpecialFörval/Importmoms";
 import AmorteringBanklan from "./SpecialFörval/AmorteringBanklan";
@@ -60,10 +60,13 @@ export default function Steg2({
   extrafält,
   setExtrafält,
 }: Step2Props) {
+  // ---------------------------------------------------------
   // Hantera specialförval med egna komponenter
+  // ---------------------------------------------------------
   if (valtFörval?.specialtyp === "Importmoms") {
     return (
       <Importmoms
+        mode="steg2"
         belopp={belopp}
         setBelopp={setBelopp}
         transaktionsdatum={transaktionsdatum}
@@ -84,6 +87,7 @@ export default function Steg2({
   if (valtFörval?.specialtyp === "AmorteringBanklån") {
     return (
       <AmorteringBanklan
+        mode="steg2"
         belopp={belopp}
         setBelopp={setBelopp}
         transaktionsdatum={transaktionsdatum}
@@ -100,8 +104,9 @@ export default function Steg2({
       />
     );
   }
-
+  // ---------------------------------------------------------
   // Hantera tysta specialförval med autogenererade extrafält
+  // ---------------------------------------------------------
   if (valtFörval?.specialtyp) {
     return (
       <CustomSteg3
@@ -122,8 +127,9 @@ export default function Steg2({
       />
     );
   }
-
+  // ---------------------------------------------------------
   // Standardförval (utan specialtyp)
+  // ---------------------------------------------------------
   const handleSubmit = () => {
     setCurrentStep(3);
   };

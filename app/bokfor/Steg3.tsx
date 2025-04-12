@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { saveTransaction, getKontoklass } from "./actions";
-import ImportmomsPreview from "./SpecialFörval/ImportmomsPreview";
-import AmorteringBanklanPreview from "./SpecialFörval/AmorteringBanklanPreview";
+import Importmoms from "./SpecialFörval/Importmoms";
+import AmorteringBanklan from "./SpecialFörval/AmorteringBanklan";
 import DefaultSteg3 from "./SpecialFörval/DefaultSteg3";
 import SubmitButton from "./SpecialFörval/SubmitButton";
 
@@ -111,7 +111,8 @@ export default function Step3({
   // SPECIALFÖRVAL: Importmoms
   if (valtFörval.specialtyp === "Importmoms") {
     return (
-      <ImportmomsPreview
+      <Importmoms
+        mode="steg3"
         formRef={formRef}
         handleSubmit={handleSubmit}
         extrafält={extrafält}
@@ -124,7 +125,8 @@ export default function Step3({
   // SPECIALFÖRVAL: Amortering
   if (valtFörval.specialtyp === "AmorteringBanklån") {
     return (
-      <AmorteringBanklanPreview
+      <AmorteringBanklan
+        mode="steg3"
         formRef={formRef}
         handleSubmit={handleSubmit}
         extrafält={extrafält}

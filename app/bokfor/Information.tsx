@@ -15,7 +15,7 @@ interface InformationProps {
   setTransaktionsdatum: (value: string) => void;
 }
 
-function Information({
+export default function Information({
   belopp,
   setBelopp,
   transaktionsdatum,
@@ -75,5 +75,3 @@ function Information({
     </div>
   );
 }
-
-export { Information };

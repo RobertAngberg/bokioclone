@@ -5,7 +5,7 @@ interface CommentProps {
   setKommentar: (value: string) => void;
 }
 
-function Kommentar({ kommentar, setKommentar }: CommentProps) {
+export default function Kommentar({ kommentar, setKommentar }: CommentProps) {
   return (
     <div className="mb-4">
       <label htmlFor="kommentar">Kommentar:</label>
