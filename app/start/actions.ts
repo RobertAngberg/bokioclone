@@ -166,3 +166,101 @@ export async function saveInvoice(data: any) {
     client.release();
   }
 }
+
+// Hämta förval med sökning + pagination
+export async function hämtaFörvalMedSökning(sök: string, offset: number, limit: number) {
+  const client = await pool.connect();
+
+  try {
+    const query = `
+      SELECT id, namn, beskrivning, typ, kategori, konton, sökord, momssats, specialtyp
+      FROM förval
+      WHERE namn ILIKE $1 OR beskrivning ILIKE $1
+      ORDER BY id
+      OFFSET $2
+      LIMIT $3
+    `;
+
+    const values = [`%${sök}%`, offset, limit];
+    const res = await client.query(query, values);
+
+    return res.rows.map((row) => ({
+      ...row,
+      konton: typeof row.konton === "string" ? JSON.parse(row.konton) : row.konton,
+      sökord: Array.isArray(row.sökord) ? row.sökord : [],
+    }));
+  } catch (err) {
+    console.error("❌ hämtaFörvalMedSökning error:", err);
+    return [];
+  } finally {
+    client.release();
+  }
+}
+
+// Räkna antal träffar
+export async function räknaFörval(sök: string) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT COUNT(*) FROM förval WHERE namn ILIKE $1 OR beskrivning ILIKE $1`,
+      [`%${sök}%`]
+    );
+    return parseInt(res.rows[0].count);
+  } catch (err) {
+    console.error("❌ räknaFörval error:", err);
+    return 0;
+  } finally {
+    client.release();
+  }
+}
+
+// Uppdatera valfri kolumn
+export async function uppdateraFörval(id: number, kolumn: string, nyttVärde: string) {
+  const tillåtnaKolumner = [
+    "namn",
+    "beskrivning",
+    "typ",
+    "kategori",
+    "momssats",
+    "specialtyp",
+    "konton",
+    "sökord",
+  ];
+
+  if (!tillåtnaKolumner.includes(kolumn)) {
+    throw new Error("Ogiltig kolumn");
+  }
+
+  const client = await pool.connect();
+
+  try {
+    let query = "";
+    let value: any = nyttVärde;
+
+    if (kolumn === "konton" || kolumn === "sökord") {
+      query = `UPDATE förval SET ${kolumn} = $1::jsonb WHERE id = $2`;
+    } else if (kolumn === "momssats") {
+      query = `UPDATE förval SET ${kolumn} = $1::real WHERE id = $2`;
+    } else {
+      query = `UPDATE förval SET ${kolumn} = $1 WHERE id = $2`;
+    }
+
+    await client.query(query, [value, id]);
+  } catch (err) {
+    console.error("❌ uppdateraFörval error:", err);
+  } finally {
+    client.release();
+  }
+}
+
+// Radera förval
+export async function taBortFörval(id: number) {
+  const client = await pool.connect();
+  try {
+    await client.query(`DELETE FROM förval WHERE id = $1`, [id]);
+  } catch (err) {
+    console.error("❌ taBortFörval error:", err);
+  } finally {
+    client.release();
+  }
+}

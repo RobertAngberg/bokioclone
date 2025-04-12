@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LaddaUppFil } from "../LaddaUppFil";
 import Forhandsgranskning from "../Forhandsgranskning";
+import Falt from "./Falt"; // 👈 ny komponent används här
 
 interface ImportmomsProps {
   belopp: number | null;
@@ -105,64 +106,42 @@ export default function Importmoms({
           setBelopp={() => {}}
         />
 
-        <div className="mb-4">
-          <label>Summa att betala in</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded text-black"
-            value={summaAttBetala}
-            onChange={(e) => setSummaAttBetala(e.target.value)}
-          />
-        </div>
+        <Falt
+          label="Summa att betala in"
+          type="number"
+          value={summaAttBetala}
+          onChange={setSummaAttBetala}
+        />
 
-        <div className="mb-4">
-          <label>Tull- och speditionskostnader m.m. (inkl. svensk moms)</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded text-black"
-            value={tullOchSpedition}
-            onChange={(e) => setTullOchSpedition(e.target.value)}
-          />
-        </div>
+        <Falt
+          label="Tull- och speditionskostnader m.m. (inkl. svensk moms)"
+          type="number"
+          value={tullOchSpedition}
+          onChange={setTullOchSpedition}
+        />
 
-        <div className="mb-4">
-          <label>Ingående fiktiv moms på förvärv från utlandet</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded text-black"
-            value={ingFiktivMoms}
-            onChange={(e) => setIngFiktivMoms(e.target.value)}
-          />
-        </div>
+        <Falt
+          label="Ingående fiktiv moms på förvärv från utlandet"
+          type="number"
+          value={ingFiktivMoms}
+          onChange={setIngFiktivMoms}
+        />
 
-        <div className="mb-4">
-          <label>Övriga skatter och tillval utan moms</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded text-black"
-            value={ovrigaSkatter}
-            onChange={(e) => setOvrigaSkatter(e.target.value)}
-          />
-        </div>
+        <Falt
+          label="Övriga skatter och tillval utan moms"
+          type="number"
+          value={ovrigaSkatter}
+          onChange={setOvrigaSkatter}
+        />
 
-        <div className="mb-4">
-          <label>Kommentar</label>
-          <textarea
-            className="w-full p-2 rounded text-black"
-            value={kommentar ?? ""}
-            onChange={(e) => setKommentar(e.target.value)}
-          />
-        </div>
+        <Falt label="Kommentar" type="textarea" value={kommentar ?? ""} onChange={setKommentar} />
 
-        <div className="mb-4">
-          <label>Betaldatum</label>
-          <input
-            type="date"
-            className="w-full p-2 rounded text-black"
-            value={transaktionsdatum ?? ""}
-            onChange={(e) => setTransaktionsdatum(e.target.value)}
-          />
-        </div>
+        <Falt
+          label="Betaldatum"
+          type="date"
+          value={transaktionsdatum ?? ""}
+          onChange={setTransaktionsdatum}
+        />
 
         <button
           onClick={handleSubmit}

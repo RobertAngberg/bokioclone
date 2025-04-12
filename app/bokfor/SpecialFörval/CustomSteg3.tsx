@@ -1,9 +1,13 @@
+// Används som Steg2 för specialförval med custom inmatningsfält.
+// Ändrar steg3 till custom preview enligt koden nedan.
+
 "use client";
 
 import { useEffect } from "react";
 import { Information } from "../Information";
 import { Kommentar } from "../Kommentar";
 import Forhandsgranskning from "../Forhandsgranskning";
+import { LaddaUppFil } from "../LaddaUppFil";
 
 interface Props {
   belopp: number | null;
@@ -22,7 +26,7 @@ interface Props {
   specialtyp: string;
 }
 
-export default function DefaultSpecialFörvalSteg2({
+export default function CustomSteg3({
   belopp,
   setBelopp,
   transaktionsdatum,
@@ -42,9 +46,12 @@ export default function DefaultSpecialFörvalSteg2({
     if (belopp == null) return;
 
     if (specialtyp === "InköpTjänstUtanfEU") {
-      console.log("Inköp tjänst utanför EU triggad!");
       setExtrafält({
-        "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: belopp },
+        "1930": {
+          label: "Företagskonto / affärskonto",
+          debet: 0,
+          kredit: belopp,
+        },
         "2614": {
           label: "Utgående moms omvänd skattskyldighet, 25 %",
           debet: 0,
@@ -78,6 +85,14 @@ export default function DefaultSpecialFörvalSteg2({
 
       <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
         <div className="w-full mb-10 text-white md:w-[40%] md:mb-0">
+          <LaddaUppFil
+            fil={fil}
+            setFil={setFil}
+            setPdfUrl={setPdfUrl}
+            setBelopp={setBelopp}
+            setTransaktionsdatum={setTransaktionsdatum}
+          />
+
           <Information
             belopp={belopp ?? 0}
             setBelopp={setBelopp}

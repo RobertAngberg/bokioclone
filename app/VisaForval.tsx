@@ -35,7 +35,9 @@ export default function VisaForval() {
   }, []);
 
   const unikaKategorier = Array.from(new Set(forval.map((f) => f.kategori))).sort();
-  const unikaTyper = Array.from(new Set(forval.map((f) => f.typ.trim().toLowerCase()))).sort();
+  const unikaTyper = Array.from(
+    new Set(forval.map((f) => (f.typ ?? "").trim().toLowerCase()))
+  ).sort();
 
   const filtrerade = forval.filter((f) => {
     const matchSök =

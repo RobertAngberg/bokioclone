@@ -7,6 +7,7 @@ import { HomeChart } from "./start/HomeChart";
 import VisaKonton from "./VisaKonton";
 import VisaForval from "./VisaForval";
 import VisaTransaktioner from "./VisaTransaktioner";
+import ForvalDatabas from "./ForvalDatabas";
 
 type YearSummary = {
   totalInkomst: number;
@@ -39,9 +40,10 @@ function Home() {
 
   return (
     <main className="items-center text-center bg-slate-950">
-      <VisaTransaktioner />
+      <ForvalDatabas />
+      {/* <VisaTransaktioner /> */}
       <VisaForval />
-      <VisaKonton />
+      {/* <VisaKonton /> */}
       {/* <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
         <>
           <Card title="Inkomster" data={data?.totalInkomst || 0} />

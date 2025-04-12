@@ -7,7 +7,7 @@ import { Kommentar } from "./Kommentar";
 import Forhandsgranskning from "./Forhandsgranskning";
 import Importmoms from "./SpecialFörval/Importmoms";
 import AmorteringBanklan from "./SpecialFörval/AmorteringBanklan";
-import DefaultSpecialFörvalSteg2 from "./SpecialFörval/DefaultSpecialFörvalSteg2";
+import CustomSteg3 from "./SpecialFörval/CustomSteg3";
 
 type KontoRad = {
   beskrivning: string;
@@ -104,7 +104,7 @@ export default function Steg2({
   // Hantera tysta specialförval med autogenererade extrafält
   if (valtFörval?.specialtyp) {
     return (
-      <DefaultSpecialFörvalSteg2
+      <CustomSteg3
         belopp={belopp}
         setBelopp={setBelopp}
         transaktionsdatum={transaktionsdatum}

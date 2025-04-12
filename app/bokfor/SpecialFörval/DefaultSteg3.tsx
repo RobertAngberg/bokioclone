@@ -1,3 +1,6 @@
+// Används som Steg3 för specialförval som har extrafält i Steg2 men ingen egen komponent.
+// Visar "vanlig" preview-tabell i Steg3 med 1930, moms och huvudkonto.
+
 "use client";
 
 import SubmitButton from "./SubmitButton";
@@ -13,7 +16,7 @@ interface Props {
 const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
 const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
-export default function DefaultSpecialPreviewSteg3({
+export default function DefaultSteg3({
   specialtyp,
   belopp,
   extrafält = {}, // fallback om undefined

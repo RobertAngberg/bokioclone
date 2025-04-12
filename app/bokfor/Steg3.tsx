@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { saveTransaction, getKontoklass } from "./actions";
 import ImportmomsPreview from "./SpecialFörval/ImportmomsPreview";
 import AmorteringBanklanPreview from "./SpecialFörval/AmorteringBanklanPreview";
-import DefaultSpecialPreviewSteg3 from "./SpecialFörval/DefaultSpecialPreviewSteg3";
+import DefaultSteg3 from "./SpecialFörval/DefaultSteg3";
 import SubmitButton from "./SpecialFörval/SubmitButton";
 
 type Forval = {
@@ -135,7 +135,7 @@ export default function Step3({
   // SPECIALFÖRVAL: Default (t.ex. Tjänst utanför EU)
   if (valtFörval.specialtyp) {
     return (
-      <DefaultSpecialPreviewSteg3
+      <DefaultSteg3
         formRef={formRef}
         handleSubmit={handleSubmit}
         extrafält={extrafält}

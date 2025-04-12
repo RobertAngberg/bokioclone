@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LaddaUppFil } from "../LaddaUppFil";
 import Forhandsgranskning from "../Forhandsgranskning";
+import Falt from "./Falt";
 
 interface AmorteringProps {
   belopp: number | null;
@@ -36,7 +37,6 @@ export default function AmorteringBanklan({
 }: AmorteringProps) {
   const [total, setTotal] = useState("");
   const [ränta, setRänta] = useState("");
-  const [zoomLevel, setZoomLevel] = useState(1);
 
   const handleSubmit = () => {
     const valTotal = round(parseFloat(total || "0"));
@@ -65,9 +65,6 @@ export default function AmorteringBanklan({
     setCurrentStep(3);
   };
 
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 3));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.2, 1));
-
   return (
     <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
       <div className="w-full mb-10 text-white md:w-[40%] md:mb-0">
@@ -81,44 +78,18 @@ export default function AmorteringBanklan({
           setBelopp={() => {}}
         />
 
-        <div className="mb-4">
-          <label>Summa amortering + ränta</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded text-black"
-            value={total}
-            onChange={(e) => setTotal(e.target.value)}
-          />
-        </div>
+        <Falt label="Summa amortering + ränta" type="number" value={total} onChange={setTotal} />
 
-        <div className="mb-4">
-          <label>Varav ränta</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded text-black"
-            value={ränta}
-            onChange={(e) => setRänta(e.target.value)}
-          />
-        </div>
+        <Falt label="Varav ränta" type="number" value={ränta} onChange={setRänta} />
 
-        <div className="mb-4">
-          <label>Kommentar</label>
-          <textarea
-            className="w-full p-2 rounded text-black"
-            value={kommentar ?? ""}
-            onChange={(e) => setKommentar(e.target.value)}
-          />
-        </div>
+        <Falt label="Kommentar" type="textarea" value={kommentar ?? ""} onChange={setKommentar} />
 
-        <div className="mb-4">
-          <label>Betaldatum</label>
-          <input
-            type="date"
-            className="w-full p-2 rounded text-black"
-            value={transaktionsdatum ?? ""}
-            onChange={(e) => setTransaktionsdatum(e.target.value)}
-          />
-        </div>
+        <Falt
+          label="Betaldatum"
+          type="date"
+          value={transaktionsdatum ?? ""}
+          onChange={setTransaktionsdatum}
+        />
 
         <button
           onClick={handleSubmit}
