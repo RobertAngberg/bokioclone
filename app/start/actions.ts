@@ -6,6 +6,20 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+export async function hämtaTransaktionsposter(transaktionsId: number) {
+  const result = await pool.query(
+    `
+    SELECT tp.konto_id, k.kontobeskrivning, tp.debet, tp.kredit
+    FROM transaktionsposter tp
+    LEFT JOIN konton k ON k.konto_id = tp.konto_id
+    WHERE tp.transaktions_id = $1
+  `,
+    [transaktionsId]
+  );
+
+  return result.rows;
+}
+
 export async function fetchAllaForval(filters?: { sök?: string; kategori?: string; typ?: string }) {
   let query = "SELECT * FROM förval";
   const values: any[] = [];
@@ -183,7 +197,6 @@ export async function saveInvoice(data: any) {
   }
 }
 
-// Hämta förval med sökning + pagination
 export async function hämtaFörvalMedSökning(sök: string, offset: number, limit: number) {
   const client = await pool.connect();
 
@@ -213,7 +226,6 @@ export async function hämtaFörvalMedSökning(sök: string, offset: number, lim
   }
 }
 
-// Räkna antal träffar
 export async function räknaFörval(sök: string) {
   const client = await pool.connect();
   try {
@@ -230,7 +242,6 @@ export async function räknaFörval(sök: string) {
   }
 }
 
-// Uppdatera valfri kolumn
 export async function uppdateraFörval(id: number, kolumn: string, nyttVärde: string) {
   const tillåtnaKolumner = [
     "namn",
@@ -269,13 +280,21 @@ export async function uppdateraFörval(id: number, kolumn: string, nyttVärde: s
   }
 }
 
-// Radera förval
 export async function taBortFörval(id: number) {
   const client = await pool.connect();
   try {
     await client.query(`DELETE FROM förval WHERE id = $1`, [id]);
   } catch (err) {
     console.error("❌ taBortFörval error:", err);
+  } finally {
+    client.release();
+  }
+}
+
+export async function taBortTransaktion(id: number) {
+  const client = await pool.connect();
+  try {
+    await client.query(`DELETE FROM transaktioner WHERE transaktions_id = $1`, [id]);
   } finally {
     client.release();
   }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Navbar } from "./Navbar";
+import Navbar from "./Navbar";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 import React from "react";

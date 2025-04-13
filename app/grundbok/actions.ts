@@ -11,21 +11,18 @@ export async function fetchTransaktioner(year: string | null) {
     const client = await pool.connect();
     const parsedYear = parseInt(year || "");
 
-    const query = year
-      ? `SELECT * FROM transaktioner 
-         WHERE transaktionsdatum >= $1 AND transaktionsdatum <= $2 
-         ORDER BY transaktionsdatum DESC`
-      : `SELECT * FROM transaktioner ORDER BY transaktionsdatum DESC`;
+    const query = `
+      SELECT * FROM transaktioner
+      WHERE EXTRACT(YEAR FROM transaktionsdatum) = $1
+      ORDER BY transaktionsdatum DESC
+    `;
+    const values = [parsedYear];
 
-    const values = year
-      ? [
-          new Date(`${parsedYear}-01-01T00:00:00.000Z`),
-          new Date(`${parsedYear}-12-31T23:59:59.999Z`),
-        ]
-      : [];
-
+    console.log("🔍 Fetching transaktioner for year:", parsedYear);
     const result = await client.query(query, values);
     client.release();
+
+    console.log("📦 Antal rader:", result.rows.length);
 
     return { success: true, data: result.rows };
   } catch (err: any) {
@@ -41,7 +38,8 @@ export async function fetchTransactionDetails(transaktionsId: number) {
     const query = `
       SELECT 
         tp.transaktionspost_id, 
-        k.kontobeskrivning, 
+        k.kontonummer, 
+        k.beskrivning,
         tp.debet, 
         tp.kredit
       FROM transaktionsposter tp
@@ -55,7 +53,8 @@ export async function fetchTransactionDetails(transaktionsId: number) {
 
     return result.rows.map((d) => ({
       transaktionspost_id: d.transaktionspost_id,
-      kontobeskrivning: d.kontobeskrivning ?? "",
+      kontonummer: d.kontonummer,
+      beskrivning: d.beskrivning,
       debet: d.debet,
       kredit: d.kredit,
     }));

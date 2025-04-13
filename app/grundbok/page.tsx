@@ -1,10 +1,7 @@
 "use client";
 
-import React from "react";
-
-import { useEffect, useState } from "react";
-import { YearSelect } from "./YearSelect";
-import { Table } from "./Table";
+import React, { useEffect, useState } from "react";
+import Table from "./Table";
 import { fetchTransaktioner, fetchTransactionDetails } from "./actions";
 
 interface HistoryItem {
@@ -18,15 +15,16 @@ interface HistoryItem {
 
 interface TransactionDetail {
   transaktionspost_id: number;
-  kontobeskrivning: string;
+  kontonummer: string;
+  beskrivning: string;
   debet: number;
   kredit: number;
 }
 
-function Grundbok() {
-  const [year, setYear] = useState("2024");
+export default function Grundbok() {
+  const [year, setYear] = useState("2025");
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
-  const [details, setDetails] = useState<TransactionDetail[]>([]);
+  const [detailsMap, setDetailsMap] = useState<Record<number, TransactionDetail[]>>({});
   const [activeId, setActiveId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,22 +52,36 @@ function Grundbok() {
   const handleRowClick = async (id: number) => {
     if (id === activeId) {
       setActiveId(null);
-      setDetails([]);
     } else {
       setActiveId(id);
-      const detailResult = await fetchTransactionDetails(id);
-      setDetails(detailResult);
+      if (!detailsMap[id]) {
+        const detailResult = await fetchTransactionDetails(id);
+        setDetailsMap((prev) => ({ ...prev, [id]: detailResult }));
+      }
     }
   };
 
   return (
-    <main className="items-center min-h-screen px-4 text-center text-white md:px-10 bg-slate-950">
-      <div className="flex flex-col items-center justify-center w-full p-10 mb-2 text-center md:text-left md:flex-row">
-        <h1 className="mb-6 text-4xl font-bold md:mr-4 md:mb-0">Grundbok</h1>
-        <YearSelect setYear={setYear} />
+    <main className="min-h-screen px-4 py-10 text-white bg-slate-950 md:px-10">
+      <div className="w-full max-w-5xl mx-auto text-center">
+        <h1 className="mb-6 text-3xl">Grundbok</h1>
+
+        <select
+          className="px-4 py-2 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
+          id="year"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+        >
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+          <option value="2022">2022</option>
+          <option value="2021">2021</option>
+          <option value="2020">2020</option>
+        </select>
       </div>
 
-      <div className="w-full">
+      <div className="w-full mt-10">
         {isLoading ? (
           <div className="flex items-center justify-center w-full h-64">
             <div className="w-16 h-16 border-t-4 border-cyan-600 border-solid rounded-full animate-spin" />
@@ -79,13 +91,10 @@ function Grundbok() {
             historyData={historyData}
             handleRowClick={handleRowClick}
             activeId={activeId}
-            details={details}
-            isLoading={false}
+            details={activeId ? (detailsMap[activeId] ?? []) : []}
           />
         )}
       </div>
     </main>
   );
 }
-
-export default Grundbok;

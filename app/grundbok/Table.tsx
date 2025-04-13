@@ -1,7 +1,9 @@
-import { TableRow } from "./TableRow";
-import React from "react";
+"use client";
 
-interface HistoryItem {
+import React from "react";
+import TableRow from "./TableRow";
+
+export interface HistoryItem {
   transaktions_id: number;
   transaktionsdatum: string;
   kontobeskrivning: string;
@@ -10,9 +12,10 @@ interface HistoryItem {
   fil?: string;
 }
 
-interface TransactionDetail {
+export interface TransactionDetail {
   transaktionspost_id: number;
-  kontobeskrivning: string;
+  kontonummer: string;
+  beskrivning: string;
   debet: number;
   kredit: number;
 }
@@ -25,33 +28,39 @@ interface TableProps {
   isLoading?: boolean;
 }
 
-function Table({ historyData, handleRowClick, activeId, details, isLoading }: TableProps) {
+export default function Table({
+  historyData,
+  handleRowClick,
+  activeId,
+  details,
+  isLoading,
+}: TableProps) {
   return (
-    <table className="w-full m-auto md:w-3/4">
-      <thead className="text-lg bg-cyan-950">
-        <tr>
-          <th className="p-5 text-left rounded-tl-lg">ID</th>
-          <th className="p-5 text-left">Datum</th>
-          <th className="hidden p-5 md:table-cell text-left">Fil</th>
-          <th className="p-5 text-left">Konto</th>
-          <th className="p-5 text-left">Belopp</th>
-          <th className="hidden p-5 pr-10 text-left rounded-tr-lg md:table-cell">Kommentar</th>
-        </tr>
-      </thead>
-      <tbody>
-        {historyData.map((item, index) => (
-          <TableRow
-            key={item.transaktions_id}
-            item={item}
-            handleRowClick={handleRowClick}
-            activeId={activeId}
-            details={details}
-            rowIndex={index} // Pass rowIndex here to TableRow component
-          />
-        ))}
-      </tbody>
-    </table>
+    <div className="max-w-5xl mx-auto overflow-x-auto border border-slate-700 rounded-lg shadow">
+      <table className="w-full text-sm border-collapse">
+        <thead className="bg-slate-800 text-left">
+          <tr>
+            <th className="p-3">ID</th>
+            <th className="p-3">Datum</th>
+            <th className="hidden p-3 md:table-cell">Fil</th>
+            <th className="p-3">Konto</th>
+            <th className="p-3">Belopp</th>
+            <th className="hidden p-3 md:table-cell">Kommentar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {historyData.map((item, index) => (
+            <TableRow
+              key={item.transaktions_id}
+              item={item}
+              handleRowClick={handleRowClick}
+              activeId={activeId}
+              details={details}
+              rowIndex={index}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
-
-export { Table };

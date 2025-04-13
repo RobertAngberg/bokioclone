@@ -40,7 +40,7 @@ function Home() {
 
   return (
     <main className="items-center text-center bg-slate-950">
-      <ForvalDatabas />
+      {/* <ForvalDatabas /> */}
       <VisaTransaktioner />
       <VisaForval />
       <VisaKonton />

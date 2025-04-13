@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 
 interface TableRowProps {
@@ -13,18 +15,23 @@ interface TableRowProps {
   activeId: number | null;
   details: {
     transaktionspost_id: number;
-    kontobeskrivning: string;
+    kontonummer: string;
+    beskrivning: string;
     debet: number;
     kredit: number;
   }[];
-  rowIndex: number; // Add rowIndex to the props
+  rowIndex: number;
 }
 
-function TableRow({ item, handleRowClick, activeId, details, rowIndex }: TableRowProps) {
+export default function TableRow({
+  item,
+  handleRowClick,
+  activeId,
+  details,
+  rowIndex,
+}: TableRowProps) {
   const isExpanded = activeId === item.transaktions_id;
   const isLoading = isExpanded && details.length === 0;
-
-  // Apply alternating colors based on the rowIndex
   const rowColorClass = rowIndex % 2 === 0 ? "bg-gray-950" : "bg-gray-900";
 
   return (
@@ -37,45 +44,63 @@ function TableRow({ item, handleRowClick, activeId, details, rowIndex }: TableRo
         <td className="p-5 text-left">{item.transaktionsdatum}</td>
         <td className="hidden p-5 text-left md:table-cell">{item.fil}</td>
         <td className="p-5 text-left">{item.kontobeskrivning}</td>
-        <td className="p-5 text-left">{item.belopp}</td>
+        <td className="p-5 text-left">
+          {item.belopp.toLocaleString("sv-SE", {
+            style: "currency",
+            currency: "SEK",
+          })}
+        </td>
         <td className="hidden p-5 text-left md:table-cell">{item.kommentar}</td>
       </tr>
 
-      {/* Show loading spinner when expanding and fetching details */}
-      <tr className={`bg-gray-800 text-left overflow-hidden ${isExpanded ? "" : "hidden"}`}>
-        <td colSpan={6} className="p-0">
-          {isExpanded && isLoading ? (
-            <div className="flex justify-center p-5">
-              <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>
-            </div>
-          ) : (
-            isExpanded && (
+      {isExpanded && (
+        <tr className="bg-slate-800">
+          <td colSpan={6} className="p-0">
+            {isLoading ? (
+              <div className="flex justify-center p-5">
+                <div className="w-16 h-16 border-t-4 border-cyan-600 border-solid rounded-full animate-spin" />
+              </div>
+            ) : (
               <div className="p-5">
-                <table className="w-full">
-                  <thead>
+                <table className="w-full text-sm">
+                  <thead className="border-b border-slate-600">
                     <tr>
-                      <th className="w-1/3 text-left">Konto</th>
-                      <th className="w-1/3 text-left">Debet</th>
-                      <th className="w-1/3 text-left">Kredit</th>
+                      <th className="text-left py-2">Konto</th>
+                      <th className="text-right py-2">Debet</th>
+                      <th className="text-right py-2">Kredit</th>
                     </tr>
                   </thead>
                   <tbody>
                     {details.map((detail) => (
-                      <tr key={detail.transaktionspost_id}>
-                        <td>{detail.kontobeskrivning}</td>
-                        <td>{detail.debet}</td>
-                        <td>{detail.kredit}</td>
+                      <tr key={detail.transaktionspost_id} className="border-b border-slate-700">
+                        <td className="py-2 pr-4">
+                          {detail.kontonummer} – {detail.beskrivning}
+                        </td>
+                        <td className="py-2 pr-4 text-right">
+                          {detail.debet !== 0
+                            ? detail.debet.toLocaleString("sv-SE", {
+                                style: "currency",
+                                currency: "SEK",
+                              })
+                            : "–"}
+                        </td>
+                        <td className="py-2 text-right">
+                          {detail.kredit !== 0
+                            ? detail.kredit.toLocaleString("sv-SE", {
+                                style: "currency",
+                                currency: "SEK",
+                              })
+                            : "–"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )
-          )}
-        </td>
-      </tr>
+            )}
+          </td>
+        </tr>
+      )}
     </>
   );
 }
-
-export { TableRow };

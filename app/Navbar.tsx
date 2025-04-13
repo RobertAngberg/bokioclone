@@ -1,43 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { LogoutButton } from "./start/LogoutButton";
 import { usePathname } from "next/navigation";
 import React from "react";
 
-function Navbar() {
+export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
+  const [selectedPath, setSelectedPath] = useState(pathname);
 
-  // console.log("📧 Email från client:", session?.user?.email);
+  useEffect(() => {
+    setSelectedPath(pathname);
+  }, [pathname]);
 
-  const closeMenu = () => {
-    setIsOpen(false);
-  };
+  const closeMenu = () => setIsOpen(false);
 
   const linkClass = (path: string) =>
-    `mb-6 transition-colors duration-300 hover:text-slate-400 md:mb-0 md:text-lg md:px-6 md:py-2 md:text-white md:font-bold ${
-      pathname === path ? "bg-cyan-800/60 rounded-full" : ""
-    }`;
+    `relative inline-block px-6 py-2 md:text-lg font-semibold text-white transition-colors duration-300 ease-in-out
+     rounded-full ${pathname === path ? "bg-cyan-800/60" : "hover:bg-cyan-700/30"}`;
 
   const renderMenuLinks = () => (
     <>
-      <li onClick={closeMenu} className={linkClass("/")}>
+      <li
+        onClick={() => {
+          setSelectedPath("/");
+          closeMenu();
+        }}
+        className={linkClass("/")}
+      >
         <Link href="/">Hem</Link>
       </li>
-      <li onClick={closeMenu} className={linkClass("/bokfor")}>
+      <li
+        onClick={() => {
+          setSelectedPath("/bokfor");
+          closeMenu();
+        }}
+        className={linkClass("/bokfor")}
+      >
         <Link href="/bokfor">Bokför</Link>
       </li>
-      <li onClick={closeMenu} className={linkClass("/grundbok")}>
+      <li
+        onClick={() => {
+          setSelectedPath("/grundbok");
+          closeMenu();
+        }}
+        className={linkClass("/grundbok")}
+      >
         <Link href="/grundbok">Grundbok</Link>
       </li>
-      <li onClick={closeMenu} className={linkClass("/huvudbok")}>
+      <li
+        onClick={() => {
+          setSelectedPath("/huvudbok");
+          closeMenu();
+        }}
+        className={linkClass("/huvudbok")}
+      >
         <Link href="/huvudbok">Huvudbok</Link>
       </li>
-      <li onClick={closeMenu} className={linkClass("/faktura")}>
+      <li
+        onClick={() => {
+          setSelectedPath("/faktura");
+          closeMenu();
+        }}
+        className={linkClass("/faktura")}
+      >
         <Link href="/faktura">Fakturor</Link>
       </li>
       {session?.user && (
@@ -50,17 +80,17 @@ function Navbar() {
 
   return (
     <div className="sticky top-0 z-50 flex items-center justify-end w-full h-20 px-4 bg-cyan-950 md:justify-center">
-      {/* Mobile */}
+      {/* Mobile menu */}
       {isOpen && (
         <ul className="absolute right-0 w-full h-screen p-6 pr-10 text-4xl font-bold text-right text-white top-20 bg-cyan-950">
           {renderMenuLinks()}
         </ul>
       )}
-      {/* Desktop */}
-      <ul className="hidden md:flex md:static md:text-center md:justify-center md:w-auto md:h-auto">
-        {renderMenuLinks()}
-      </ul>
-      {/* Hamburger */}
+
+      {/* Desktop menu */}
+      <ul className="hidden md:flex md:space-x-4 md:items-center">{renderMenuLinks()}</ul>
+
+      {/* Hamburger icon */}
       <div onClick={() => setIsOpen(!isOpen)} className="z-50 md:hidden">
         <svg
           className="w-8 h-8 text-white cursor-pointer"
@@ -89,7 +119,8 @@ function Navbar() {
           )}
         </svg>
       </div>
-      {/* Logout button on desktop (separate from menu) */}
+
+      {/* Logout button desktop */}
       {session?.user && (
         <div className="hidden md:block md:ml-6">
           <LogoutButton />
@@ -98,5 +129,3 @@ function Navbar() {
     </div>
   );
 }
-
-export { Navbar };

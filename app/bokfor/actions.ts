@@ -112,11 +112,8 @@ export async function saveTransaction(formData: FormData) {
 
   const client = await pool.connect();
   try {
-    // 📝 Kontobeskrivning = förvalets namn om specialtyp, annars kommer från formData
-    const kontobeskrivning =
-      valtFörval.specialtyp === "Importmoms"
-        ? valtFörval.namn
-        : formData.get("kontobeskrivning")?.toString().trim() || "";
+    // 📝 Kontobeskrivning = alltid förvalets namn
+    const kontobeskrivning = valtFörval.namn || "";
 
     const insertTransactionQuery = `
       INSERT INTO transaktioner (

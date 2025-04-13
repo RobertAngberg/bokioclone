@@ -34,7 +34,7 @@ export default function ForvalDatabas() {
   const [editField, setEditField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
 
-  const perPage = 1;
+  const perPage = 10;
 
   useEffect(() => {
     const fetch = async () => {
@@ -86,10 +86,10 @@ export default function ForvalDatabas() {
   };
 
   return (
-    <main className="px-6 pt-10 text-white">
+    <main className="px-6 py-10 text-white">
       <h1 className="mb-6 text-3xl font-bold text-center">Förval-databas</h1>
 
-      <div className="flex justify-center mb-0">
+      <div className="flex justify-center mb-6">
         <input
           type="text"
           placeholder="🔍 Sök förval..."
@@ -98,32 +98,31 @@ export default function ForvalDatabas() {
             setSök(e.target.value);
             setSida(1);
           }}
-          className="mb-2 w-[400px] px-4 py-2 rounded bg-slate-800 text-white placeholder-gray-400 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          className="w-full max-w-md px-4 py-2 rounded bg-slate-800 text-white placeholder-gray-400 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500"
         />
       </div>
 
       {data.length > 0 && (
-        <>
-          <table className="w-full text-sm border border-gray-700">
-            <thead className="text-left">
+        <div className="max-w-5xl mx-auto border border-slate-700 rounded-lg shadow overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead className="bg-slate-800 text-left">
               <tr>
-                <th className="px-3 py-6">ID</th>
-                <th className="px-3 py-4">Namn</th>
-                <th className="px-3 py-4">Beskrivning</th>
-                <th className="px-3 py-4">Typ</th>
-                <th className="px-3 py-4">Kategori</th>
-                <th className="px-3 py-4">Sökord</th>
-                <th className="px-3 py-4">Moms</th>
-                <th className="px-3 py-4">Specialtyp</th>
-                <th className="px-3 py-4">Konton</th>
-                <th className="px-3 py-4">❌</th>
+                <th className="p-3">ID</th>
+                <th className="p-3">Namn</th>
+                <th className="p-3">Beskrivning</th>
+                <th className="p-3">Typ</th>
+                <th className="p-3">Kategori</th>
+                <th className="p-3">Sökord</th>
+                <th className="p-3">Moms</th>
+                <th className="p-3">Specialtyp</th>
+                <th className="p-3">Konton</th>
+                <th className="p-3">❌</th>
               </tr>
             </thead>
-
             <tbody>
               {data.flatMap((rad, i) => {
                 const isEven = i % 2 === 0;
-                const rowBg = isEven ? "bg-slate-800" : "bg-slate-850";
+                const rowBg = isEven ? "bg-slate-850" : "bg-slate-800";
                 const isExpanded = expandedRows.has(rad.id);
 
                 const renderCell = (field: keyof Förval, value: any) => {
@@ -158,15 +157,15 @@ export default function ForvalDatabas() {
 
                 return [
                   <tr key={rad.id} className={`${rowBg} align-top text-sm`}>
-                    <td className="p-3 text-left">{rad.id}</td>
-                    <td className="p-3 text-left">{renderCell("namn", rad.namn)}</td>
-                    <td className="p-3 text-left">{renderCell("beskrivning", rad.beskrivning)}</td>
-                    <td className="p-3 text-left">{renderCell("typ", rad.typ)}</td>
-                    <td className="p-3 text-left">{renderCell("kategori", rad.kategori)}</td>
-                    <td className="p-3 text-left">{renderCell("sökord", rad.sökord)}</td>
-                    <td className="p-3 text-left">{renderCell("momssats", rad.momssats)}</td>
-                    <td className="p-3 text-left">{renderCell("specialtyp", rad.specialtyp)}</td>
-                    <td className="p-3 text-left">
+                    <td className="p-3">{rad.id}</td>
+                    <td className="p-3">{renderCell("namn", rad.namn)}</td>
+                    <td className="p-3">{renderCell("beskrivning", rad.beskrivning)}</td>
+                    <td className="p-3">{renderCell("typ", rad.typ)}</td>
+                    <td className="p-3">{renderCell("kategori", rad.kategori)}</td>
+                    <td className="p-3">{renderCell("sökord", rad.sökord)}</td>
+                    <td className="p-3">{renderCell("momssats", rad.momssats)}</td>
+                    <td className="p-3">{renderCell("specialtyp", rad.specialtyp)}</td>
+                    <td className="p-3">
                       <button
                         onClick={() => toggleExpand(rad.id)}
                         className="text-cyan-300 hover:underline text-sm"
@@ -174,7 +173,7 @@ export default function ForvalDatabas() {
                         {isExpanded ? "Dölj" : "Visa"}
                       </button>
                     </td>
-                    <td className="p-3 text-left">
+                    <td className="p-3">
                       <button
                         onClick={() => handleDelete(rad.id)}
                         className="text-red-500 hover:underline text-sm"
@@ -183,28 +182,24 @@ export default function ForvalDatabas() {
                       </button>
                     </td>
                   </tr>,
-
                   isExpanded && (
                     <tr key={`exp-${rad.id}`} className={rowBg}>
                       <td colSpan={10}>
                         <div className="border-b-4 border-slate-600 pb-4 mb-10 flex flex-wrap justify-center gap-3 px-4 pt-4">
-                          {[...(rad.konton || []), ...(rad.extrafält || [])].map(
-                            (konto: any, idx) => (
-                              <div
-                                key={idx}
-                                className="p-3 border border-slate-700 rounded bg-slate-800 min-w-[220px]"
-                              >
-                                <p className="mb-1 font-bold">
-                                  {konto.kontonummer} –{" "}
-                                  {konto.beskrivning ?? konto.label ?? "Saknas"}
-                                </p>
-                                <p className="text-xs text-gray-300">
-                                  Debet: {konto.debet ? "✓" : "–"} | Kredit:{" "}
-                                  {konto.kredit ? "✓" : "–"}
-                                </p>
-                              </div>
-                            )
-                          )}
+                          {[...(rad.konton || []), ...(rad.extrafält || [])].map((konto, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3 border border-slate-700 rounded bg-slate-800 min-w-[220px]"
+                            >
+                              <p className="mb-1 font-bold">
+                                {konto.kontonummer} – {konto.beskrivning ?? konto.label ?? "Saknas"}
+                              </p>
+                              <p className="text-xs text-gray-300">
+                                Debet: {konto.debet ? "✓" : "–"} | Kredit:{" "}
+                                {konto.kredit ? "✓" : "–"}
+                              </p>
+                            </div>
+                          ))}
                         </div>
                       </td>
                     </tr>
@@ -213,27 +208,29 @@ export default function ForvalDatabas() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
 
-          <div className="flex items-center justify-center mt-6 space-x-4">
-            <button
-              disabled={sida === 1}
-              onClick={() => setSida(sida - 1)}
-              className="px-3 py-2 text-sm bg-slate-800 rounded disabled:opacity-30"
-            >
-              ◀ Föregående
-            </button>
-            <span>
-              Sida {sida} av {totalPages}
-            </span>
-            <button
-              disabled={sida === totalPages}
-              onClick={() => setSida(sida + 1)}
-              className="px-3 py-2 text-sm bg-slate-800 rounded disabled:opacity-30"
-            >
-              Nästa ▶
-            </button>
-          </div>
-        </>
+      {data.length > 0 && (
+        <div className="flex items-center justify-center mt-6 space-x-4">
+          <button
+            disabled={sida === 1}
+            onClick={() => setSida(sida - 1)}
+            className="px-3 py-2 text-sm bg-slate-800 rounded disabled:opacity-30"
+          >
+            ◀ Föregående
+          </button>
+          <span>
+            Sida {sida} av {totalPages}
+          </span>
+          <button
+            disabled={sida === totalPages}
+            onClick={() => setSida(sida + 1)}
+            className="px-3 py-2 text-sm bg-slate-800 rounded disabled:opacity-30"
+          >
+            Nästa ▶
+          </button>
+        </div>
       )}
     </main>
   );
