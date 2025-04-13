@@ -49,39 +49,42 @@ function Bokför() {
   >({});
 
   return (
-    <main className="items-center min-h-screen pt-10 text-center bg-slate-950">
-      {currentStep === 1 && (
-        <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <SokForval
+    <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10">
+      <div className="max-w-5xl mx-auto">
+        {currentStep === 1 && (
+          <div className="w-full p-8 text-gray-100 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+            <SokForval
+              setCurrentStep={setCurrentStep}
+              setvaltFörval={setValtFörval}
+              setKontonummer={setKontonummer}
+              setKontobeskrivning={setKontobeskrivning}
+            />
+            <div className="text-gray-400 text-sm text-center pt-6">
+              Ofta använda förval kommer att visas här i framtiden som genvägar.
+            </div>
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <Steg2
             setCurrentStep={setCurrentStep}
-            setvaltFörval={setValtFörval}
-            setKontonummer={setKontonummer}
-            setKontobeskrivning={setKontobeskrivning}
+            fil={fil}
+            setFil={setFil}
+            pdfUrl={pdfUrl}
+            setPdfUrl={setPdfUrl}
+            belopp={belopp}
+            setBelopp={setBelopp}
+            transaktionsdatum={transaktionsdatum}
+            setTransaktionsdatum={setTransaktionsdatum}
+            kommentar={kommentar}
+            setKommentar={setKommentar}
+            valtFörval={valtFörval}
+            extrafält={extrafält}
+            setExtrafält={setExtrafält}
           />
-        </div>
-      )}
+        )}
 
-      {currentStep === 2 && (
-        <Steg2
-          setCurrentStep={setCurrentStep}
-          fil={fil}
-          setFil={setFil}
-          pdfUrl={pdfUrl}
-          setPdfUrl={setPdfUrl}
-          belopp={belopp}
-          setBelopp={setBelopp}
-          transaktionsdatum={transaktionsdatum}
-          setTransaktionsdatum={setTransaktionsdatum}
-          kommentar={kommentar}
-          setKommentar={setKommentar}
-          valtFörval={valtFörval}
-          extrafält={extrafält}
-          setExtrafält={setExtrafält}
-        />
-      )}
-
-      {currentStep === 3 && (
-        <>
+        {currentStep === 3 && (
           <Steg3
             kontonummer={kontonummer}
             kontobeskrivning={kontobeskrivning ?? ""}
@@ -93,10 +96,10 @@ function Bokför() {
             setCurrentStep={setCurrentStep}
             extrafält={extrafält}
           />
-        </>
-      )}
+        )}
 
-      {currentStep === 4 && <Steg4 />}
+        {currentStep === 4 && <Steg4 />}
+      </div>
     </main>
   );
 }

@@ -6,25 +6,36 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-export async function fetchAllaForval() {
-  try {
-    const client = await pool.connect();
-    const res = await client.query(`
-      SELECT id, namn, beskrivning, typ, kategori, konton, sökord, momssats, specialtyp
-      FROM förval
-      ORDER BY id
-    `);
+export async function fetchAllaForval(filters?: { sök?: string; kategori?: string; typ?: string }) {
+  let query = "SELECT * FROM förval";
+  const values: any[] = [];
+  const conditions: string[] = [];
 
-    client.release();
-
-    return res.rows.map((rad) => ({
-      ...rad,
-      konton: typeof rad.konton === "string" ? JSON.parse(rad.konton) : rad.konton,
-    }));
-  } catch (err) {
-    console.error("❌ fetchAllaForval error:", err);
-    return [];
+  if (filters?.sök) {
+    conditions.push(
+      `(LOWER(namn) LIKE $${values.length + 1} OR LOWER(beskrivning) LIKE $${values.length + 1})`
+    );
+    values.push(`%${filters.sök.toLowerCase()}%`);
   }
+
+  if (filters?.kategori) {
+    conditions.push(`kategori = $${values.length + 1}`);
+    values.push(filters.kategori);
+  }
+
+  if (filters?.typ) {
+    conditions.push(`LOWER(typ) = $${values.length + 1}`);
+    values.push(filters.typ.toLowerCase());
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ` + conditions.join(" AND ");
+  }
+
+  query += ` ORDER BY namn`;
+
+  const res = await pool.query(query, values);
+  return res.rows;
 }
 
 export async function fetchDataFromYear(year: string) {

@@ -21,7 +21,7 @@ interface AmorteringProps {
   setPdfUrl?: (url: string | null) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
-  formRef?: React.RefObject<HTMLFormElement>;
+  formRef?: React.RefObject<HTMLFormElement | null>;
   handleSubmit?: (formData: FormData) => void;
 }
 

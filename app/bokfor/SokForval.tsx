@@ -112,79 +112,84 @@ export default function SokForval({
 
   return (
     <div className="w-full">
-      <h1 className="mb-4 text-4xl font-bold">Steg 1: Sök förval</h1>
+      <h1 className="mb-8 text-3xl text-center text-white">Steg 1: Sök förval</h1>
+
       <input
-        className="w-full p-3 mt-4 text-black border-2 rounded-lg border-slate-950"
+        className="text-center w-full p-3 text-white border-2 border-gray-700 rounded-lg bg-slate-900 placeholder-gray-400"
         type="text"
         autoComplete="off"
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
         onKeyDown={handleKeyDown}
+        placeholder="Skriv t.ex. representation eller leasing..."
       />
 
       {loading && (
         <div className="flex justify-center mt-6">
-          <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-800 rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-gray-500 border-t-gray-300 rounded-full animate-spin"></div>
         </div>
       )}
 
-      {!loading &&
-        results.length > 0 &&
-        results.map((f, index) => (
-          <div
-            key={f.id}
-            className={`relative mt-4 rounded-xl p-4 shadow cursor-pointer transition-all ${
-              index === highlightedIndex
-                ? "border-2 border-dashed border-blue-500 bg-white"
-                : "border border-gray-300 bg-white"
-            }`}
-            onClick={() => väljFörval(f)}
-          >
-            <div className="text-xl font-semibold text-gray-800 mb-2">✓ {f.namn}</div>
-            <pre className="whitespace-pre-wrap text-sm italic text-gray-600 mb-2 font-sans">
-              {f.beskrivning}
-            </pre>
+      {!loading && results.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 animate-fade-in">
+          {results.map((f, index) => (
+            <div
+              key={f.id}
+              className={`relative rounded-xl p-4 transition-all duration-200 shadow-md cursor-pointer ${
+                index === highlightedIndex
+                  ? "border-2 border-dashed border-gray-500 bg-slate-800"
+                  : "border border-gray-700 bg-slate-900"
+              }`}
+              onClick={() => väljFörval(f)}
+            >
+              <div className="text-xl font-semibold text-white mb-2">✓ {f.namn}</div>
+              <pre className="whitespace-pre-wrap text-sm italic text-gray-300 mb-2 font-sans">
+                {f.beskrivning}
+              </pre>
 
-            <p className="text-sm text-gray-600">
-              <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
-              <strong>Kategori:</strong> {f.kategori}
-            </p>
-            <p className="text-sm text-gray-500 mt-2 mb-4">
-              <strong>Sökord:</strong> {f.sökord.join(", ")}
-            </p>
+              <p className="text-sm text-gray-400">
+                <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
+                <strong>Kategori:</strong> {f.kategori}
+              </p>
 
-            <table className="w-full border border-gray-300 text-sm text-gray-700">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-2 py-1 text-left">Konto</th>
-                  <th className="border border-gray-300 px-2 py-1 text-left">Debet</th>
-                  <th className="border border-gray-300 px-2 py-1 text-left">Kredit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {f.konton.map((konto, i) => (
-                  <tr key={i}>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {konto.kontonummer} {konto.beskrivning}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {konto.debet === true ? "✓" : (konto.debet ?? "")}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1">
-                      {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
-                    </td>
+              <p className="text-sm text-gray-500 mt-2 mb-4">
+                <strong>Sökord:</strong> {f.sökord.join(", ")}
+              </p>
+
+              <table className="w-full border border-gray-700 text-sm text-gray-300">
+                <thead className="bg-slate-800 text-white">
+                  <tr>
+                    <th className="border border-gray-700 px-2 py-1 text-left">Konto</th>
+                    <th className="border border-gray-700 px-2 py-1 text-center">Debet</th>
+                    <th className="border border-gray-700 px-2 py-1 text-center">Kredit</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {f.konton.map((konto, i) => (
+                    <tr key={i}>
+                      <td className="border border-gray-700 px-2 py-1">
+                        {konto.kontonummer} {konto.beskrivning}
+                      </td>
+                      <td className="border border-gray-700 px-2 py-1 text-center">
+                        {konto.debet === true ? "✓" : (konto.debet ?? "")}
+                      </td>
+                      <td className="border border-gray-700 px-2 py-1 text-center">
+                        {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-            {index === highlightedIndex && (
-              <div className="mt-3 text-xs text-gray-500 text-right">
-                ⏎ Tryck Enter för att välja
-              </div>
-            )}
-          </div>
-        ))}
+              {index === highlightedIndex && (
+                <div className="mt-3 text-xs text-right text-gray-400">
+                  ⏎ Tryck Enter för att välja
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

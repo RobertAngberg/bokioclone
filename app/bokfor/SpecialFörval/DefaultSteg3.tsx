@@ -9,7 +9,7 @@ interface Props {
   specialtyp: string;
   belopp: number;
   extrafält?: Record<string, any>; // optional now
-  formRef: React.RefObject<HTMLFormElement>;
+  formRef?: React.RefObject<HTMLFormElement | null>;
   handleSubmit: (formData: FormData) => void;
 }
 

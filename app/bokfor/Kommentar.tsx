@@ -8,9 +8,11 @@ interface CommentProps {
 export default function Kommentar({ kommentar, setKommentar }: CommentProps) {
   return (
     <div className="mb-4">
-      <label htmlFor="kommentar">Kommentar:</label>
+      <label htmlFor="kommentar" className="text-white block mb-2">
+        Kommentar:
+      </label>
       <textarea
-        className="w-full p-2 mb-4 text-black border-2 border-gray-600 border-solid rounded"
+        className="w-full p-2 mb-4 text-white bg-slate-900 border-2 border-gray-700 rounded"
         id="kommentar"
         name="kommentar"
         maxLength={500}

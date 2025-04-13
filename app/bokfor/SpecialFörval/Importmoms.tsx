@@ -21,7 +21,7 @@ interface ImportmomsProps {
   setPdfUrl?: (url: string | null) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
-  formRef?: React.RefObject<HTMLFormElement>;
+  formRef?: React.RefObject<HTMLFormElement | null>;
   handleSubmit?: (formData: FormData) => void;
   validationMessages?: string[];
 }
@@ -113,8 +113,6 @@ export default function Importmoms(props: ImportmomsProps) {
     return (
       <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row text-white">
         <div className="w-full mb-10 md:w-2/5 md:mb-0">
-          <h1 className="text-3xl font-bold mb-6 text-center">Steg 2: Importmoms</h1>
-
           <LaddaUppFil
             fil={fil ?? null}
             setFil={setFil ?? (() => {})}

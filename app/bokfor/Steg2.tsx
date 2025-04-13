@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import LaddaUppFil from "./LaddaUppFil";
 import Information from "./Information";
 import Kommentar from "./Kommentar";
@@ -9,6 +8,7 @@ import Importmoms from "./SpecialFörval/Importmoms";
 import AmorteringBanklan from "./SpecialFörval/AmorteringBanklan";
 import CustomSteg3 from "./SpecialFörval/CustomSteg3";
 
+// #region Types
 type KontoRad = {
   beskrivning: string;
   kontonummer?: string;
@@ -27,7 +27,7 @@ type Förval = {
   specialtyp?: string | null;
 };
 
-interface Step2Props {
+type Step2Props = {
   setCurrentStep: (step: number) => void;
   fil: File | null;
   setFil: (file: File | null) => void;
@@ -42,7 +42,25 @@ interface Step2Props {
   valtFörval: Förval | null;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
-}
+};
+
+type Steg2SpecialProps = {
+  mode: "steg2";
+  belopp: number | null;
+  setBelopp: (amount: number | null) => void;
+  transaktionsdatum: string | null;
+  setTransaktionsdatum: (date: string | null) => void;
+  kommentar: string | null;
+  setKommentar: (comment: string | null) => void;
+  setCurrentStep: (step: number) => void;
+  fil: File | null;
+  setFil: (file: File | null) => void;
+  pdfUrl: string | null;
+  setPdfUrl: (url: string | null) => void;
+  extrafält: Record<string, { label: string; debet: number; kredit: number }>;
+  setExtrafält: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
+};
+// #endregion
 
 export default function Steg2({
   setCurrentStep,
@@ -60,114 +78,78 @@ export default function Steg2({
   extrafält,
   setExtrafält,
 }: Step2Props) {
-  // ---------------------------------------------------------
-  // Hantera specialförval med egna komponenter
-  // ---------------------------------------------------------
-  if (valtFörval?.specialtyp === "Importmoms") {
-    return (
-      <Importmoms
-        mode="steg2"
-        belopp={belopp}
-        setBelopp={setBelopp}
-        transaktionsdatum={transaktionsdatum}
-        setTransaktionsdatum={setTransaktionsdatum}
-        kommentar={kommentar}
-        setKommentar={setKommentar}
-        setCurrentStep={setCurrentStep}
-        fil={fil}
-        setFil={setFil}
-        pdfUrl={pdfUrl}
-        setPdfUrl={setPdfUrl}
-        extrafält={extrafält}
-        setExtrafält={setExtrafält}
-      />
-    );
-  }
-
-  if (valtFörval?.specialtyp === "AmorteringBanklån") {
-    return (
-      <AmorteringBanklan
-        mode="steg2"
-        belopp={belopp}
-        setBelopp={setBelopp}
-        transaktionsdatum={transaktionsdatum}
-        setTransaktionsdatum={setTransaktionsdatum}
-        kommentar={kommentar}
-        setKommentar={setKommentar}
-        setCurrentStep={setCurrentStep}
-        fil={fil}
-        setFil={setFil}
-        pdfUrl={pdfUrl}
-        setPdfUrl={setPdfUrl}
-        extrafält={extrafält}
-        setExtrafält={setExtrafält}
-      />
-    );
-  }
-  // ---------------------------------------------------------
-  // Hantera tysta specialförval med autogenererade extrafält
-  // ---------------------------------------------------------
-  if (valtFörval?.specialtyp) {
-    return (
-      <CustomSteg3
-        belopp={belopp}
-        setBelopp={setBelopp}
-        transaktionsdatum={transaktionsdatum}
-        setTransaktionsdatum={setTransaktionsdatum}
-        kommentar={kommentar}
-        setKommentar={setKommentar}
-        setCurrentStep={setCurrentStep}
-        fil={fil}
-        setFil={setFil}
-        pdfUrl={pdfUrl}
-        setPdfUrl={setPdfUrl}
-        extrafält={extrafält}
-        setExtrafält={setExtrafält}
-        specialtyp={valtFörval.specialtyp}
-      />
-    );
-  }
-  // ---------------------------------------------------------
-  // Standardförval (utan specialtyp)
-  // ---------------------------------------------------------
   const handleSubmit = () => {
     setCurrentStep(3);
   };
 
+  const renderSpecialförval = () => {
+    if (!valtFörval?.specialtyp) return null;
+
+    const specialProps: Steg2SpecialProps = {
+      mode: "steg2",
+      belopp,
+      setBelopp,
+      transaktionsdatum,
+      setTransaktionsdatum,
+      kommentar,
+      setKommentar,
+      setCurrentStep,
+      fil,
+      setFil,
+      pdfUrl,
+      setPdfUrl,
+      extrafält,
+      setExtrafält,
+    };
+
+    switch (valtFörval.specialtyp) {
+      case "Importmoms":
+        return <Importmoms {...specialProps} />;
+      case "AmorteringBanklån":
+        return <AmorteringBanklan {...specialProps} />;
+      default:
+        return <CustomSteg3 {...specialProps} specialtyp={valtFörval.specialtyp} />;
+    }
+  };
+
   return (
-    <>
-      <h1 className="mb-10 text-4xl font-bold text-center text-white">Steg 2: Fyll i uppgifter</h1>
+    <div className="p-6 bg-cyan-950 text-white border border-cyan-800 rounded-2xl shadow-lg">
+      <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Fyll i uppgifter</h1>
 
-      <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
-        <div className="w-full mb-10 text-white md:w-[40%] md:mb-0">
-          <LaddaUppFil
-            fil={fil}
-            setFil={setFil}
-            setPdfUrl={setPdfUrl}
-            setBelopp={setBelopp}
-            setTransaktionsdatum={setTransaktionsdatum}
-          />
+      {valtFörval?.specialtyp ? (
+        renderSpecialförval()
+      ) : (
+        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
+          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
+            <LaddaUppFil
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
+              setBelopp={setBelopp}
+              setTransaktionsdatum={setTransaktionsdatum}
+            />
 
-          <Information
-            belopp={belopp ?? 0}
-            setBelopp={setBelopp}
-            transaktionsdatum={transaktionsdatum}
-            setTransaktionsdatum={setTransaktionsdatum}
-          />
+            <Information
+              belopp={belopp ?? 0}
+              setBelopp={setBelopp}
+              transaktionsdatum={transaktionsdatum}
+              setTransaktionsdatum={setTransaktionsdatum}
+            />
 
-          <Kommentar kommentar={kommentar ?? ""} setKommentar={setKommentar} />
+            <Kommentar kommentar={kommentar ?? ""} setKommentar={setKommentar} />
 
-          <button
-            type="button"
-            className="flex items-center justify-center w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-            onClick={handleSubmit}
-          >
-            Bokför
-          </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="w-full flex items-center justify-center px-4 py-4 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
+            >
+              Bokför
+            </button>
+          </div>
+
+          <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
-
-        <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
-      </div>
-    </>
+      )}
+    </div>
   );
 }

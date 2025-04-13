@@ -29,15 +29,14 @@ export default function Information({
 
     const inputEl = document.querySelector(".react-datepicker__input-container input");
     if (inputEl) {
-      (inputEl as HTMLElement).style.width = "100%";
+      (inputEl as HTMLElement).className =
+        "w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700";
     }
 
-    // Förifyll dagens datum om null
     if (!transaktionsdatum) {
       setTransaktionsdatum(new Date().toISOString());
     }
 
-    // Förifyll belopp 1000 om 0 eller null
     if (!belopp || belopp === 0) {
       setBelopp(1000);
     }
@@ -45,11 +44,14 @@ export default function Information({
 
   return (
     <div className="padder">
-      <label htmlFor="belopp" className="block mb-2">
+      <label htmlFor="belopp" className="block mb-2 text-white">
         Belopp:
       </label>
       <input
-        className="w-full p-2 mb-4 text-black border-2 border-gray-600 border-solid rounded"
+        className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700 appearance-none 
+    [&::-webkit-outer-spin-button]:appearance-none 
+    [&::-webkit-inner-spin-button]:appearance-none 
+    [&::-moz-inner-spin-button]:appearance-none"
         type="number"
         id="belopp"
         name="belopp"
@@ -58,11 +60,11 @@ export default function Information({
         onChange={(e) => setBelopp(Number(e.target.value))}
       />
 
-      <label htmlFor="datum" className="block mb-2">
+      <label htmlFor="datum" className="block mb-2 text-white">
         Betaldatum (ÅÅÅÅ-MM-DD):
       </label>
       <DatePicker
-        className="w-full p-2 mb-4 text-black border-2 border-gray-600 border-solid rounded"
+        className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
         id="datum"
         selected={transaktionsdatum ? new Date(transaktionsdatum) : new Date()}
         onChange={(date) => {

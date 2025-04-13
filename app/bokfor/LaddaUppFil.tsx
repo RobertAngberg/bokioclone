@@ -78,7 +78,7 @@ export default function LaddaUppFil({
       />
       <label
         htmlFor="fileUpload"
-        className="flex items-center justify-center px-4 py-2 mb-2 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
+        className="flex items-center justify-center px-4 py-2 mb-6 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
       >
         Välj fil
       </label>
