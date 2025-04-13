@@ -5,8 +5,8 @@ import { fetchHuvudbok } from "./actions";
 import React from "react";
 
 type TransactionItem = {
-  kontobeskrivning: string;
   kontonummer: string;
+  beskrivning: string;
   transaktionsdatum: string;
   fil: string;
   debet: number;
@@ -14,12 +14,12 @@ type TransactionItem = {
 };
 
 type GroupedTransactions = {
-  [key: string]: TransactionItem[];
+  [konto: string]: TransactionItem[];
 };
 
-function Huvudbok() {
+export default function Huvudbok() {
   const [groupedData, setGroupedData] = useState<GroupedTransactions>({});
-  const [expandedAccInfo, setExpandedAccInfo] = useState<string | null>(null);
+  const [expandedAcc, setExpandedAcc] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ function Huvudbok() {
       setIsLoading(true);
       const result = await fetchHuvudbok();
       const grouped: GroupedTransactions = result.reduce((acc, item) => {
-        const key = item.kontobeskrivning;
+        const key = `${item.kontonummer} – ${item.beskrivning}`;
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
         return acc;
@@ -37,61 +37,98 @@ function Huvudbok() {
     })();
   }, []);
 
-  const toggleAccInfo = (desc: string) =>
-    setExpandedAccInfo(expandedAccInfo === desc ? null : desc);
+  const toggleAcc = (key: string) => {
+    setExpandedAcc(expandedAcc === key ? null : key);
+  };
 
   return (
-    <main className="flex justify-center min-h-screen bg-slate-950">
+    <main className="flex justify-center min-h-screen bg-slate-950 px-4">
       {isLoading ? (
         <div className="flex items-center justify-center w-full h-screen">
           <div className="w-16 h-16 border-t-4 border-cyan-600 border-solid rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="w-full max-w-4xl px-4 text-left">
-          <h1 className="py-10 text-4xl font-bold text-center text-white">Huvudbok</h1>
-          {Object.entries(groupedData).map(([desc, items]) => (
-            <div key={desc} className="mb-1">
-              <div
-                onClick={() => toggleAccInfo(desc)}
-                className="flex items-center justify-between py-2 pr-10 text-white cursor-pointer bg-cyan-950"
-              >
-                <span className="flex items-center justify-between p-2 pl-10 text-lg font-bold">
-                  {items[0].kontonummer} - {desc}
-                </span>
-                <span>{expandedAccInfo === desc ? "▲" : "▼"}</span>
-              </div>
+        <div className="w-full max-w-5xl text-left">
+          <h1 className="py-10 text-3xl text-center text-white">Huvudbok</h1>
+          {Object.entries(groupedData).map(([konto, items]) => {
+            let saldo = 0;
 
-              {expandedAccInfo === desc && (
-                <table className="w-full text-white">
-                  <thead className="bg-gray-700">
-                    <tr>
-                      <th className="p-2 pl-10 text-left">Datum</th>
-                      <th className="p-2 text-left">Konto</th>
-                      <th className="p-2 text-left">Debet</th>
-                      <th className="p-2 text-left">Kredit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, index) => (
-                      <tr
-                        key={index}
-                        className="even:bg-gray-950 odd:bg-gray-900 hover:bg-gray-700"
-                      >
-                        <td className="p-2 pl-10">{item.transaktionsdatum.slice(0, 10)}</td>
-                        <td className="p-2">{item.kontobeskrivning}</td>
-                        <td className="p-2">{item.debet}</td>
-                        <td className="p-2">{item.kredit}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          ))}
+            return (
+              <div
+                key={konto}
+                className="mb-6 border border-slate-700 rounded-lg shadow overflow-hidden"
+              >
+                <div
+                  onClick={() => toggleAcc(konto)}
+                  className="flex items-center justify-between px-6 py-3 text-white bg-cyan-950 cursor-pointer hover:bg-cyan-900"
+                >
+                  <span className="text-lg font-bold">{konto}</span>
+                  <span className="text-xl">{expandedAcc === konto ? "▲" : "▼"}</span>
+                </div>
+
+                {expandedAcc === konto && (
+                  <table className="w-full text-sm text-white">
+                    <tbody>
+                      {items.map((rad, i) => {
+                        saldo += (rad.debet ?? 0) - (rad.kredit ?? 0);
+                        return (
+                          <tr key={i} className={i % 2 === 0 ? "bg-slate-900" : "bg-slate-950"}>
+                            <td className="p-3 pl-6">{rad.transaktionsdatum.slice(0, 10)}</td>
+                            <td className="p-3">
+                              {rad.fil ? (
+                                <span className="text-cyan-300 underline">{rad.fil}</span>
+                              ) : (
+                                <span className="text-gray-400 italic">—</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right">
+                              {rad.debet
+                                ? rad.debet.toLocaleString("sv-SE", {
+                                    style: "currency",
+                                    currency: "SEK",
+                                  })
+                                : "—"}
+                            </td>
+                            <td className="p-3 text-right">
+                              {rad.kredit
+                                ? rad.kredit.toLocaleString("sv-SE", {
+                                    style: "currency",
+                                    currency: "SEK",
+                                  })
+                                : "—"}
+                            </td>
+                            <td className="p-3 text-right">
+                              {saldo.toLocaleString("sv-SE", {
+                                style: "currency",
+                                currency: "SEK",
+                              })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {/* Balansrad med TEAL-färg */}
+                      {saldo !== 0 && (
+                        <tr className="bg-cyan-950 font-semibold text-white">
+                          <td className="p-3 pl-6" colSpan={4}>
+                            {saldo > 0 ? "Utgående balans" : "Ingående balans"}
+                          </td>
+                          <td className="p-3 text-right">
+                            {(Math.abs(saldo) || 0).toLocaleString("sv-SE", {
+                              style: "currency",
+                              currency: "SEK",
+                            })}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </main>
   );
 }
-
-export default Huvudbok;

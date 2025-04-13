@@ -11,7 +11,7 @@ export async function fetchHuvudbok() {
     const query = `
       SELECT 
         k.kontonummer,
-        k.kontobeskrivning,
+        k.beskrivning, -- ändrad här
         t.transaktionsdatum,
         t.fil,
         p.debet,
@@ -27,7 +27,7 @@ export async function fetchHuvudbok() {
 
     return res.rows.map((row) => ({
       kontonummer: row.kontonummer,
-      kontobeskrivning: row.kontobeskrivning,
+      beskrivning: row.beskrivning, // ändrad här
       transaktionsdatum: row.transaktionsdatum?.toISOString?.() ?? "",
       fil: row.fil ?? "",
       debet: row.debet,

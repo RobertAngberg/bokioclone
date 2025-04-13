@@ -19,59 +19,62 @@ export default function Navbar() {
 
   const closeMenu = () => setIsOpen(false);
 
+  const handleClick = (path: string) => {
+    setSelectedPath(path);
+    closeMenu();
+  };
+
   const linkClass = (path: string) =>
-    `relative inline-block px-6 py-2 md:text-lg font-semibold text-white transition-colors duration-300 ease-in-out
-     rounded-full ${pathname === path ? "bg-cyan-800/60" : "hover:bg-cyan-700/30"}`;
+    `relative inline-flex items-center gap-1 px-5 py-1.5 md:text-xl font-semibold text-white 
+     transition-transform duration-75 ease-in-out rounded-full
+     ${pathname === path ? "bg-cyan-800/60" : "hover:bg-cyan-700/30"} 
+     active:scale-95`;
 
   const renderMenuLinks = () => (
     <>
-      <li
-        onClick={() => {
-          setSelectedPath("/");
-          closeMenu();
-        }}
-        className={linkClass("/")}
-      >
-        <Link href="/">Hem</Link>
+      <li>
+        <Link href="/" onClick={() => handleClick("/")} className={linkClass("/")}>
+          Hem
+        </Link>
       </li>
-      <li
-        onClick={() => {
-          setSelectedPath("/bokfor");
-          closeMenu();
-        }}
-        className={linkClass("/bokfor")}
-      >
-        <Link href="/bokfor">Bokför</Link>
+      <li>
+        <Link
+          href="/bokfor"
+          onClick={() => handleClick("/bokfor")}
+          className={linkClass("/bokfor")}
+        >
+          Bokför
+        </Link>
       </li>
-      <li
-        onClick={() => {
-          setSelectedPath("/grundbok");
-          closeMenu();
-        }}
-        className={linkClass("/grundbok")}
-      >
-        <Link href="/grundbok">Grundbok</Link>
+      <li>
+        <Link
+          href="/grundbok"
+          onClick={() => handleClick("/grundbok")}
+          className={linkClass("/grundbok")}
+        >
+          Grundbok
+        </Link>
       </li>
-      <li
-        onClick={() => {
-          setSelectedPath("/huvudbok");
-          closeMenu();
-        }}
-        className={linkClass("/huvudbok")}
-      >
-        <Link href="/huvudbok">Huvudbok</Link>
+      <li>
+        <Link
+          href="/huvudbok"
+          onClick={() => handleClick("/huvudbok")}
+          className={linkClass("/huvudbok")}
+        >
+          Huvudbok
+        </Link>
       </li>
-      <li
-        onClick={() => {
-          setSelectedPath("/faktura");
-          closeMenu();
-        }}
-        className={linkClass("/faktura")}
-      >
-        <Link href="/faktura">Fakturor</Link>
+      <li>
+        <Link
+          href="/faktura"
+          onClick={() => handleClick("/faktura")}
+          className={linkClass("/faktura")}
+        >
+          Fakturor
+        </Link>
       </li>
       {session?.user && (
-        <li onClick={closeMenu} className="mb-6 md:mb-0 md:px-6">
+        <li className="mb-3 md:mb-0 md:px-6">
           <LogoutButton />
         </li>
       )}
@@ -82,13 +85,13 @@ export default function Navbar() {
     <div className="sticky top-0 z-50 flex items-center justify-end w-full h-20 px-4 bg-cyan-950 md:justify-center">
       {/* Mobile menu */}
       {isOpen && (
-        <ul className="absolute right-0 w-full h-screen p-6 pr-10 text-4xl font-bold text-right text-white top-20 bg-cyan-950">
+        <ul className="absolute right-0 w-full h-screen p-6 pr-10 text-4xl font-bold text-right text-white top-20 bg-cyan-950 space-y-6">
           {renderMenuLinks()}
         </ul>
       )}
 
       {/* Desktop menu */}
-      <ul className="hidden md:flex md:space-x-4 md:items-center">{renderMenuLinks()}</ul>
+      <ul className="hidden md:flex md:space-x-3 md:items-center">{renderMenuLinks()}</ul>
 
       {/* Hamburger icon */}
       <div onClick={() => setIsOpen(!isOpen)} className="z-50 md:hidden">
