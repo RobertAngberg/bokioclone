@@ -81,42 +81,49 @@ export default function AmorteringBanklan(props: AmorteringProps) {
     };
 
     return (
-      <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
-        <div className="w-full mb-10 text-white md:w-[40%] md:mb-0">
-          <h1 className="text-3xl font-bold mb-6 text-center">Steg 2: Amortering Banklån</h1>
+      <div className="p-6 bg-cyan-950 text-white border border-cyan-800 rounded-2xl shadow-lg">
+        <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Amortering Banklån</h1>
 
-          <LaddaUppFil
-            fil={fil ?? null}
-            setFil={setFil ?? (() => {})}
-            setPdfUrl={setPdfUrl ?? (() => {})}
-            setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
-            setBelopp={() => {}}
-          />
+        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
+          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
+            <LaddaUppFil
+              fil={fil ?? null}
+              setFil={setFil ?? (() => {})}
+              setPdfUrl={setPdfUrl ?? (() => {})}
+              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
+              setBelopp={() => {}}
+            />
 
-          <Falt label="Summa amortering + ränta" type="number" value={total} onChange={setTotal} />
-          <Falt label="Varav ränta" type="number" value={ränta} onChange={setRänta} />
-          <Falt
-            label="Kommentar"
-            type="textarea"
-            value={kommentar ?? ""}
-            onChange={setKommentar ?? (() => {})}
-          />
-          <Falt
-            label="Betaldatum"
-            type="date"
-            value={transaktionsdatum ?? ""}
-            onChange={setTransaktionsdatum ?? (() => {})}
-          />
+            <Falt
+              label="Summa amortering + ränta"
+              type="number"
+              value={total}
+              onChange={setTotal}
+            />
+            <Falt label="Varav ränta" type="number" value={ränta} onChange={setRänta} />
+            <Falt
+              label="Kommentar"
+              type="textarea"
+              value={kommentar ?? ""}
+              onChange={setKommentar ?? (() => {})}
+            />
+            <Falt
+              label="Betaldatum"
+              type="date"
+              value={transaktionsdatum ?? ""}
+              onChange={setTransaktionsdatum ?? (() => {})}
+            />
 
-          <button
-            onClick={handleLocalSubmit}
-            className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-          >
-            Bokför
-          </button>
+            <button
+              onClick={handleLocalSubmit}
+              className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
+            >
+              Bokför
+            </button>
+          </div>
+
+          <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
         </div>
-
-        <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
       </div>
     );
   }
@@ -146,37 +153,48 @@ export default function AmorteringBanklan(props: AmorteringProps) {
     const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
 
     return (
-      <main className="items-center min-h-screen text-center text-white bg-slate-950">
-        <div className="w-full p-10 text-white md:mx-auto md:w-2/5 bg-cyan-950 rounded-3xl">
-          <h1 className="text-3xl font-bold mb-4">Steg 3: Kontrollera och slutför (Amortering)</h1>
+      <main className="min-h-screen text-white bg-slate-950 px-4">
+        <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
+          <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
+          <p className="text-center font-bold text-xl mb-1">Amortering Banklån</p>
+          <p className="text-center text-gray-300 mb-8">
+            {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
+          </p>
 
           <form ref={formRef} action={handleSubmit}>
-            <table className="w-full mb-8 text-left border border-gray-300">
-              <thead>
+            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
+              <thead className="bg-slate-800 text-white">
                 <tr>
-                  <th className="p-4 border-b">Konto</th>
-                  <th className="p-4 border-b">Debet</th>
-                  <th className="p-4 border-b">Kredit</th>
+                  <th className="p-4 border-b border-gray-700">Konto</th>
+                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
+                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td className="p-4">{r.konto}</td>
-                    <td className="p-4">{r.debet > 0 ? formatSEK(r.debet) : ""}</td>
-                    <td className="p-4">{r.kredit > 0 ? formatSEK(r.kredit) : ""}</td>
+                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
+                    <td className="p-4 text-center border-b border-gray-700">
+                      {r.debet > 0 ? formatSEK(r.debet) : ""}
+                    </td>
+                    <td className="p-4 text-center border-b border-gray-700">
+                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
+                    </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4">Totalt</td>
-                  <td className="p-4">{formatSEK(totalDebet)}</td>
-                  <td className="p-4">{formatSEK(totalKredit)}</td>
+                  <td className="p-4 text-left">Totalt</td>
+                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
+                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
                 </tr>
               </tfoot>
             </table>
-            <SubmitButton />
+
+            <div className="mt-8">
+              <SubmitButton />
+            </div>
           </form>
         </div>
       </main>

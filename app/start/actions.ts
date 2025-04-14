@@ -328,28 +328,3 @@ export async function fetchForvalMedFel() {
     client.release();
   }
 }
-
-export async function fetchDubbletter() {
-  try {
-    const client = await pool.connect();
-
-    const query = `
-      SELECT 
-        k1.kontonummer AS dubblett_konto,
-        k1.beskrivning AS dubblett_beskrivning,
-        k1.dubblett_av,
-        k2.beskrivning AS original_beskrivning
-      FROM konton k1
-      LEFT JOIN konton k2 ON k1.dubblett_av = k2.kontonummer
-      WHERE k1.dubblett_av IS NOT NULL
-      ORDER BY k1.kontonummer;
-    `;
-
-    const res = await client.query(query);
-    client.release();
-    return res.rows;
-  } catch (error) {
-    console.error("❌ Fel vid hämtning av dubbletter:", error);
-    return [];
-  }
-}

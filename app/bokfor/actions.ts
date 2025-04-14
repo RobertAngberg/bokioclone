@@ -92,27 +92,16 @@ export async function saveTransaction(formData: FormData) {
   const extrafältRaw = formData.get("extrafält")?.toString();
   const extrafält = extrafältRaw ? (JSON.parse(extrafältRaw) as Record<string, ExtrafältRad>) : {};
 
-  // 📦 Logga allt
-  console.log("📦 Spara transaktion...");
-  console.log("🗓️ Datum:", transaktionsdatum);
-  console.log("🧾 Kommentar:", kommentar);
-  console.log("📁 Filnamn:", filename);
-  console.log("💰 Moms:", moms);
-  console.log("💡 Belopp utan moms:", beloppUtanMoms);
-  console.log("🗂️ valtFörval:", valtFörval);
-  console.log("🧩 extrafält:", extrafält);
-
   let belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
 
   // 🚨 Justera belopp för specialförval
-  if (valtFörval.specialtyp === "Importmoms" || valtFörval.specialtyp === "AmorteringBanklån") {
+  if (valtFörval.specialtyp && Object.keys(extrafält).length > 0) {
     const specialBelopp = extrafält?.["1930"]?.kredit ?? extrafält?.["1930"]?.debet ?? 0;
     belopp = parseFloat(specialBelopp.toString());
   }
 
   const client = await pool.connect();
   try {
-    // 📝 Kontobeskrivning = alltid förvalets namn
     const kontobeskrivning = valtFörval.namn || "";
 
     const insertTransactionQuery = `
@@ -135,9 +124,9 @@ export async function saveTransaction(formData: FormData) {
     const transaktionsId = res.rows[0].transaktions_id;
     console.log("🆔 transaktions_id:", transaktionsId);
 
-    // ===================== SPECIALFALL: IMPORTMOMS =====================
-    if (valtFörval.specialtyp === "Importmoms") {
-      console.log("🟡 Hanterar specialförval: Importmoms");
+    // ===================== SPECIALFÖRVAL =====================
+    if (valtFörval.specialtyp && Object.keys(extrafält).length > 0) {
+      console.log(`🟡 Hanterar specialförval: ${valtFörval.specialtyp}`);
 
       for (const [kontonummer, data] of Object.entries(extrafält)) {
         const kontoRes = await client.query(

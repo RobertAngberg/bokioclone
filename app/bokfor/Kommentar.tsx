@@ -12,11 +12,12 @@ export default function Kommentar({ kommentar, setKommentar }: CommentProps) {
         Kommentar:
       </label>
       <textarea
-        className="w-full p-2 mb-4 text-white bg-slate-900 border-2 border-gray-700 rounded"
+        className="w-full p-2 mb-0 text-white bg-slate-900 border-2 border-gray-700 rounded"
         id="kommentar"
         name="kommentar"
         maxLength={500}
         placeholder="Valfritt"
+        rows={1}
         value={kommentar}
         onChange={(e) => setKommentar(e.target.value)}
       />

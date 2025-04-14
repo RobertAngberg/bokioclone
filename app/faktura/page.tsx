@@ -39,7 +39,7 @@ function InnerFakturaPage() {
   return (
     <main className="flex justify-center p-4 print:hidden">
       <div className="w-full max-w-3xl space-y-4 mx-auto">
-        <h1 className="mt-10 mb-10 text-3xl text-center text-white">Fakturor</h1>
+        <h1 className="mt-6 mb-10 text-3xl text-center text-white">Fakturor</h1>
         <FakturorLista />
         <ArtiklarTjanster />
         <Avsandare />
