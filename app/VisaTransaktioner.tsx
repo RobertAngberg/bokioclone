@@ -7,7 +7,7 @@ type Transaktion = {
   transaktions_id: number;
   transaktionsdatum: string;
   kontobeskrivning: string;
-  kontotyp: string;
+  kontoklass: string;
   belopp: number;
   fil: string;
   kommentar: string;
@@ -26,7 +26,7 @@ export default function VisaTransaktioner() {
         transaktions_id: rad.transaktions_id,
         transaktionsdatum: new Date(rad.transaktionsdatum).toISOString().split("T")[0],
         kontobeskrivning: rad.kontobeskrivning ?? "",
-        kontotyp: rad.kontotyp ?? "",
+        kontoklass: rad.kontoklass ?? "",
         belopp: Number(rad.belopp ?? 0),
         fil: rad.fil ?? "",
         kommentar: rad.kommentar ?? "",
@@ -80,7 +80,7 @@ export default function VisaTransaktioner() {
                     <td className="p-3">{t.transaktions_id}</td>
                     <td className="p-3">{t.transaktionsdatum}</td>
                     <td className="p-3">{t.kontobeskrivning}</td>
-                    <td className="p-3">{t.kontotyp}</td>
+                    <td className="p-3">{t.kontoklass}</td>
                     <td className="p-3 text-right">
                       {t.belopp.toLocaleString("sv-SE", {
                         style: "currency",

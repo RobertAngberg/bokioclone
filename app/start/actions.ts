@@ -62,7 +62,7 @@ export async function fetchDataFromYear(year: string) {
     const query = `
       SELECT 
         t.transaktionsdatum, 
-        t.kontotyp, 
+        t.kontoklass, 
         tp.debet, 
         tp.kredit 
       FROM transaktioner t
@@ -81,10 +81,10 @@ export async function fetchDataFromYear(year: string) {
 
     rows.forEach((row, i) => {
       const rawDate = row.transaktionsdatum;
-      const typ = row.kontotyp;
+      const typ = row.kontoklass;
 
       if (!rawDate || !typ) {
-        console.warn(`⚠️ Skipping row ${i + 1} - saknar datum eller kontotyp`);
+        console.warn(`⚠️ Skipping row ${i + 1} - saknar datum eller kontoklass`);
         return;
       }
 
@@ -138,7 +138,7 @@ export async function hämtaAllaTransaktioner() {
         transaktions_id,
         transaktionsdatum,
         kontobeskrivning,
-        kontotyp,
+        kontoklass, -- ✅ rätt namn
         belopp,
         fil,
         kommentar,

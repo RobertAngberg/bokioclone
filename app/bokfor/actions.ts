@@ -88,17 +88,10 @@ export async function saveTransaction(formData: FormData) {
 
   const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
   const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString().trim() || "0");
+  let belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
 
   const extrafältRaw = formData.get("extrafält")?.toString();
   const extrafält = extrafältRaw ? (JSON.parse(extrafältRaw) as Record<string, ExtrafältRad>) : {};
-
-  let belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
-
-  // 🚨 Justera belopp för specialförval
-  if (valtFörval.specialtyp && Object.keys(extrafält).length > 0) {
-    const specialBelopp = extrafält?.["1930"]?.kredit ?? extrafält?.["1930"]?.debet ?? 0;
-    belopp = parseFloat(specialBelopp.toString());
-  }
 
   const client = await pool.connect();
   try {
@@ -106,7 +99,7 @@ export async function saveTransaction(formData: FormData) {
 
     const insertTransactionQuery = `
       INSERT INTO transaktioner (
-        transaktionsdatum, kontobeskrivning, kontotyp, belopp, fil, kommentar, "userId"
+        transaktionsdatum, kontobeskrivning, kontoklass, belopp, fil, kommentar, "userId"
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING transaktions_id
     `;
@@ -114,7 +107,7 @@ export async function saveTransaction(formData: FormData) {
     const res = await client.query(insertTransactionQuery, [
       new Date(transaktionsdatum),
       kontobeskrivning,
-      valtFörval.typ,
+      valtFörval.typ, // nu "kontoklass"
       belopp,
       filename,
       kommentar,
@@ -124,95 +117,87 @@ export async function saveTransaction(formData: FormData) {
     const transaktionsId = res.rows[0].transaktions_id;
     console.log("🆔 transaktions_id:", transaktionsId);
 
-    // ===================== SPECIALFÖRVAL =====================
-    if (valtFörval.specialtyp && Object.keys(extrafält).length > 0) {
-      console.log(`🟡 Hanterar specialförval: ${valtFörval.specialtyp}`);
+    // === Hantera extrafält ===
+    for (const [kontonummer, data] of Object.entries(extrafält)) {
+      const kontoRes = await client.query(
+        "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
+        [kontonummer]
+      );
 
-      for (const [kontonummer, data] of Object.entries(extrafält)) {
-        const kontoRes = await client.query(
-          "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
-          [kontonummer]
-        );
-
-        if (kontoRes.rows.length === 0) {
-          console.warn(`⛔ Konto ${kontonummer} hittades inte i databasen`);
-          continue;
-        }
-
-        const konto_id = kontoRes.rows[0].konto_id;
-        const debet = Number(data.debet ?? 0);
-        const kredit = Number(data.kredit ?? 0);
-
-        console.log(`📘 Konto ${kontonummer} (${data.label}) – Debet: ${debet}, Kredit: ${kredit}`);
-
-        await client.query(
-          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
-           VALUES ($1, $2, $3, $4)`,
-          [transaktionsId, konto_id, debet, kredit]
-        );
+      if (kontoRes.rows.length === 0) {
+        console.warn(`⛔ Konto ${kontonummer} hittades inte`);
+        continue;
       }
 
-      console.log("✅ Alla extrafält sparade");
+      const konto_id = kontoRes.rows[0].konto_id;
+      const debet = Number(data.debet ?? 0);
+      const kredit = Number(data.kredit ?? 0);
+
+      if (debet === 0 && kredit === 0) continue;
+
+      console.log(`➕ Extrafält ${kontonummer}: Debet ${debet}, Kredit ${kredit}`);
+
+      await client.query(
+        `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
+         VALUES ($1, $2, $3, $4)`,
+        [transaktionsId, konto_id, debet, kredit]
+      );
     }
 
-    // ===================== VANLIGA FÖRVAL =====================
-    else {
-      const getBelopp = (konto: any, typ: "debet" | "kredit") => {
-        const nr = konto.kontonummer?.toString() ?? "";
-        const andel = konto.andelAv;
+    // === Hantera vanliga konton ===
+    const getBelopp = (konto: any, typ: "debet" | "kredit") => {
+      const nr = konto.kontonummer?.toString() ?? "";
+      const andel = konto.andelAv;
 
-        if (andel === "moms") return moms;
-        if (andel === "utanMoms") return beloppUtanMoms;
-        if (andel === "hela") return belopp;
+      if (andel === "moms") return moms;
+      if (andel === "utanMoms") return beloppUtanMoms;
+      if (andel === "hela") return belopp;
 
-        const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
-        if (alwaysFull.includes(nr)) return belopp;
+      const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
+      if (alwaysFull.includes(nr)) return belopp;
 
-        const prefix = nr[0];
-        if (typ === "debet") {
-          if (prefix === "1") return belopp;
-          if (prefix === "2") return moms;
-          return beloppUtanMoms;
-        }
-        if (typ === "kredit") {
-          if (prefix === "1") return belopp;
-          if (prefix === "2") return moms;
-          if (prefix === "3") return beloppUtanMoms;
-        }
-
-        return 0;
-      };
-
-      console.log("🟢 Sparar normalt förval");
-
-      for (const konto of valtFörval.konton) {
-        const kontonummer = konto.kontonummer?.toString().trim();
-        if (!kontonummer) continue;
-
-        const kontoRes = await client.query(
-          "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
-          [kontonummer]
-        );
-
-        if (kontoRes.rows.length === 0) {
-          console.warn(`⛔ Konto ${kontonummer} hittades inte`);
-          continue;
-        }
-
-        const konto_id = kontoRes.rows[0].konto_id;
-        const debet = konto.debet ? getBelopp(konto, "debet") : 0;
-        const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
-
-        console.log(`📘 Konto ${kontonummer} – Debet: ${debet}, Kredit: ${kredit}`);
-
-        await client.query(
-          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
-           VALUES ($1, $2, $3, $4)`,
-          [transaktionsId, konto_id, debet, kredit]
-        );
+      const prefix = nr[0];
+      if (typ === "debet") {
+        if (prefix === "1") return belopp;
+        if (prefix === "2") return moms;
+        return beloppUtanMoms;
+      }
+      if (typ === "kredit") {
+        if (prefix === "1") return belopp;
+        if (prefix === "2") return moms;
+        if (prefix === "3") return beloppUtanMoms;
       }
 
-      console.log("✅ Vanliga rader sparade");
+      return 0;
+    };
+
+    for (const konto of valtFörval.konton) {
+      const kontonummer = konto.kontonummer?.toString().trim();
+      if (!kontonummer) continue;
+
+      const kontoRes = await client.query(
+        "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
+        [kontonummer]
+      );
+
+      if (kontoRes.rows.length === 0) {
+        console.warn(`⛔ Konto ${kontonummer} hittades inte`);
+        continue;
+      }
+
+      const konto_id = kontoRes.rows[0].konto_id;
+      const debet = konto.debet ? getBelopp(konto, "debet") : 0;
+      const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
+
+      if (debet === 0 && kredit === 0) continue;
+
+      console.log(`📘 Konto ${kontonummer} – Debet: ${debet}, Kredit: ${kredit}`);
+
+      await client.query(
+        `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
+         VALUES ($1, $2, $3, $4)`,
+        [transaktionsId, konto_id, debet, kredit]
+      );
     }
 
     client.release();
@@ -223,5 +208,114 @@ export async function saveTransaction(formData: FormData) {
     client.release();
     console.error("❌ saveTransaction error:", error);
     return { success: false, error };
+  }
+}
+
+export async function loggaFavoritförval(forvalId: number) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    console.warn("⛔ Ingen användare inloggad vid loggaFavoritförval");
+    return;
+  }
+
+  try {
+    await pool.query(
+      `
+      INSERT INTO favoritförval (user_id, forval_id, antal, senaste)
+      VALUES ($1, $2, 1, NOW())
+      ON CONFLICT (user_id, forval_id)
+      DO UPDATE SET antal = favoritförval.antal + 1, senaste = NOW()
+      `,
+      [userId, forvalId]
+    );
+    console.log(`🌟 Favoritförval uppdaterad för user ${userId}, förval ${forvalId}`);
+  } catch (error) {
+    console.error("❌ loggaFavoritförval error:", error);
+  }
+}
+
+export async function hamtaFavoritforval(): Promise<any[]> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    console.warn("⛔ Ingen användare inloggad vid hamtaFavoritforval");
+    return [];
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT f.*
+      FROM favoritförval ff
+      JOIN förval f ON ff.forval_id = f.id
+      WHERE ff.user_id = $1
+      ORDER BY ff.antal DESC, ff.senaste DESC
+      LIMIT 10
+      `,
+      [userId]
+    );
+
+    console.log(`📥 Hittade ${result.rows.length} favoritförval för user ${userId}`);
+    return result.rows;
+  } catch (error) {
+    console.error("❌ hamtaFavoritforval error:", error);
+    return [];
+  }
+}
+
+export async function fetchAllaForval(filters?: { sök?: string; kategori?: string; typ?: string }) {
+  let query = "SELECT * FROM förval";
+  const values: any[] = [];
+  const conditions: string[] = [];
+
+  if (filters?.sök) {
+    conditions.push(
+      `(LOWER(namn) LIKE $${values.length + 1} OR LOWER(beskrivning) LIKE $${values.length + 1})`
+    );
+    values.push(`%${filters.sök.toLowerCase()}%`);
+  }
+
+  if (filters?.kategori) {
+    conditions.push(`kategori = $${values.length + 1}`);
+    values.push(filters.kategori);
+  }
+
+  if (filters?.typ) {
+    conditions.push(`LOWER(typ) = $${values.length + 1}`);
+    values.push(filters.typ.toLowerCase());
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ` + conditions.join(" AND ");
+  }
+
+  query += ` ORDER BY namn`;
+
+  const res = await pool.query(query, values);
+  return res.rows;
+}
+
+export async function fetchFavoritforval() {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const userId = parseInt(session.user.id);
+
+  const query = `
+    SELECT f.*
+    FROM favoritförval ff
+    JOIN förval f ON ff.forval_id = f.id
+    WHERE ff.user_id = $1
+    ORDER BY ff.antal DESC
+    LIMIT 5
+  `;
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(query, [userId]);
+    return res.rows;
+  } finally {
+    client.release();
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { fetchAllaForval } from "../start/actions";
+import { useState, useEffect, useRef } from "react";
+import { fetchAllaForval, fetchFavoritforval, loggaFavoritförval } from "./actions";
 
 type KontoRad = {
   beskrivning: string;
@@ -44,29 +44,80 @@ export default function SokForval({
 }: Props) {
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState<Forval[]>([]);
-  const [loading, setLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [favoriter, setFavoriter] = useState<Forval[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
   useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const laddaFavoriter = async () => {
+      const favs = await fetchFavoritforval();
+      const begränsade = favs.slice(0, 6);
+      setFavoriter(begränsade);
+
+      if (searchText.trim().length < 2 && begränsade.length > 0) {
+        setResults(begränsade);
+        setHighlightedIndex(0);
+      }
+    };
+    laddaFavoriter();
+  }, []);
+
+  useEffect(() => {
     const delay = setTimeout(async () => {
       const input = searchText.trim();
+
       if (input.length < 2) {
-        setResults([]);
+        if (favoriter.length > 0) {
+          setResults(favoriter);
+          setHighlightedIndex(0);
+        } else {
+          setResults([]);
+        }
         setLoading(false);
         return;
       }
 
       setLoading(true);
       const alla = await fetchAllaForval();
-      const words = normalize(input).split(" ");
+      const q = normalize(input);
 
-      const träffar = alla.filter((f: Forval) => {
-        const text = `${f.namn} ${f.beskrivning} ${f.typ} ${f.kategori} ${f.sökord.join(" ")}`;
-        const norm = normalize(text);
-        return words.every((w) => norm.includes(w));
-      });
+      function score(f: Forval): number {
+        const input = normalize(searchText);
+        let poäng = 0;
+
+        const namn = normalize(f.namn);
+        if (namn === input) poäng += 200;
+        else if (namn.startsWith(input)) poäng += 100;
+        else if (namn.includes(input)) poäng += 40;
+
+        for (const ord of f.sökord || []) {
+          const s = normalize(ord);
+          if (s === input) poäng += 300;
+          else if (s.startsWith(input)) poäng += 150;
+          else if (s.includes(input)) poäng += 60;
+        }
+
+        const desc = normalize(f.beskrivning);
+        if (desc.includes(input)) poäng += 30;
+
+        if (normalize(f.typ).includes(input)) poäng += 20;
+        if (normalize(f.kategori).includes(input)) poäng += 20;
+
+        return poäng;
+      }
+
+      const träffar = alla
+        .map((f) => ({ förval: f, poäng: score(f) }))
+        .filter((x) => x.poäng > 0)
+        .sort((a, b) => b.poäng - a.poäng)
+        .map((x) => x.förval);
 
       setResults(träffar);
       setHighlightedIndex(0);
@@ -74,10 +125,12 @@ export default function SokForval({
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [searchText]);
+  }, [searchText, favoriter]);
 
   const väljFörval = (f: Forval) => {
+    loggaFavoritförval(f.id);
     setvaltFörval(f);
+
     const huvudkonto = f.konton.find(
       (k) => k.kontonummer !== "1930" && (k.kredit || k.debet) && !!k.kontonummer
     );
@@ -87,6 +140,7 @@ export default function SokForval({
     } else {
       console.warn("⚠️ Hittade inget huvudkonto i förval:", f);
     }
+
     setCurrentStep(2);
   };
 
@@ -106,7 +160,8 @@ export default function SokForval({
     }
     if (e.key === "Escape") {
       setSearchText("");
-      setResults([]);
+      setResults(favoriter);
+      setHighlightedIndex(0);
     }
   };
 
@@ -115,6 +170,7 @@ export default function SokForval({
       <h1 className="mb-8 text-3xl text-center text-white">Steg 1: Sök förval</h1>
 
       <input
+        ref={inputRef}
         className="text-center w-full p-3 text-white border-2 border-gray-700 rounded-lg bg-slate-900 placeholder-gray-400"
         type="text"
         autoComplete="off"
@@ -126,11 +182,65 @@ export default function SokForval({
 
       {loading && (
         <div className="flex justify-center mt-6">
-          <div className="w-8 h-8 border-4 border-gray-500 border-t-gray-300 rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-gray-500 border-t-white rounded-full animate-spin"></div>
         </div>
       )}
 
-      {!loading && results.length > 0 && (
+      {!loading && searchText.trim().length < 2 && favoriter.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-white text-xl font-semibold mb-4 text-center">Mest använda förval</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+            {favoriter.map((f, index) => (
+              <div
+                key={f.id}
+                className="relative rounded-xl p-4 transition-all duration-200 shadow-md cursor-pointer border border-gray-700 bg-slate-900"
+                onClick={() => väljFörval(f)}
+              >
+                <div className="text-xl font-semibold text-white mb-2">✓ {f.namn}</div>
+                <pre className="whitespace-pre-wrap text-sm italic text-gray-300 mb-2 font-sans">
+                  {f.beskrivning}
+                </pre>
+
+                <p className="text-sm text-gray-400">
+                  <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
+                  <strong>Kategori:</strong> {f.kategori}
+                </p>
+
+                <p className="text-sm text-gray-500 mt-2 mb-4">
+                  <strong>Sökord:</strong> {f.sökord.join(", ")}
+                </p>
+
+                <table className="w-full border border-gray-700 text-sm text-gray-300">
+                  <thead className="bg-slate-800 text-white">
+                    <tr>
+                      <th className="border border-gray-700 px-2 py-1 text-left">Konto</th>
+                      <th className="border border-gray-700 px-2 py-1 text-center">Debet</th>
+                      <th className="border border-gray-700 px-2 py-1 text-center">Kredit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {f.konton.map((konto, i) => (
+                      <tr key={i}>
+                        <td className="border border-gray-700 px-2 py-1">
+                          {konto.kontonummer} {konto.beskrivning}
+                        </td>
+                        <td className="border border-gray-700 px-2 py-1 text-center">
+                          {konto.debet === true ? "✓" : (konto.debet ?? "")}
+                        </td>
+                        <td className="border border-gray-700 px-2 py-1 text-center">
+                          {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && results.length > 0 && searchText.trim().length >= 2 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 animate-fade-in">
           {results.map((f, index) => (
             <div
