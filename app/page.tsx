@@ -8,6 +8,7 @@ import VisaKonton from "./VisaKonton";
 import VisaForval from "./VisaForval";
 import VisaTransaktioner from "./VisaTransaktioner";
 import ForvalDatabas from "./ForvalDatabas";
+import VisaDubbletter from "./VisaDubbletter";
 
 type YearSummary = {
   totalInkomst: number;
@@ -41,8 +42,9 @@ function Home() {
   return (
     <main className="items-center text-center bg-slate-950">
       {/* <ForvalDatabas /> */}
-      <VisaTransaktioner />
-      <VisaForval />
+      {/* <VisaTransaktioner /> */}
+      {/* <VisaForval /> */}
+      <VisaDubbletter />
       <VisaKonton />
       {/* <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
         <>

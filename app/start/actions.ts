@@ -299,3 +299,57 @@ export async function taBortTransaktion(id: number) {
     client.release();
   }
 }
+
+export async function fetchForvalMedFel() {
+  const client = await pool.connect();
+
+  try {
+    const kontonResult = await client.query("SELECT kontonummer FROM konton");
+    const giltigaKonton = kontonResult.rows.map((row) => row.kontonummer);
+
+    const forvalResult = await client.query("SELECT * FROM förval");
+    const felaktiga = forvalResult.rows.filter((f) => {
+      try {
+        const konton = Array.isArray(f.konton) ? f.konton : JSON.parse(f.konton);
+        return konton.some(
+          (konto: any) => konto.kontonummer && !giltigaKonton.includes(konto.kontonummer)
+        );
+      } catch (err) {
+        console.error("❌ JSON parse-fel i förval id:", f.id);
+        return true; // räkna som felaktig om JSON är trasig
+      }
+    });
+
+    return felaktiga;
+  } catch (error) {
+    console.error("❌ fetchForvalMedFel error:", error);
+    return [];
+  } finally {
+    client.release();
+  }
+}
+
+export async function fetchDubbletter() {
+  try {
+    const client = await pool.connect();
+
+    const query = `
+      SELECT 
+        k1.kontonummer AS dubblett_konto,
+        k1.beskrivning AS dubblett_beskrivning,
+        k1.dubblett_av,
+        k2.beskrivning AS original_beskrivning
+      FROM konton k1
+      LEFT JOIN konton k2 ON k1.dubblett_av = k2.kontonummer
+      WHERE k1.dubblett_av IS NOT NULL
+      ORDER BY k1.kontonummer;
+    `;
+
+    const res = await client.query(query);
+    client.release();
+    return res.rows;
+  } catch (error) {
+    console.error("❌ Fel vid hämtning av dubbletter:", error);
+    return [];
+  }
+}

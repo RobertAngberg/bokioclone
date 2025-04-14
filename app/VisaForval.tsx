@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchAllaForval } from "./start/actions"; // måste stödja filter
+import { fetchAllaForval } from "./start/actions";
 
 type KontoRad = {
   beskrivning: string;
@@ -22,12 +22,12 @@ type Forval = {
 
 export default function VisaForval() {
   const [forval, setForval] = useState<Forval[]>([]);
-  const [allaFörval, setAllaFörval] = useState<Forval[]>([]); // För metadata
+  const [allaFörval, setAllaFörval] = useState<Forval[]>([]);
   const [sök, setSök] = useState("");
   const [kategori, setKategori] = useState("");
   const [typ, setTyp] = useState("");
 
-  // Hämta allt vid första laddning för att visa alternativ i dropdowns
+  // Hämta metadata till dropdowns
   useEffect(() => {
     const init = async () => {
       const alla = await fetchAllaForval();
@@ -36,17 +36,21 @@ export default function VisaForval() {
     init();
   }, []);
 
-  // Hämta filtrerat varje gång något filter ändras
+  // Hämta filtrerade resultat
   useEffect(() => {
     const hämta = async () => {
-      const resultat = await fetchAllaForval({ sök, kategori, typ }); // NY funktionalitet krävs
+      const visaFörval = sök.length > 0 || kategori || typ;
+      if (!visaFörval) {
+        setForval([]);
+        return;
+      }
+      const resultat = await fetchAllaForval({ sök, kategori, typ });
       setForval(resultat);
     };
     hämta();
   }, [sök, kategori, typ]);
 
   const unikaKategorier = Array.from(new Set(allaFörval.map((f) => f.kategori))).sort();
-
   const unikaTyper = Array.from(
     new Set(allaFörval.map((f) => (f.typ ?? "").trim().toLowerCase()))
   ).sort();

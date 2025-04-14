@@ -59,7 +59,7 @@ function Bokför() {
               setKontonummer={setKontonummer}
               setKontobeskrivning={setKontobeskrivning}
             />
-            <div className="text-gray-400 text-sm text-center pt-6">
+            <div className="text-sm text-center pt-14">
               Ofta använda förval kommer att visas här i framtiden som genvägar.
             </div>
           </div>
