@@ -58,6 +58,15 @@ export default function Step3({
 
   console.log("📦 valtFörval i steg3:", valtFörval);
   console.log("🚚 Steg3 extrafält:", extrafält);
+  console.log(
+    "📦 konton i valtFörval:",
+    valtFörval?.konton.map((k) => k.kontonummer)
+  );
+  useEffect(() => {
+    if (valtFörval?.specialtyp && Object.keys(extrafält).length === 0) {
+      console.warn("⚠️ Extrafält saknas i Steg3 trots specialförval!", valtFörval);
+    }
+  }, [valtFörval, extrafält]);
 
   const momsSats = valtFörval?.momssats ?? 0;
   const moms = +(belopp * momsSats).toFixed(2);
@@ -66,7 +75,10 @@ export default function Step3({
   const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
   useEffect(() => {
-    if (!valtFörval || valtFörval.specialtyp) return;
+    if (!valtFörval || valtFörval.specialtyp) {
+      console.log("⏭️ Skippar kontoklass-hämtning för specialtyp:", valtFörval?.specialtyp);
+      return;
+    }
 
     getKontoklass(kontonummer).then((res) => {
       const typ = res?.toLowerCase();
@@ -74,6 +86,7 @@ export default function Step3({
       else if (typ === "kostnader") setKontoklass("Kostnad");
       else if (typ === "tillgångar") setKontoklass("Tillgång");
       else if (typ === "skulder") setKontoklass("Skuld");
+      else console.warn("🤷‍♂️ Okänd kontoklass:", res);
     });
   }, [valtFörval, kontonummer]);
 

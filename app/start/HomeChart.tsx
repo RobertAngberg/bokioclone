@@ -24,6 +24,8 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
   const [resultData, setResultData] = useState<number[]>([]);
 
   useEffect(() => {
+    console.log("📊 chartData som kom in:", chartData);
+
     const monthNames = [
       "Jan",
       "Feb",
@@ -38,14 +40,20 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
       "Nov",
       "Dec",
     ];
+
     const monthDataMap: { [key: string]: { inkomst: number; utgift: number } } = {};
 
-    chartData.forEach((row) => {
-      const date = new Date(row.month);
-      if (isNaN(date.getTime())) return;
+    chartData.forEach((row, index) => {
+      console.log(`📅 Row ${index + 1}:`, row);
 
-      const month = date.getMonth();
-      const label = monthNames[month];
+      const parsedDate = new Date(`${row.month}T00:00:00Z`);
+      if (isNaN(parsedDate.getTime())) {
+        console.warn("⚠️ Ogiltigt datum i row:", row.month);
+        return;
+      }
+
+      const monthIndex = parsedDate.getMonth();
+      const label = monthNames[monthIndex];
 
       if (!monthDataMap[label]) {
         monthDataMap[label] = { inkomst: 0, utgift: 0 };
@@ -55,12 +63,19 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
       monthDataMap[label].utgift += row.utgift;
     });
 
+    console.log("✅ Sammanställt monthDataMap:", monthDataMap);
+
     const finalLabels = monthNames.filter((m) => monthDataMap[m]);
     const inkomstValues = finalLabels.map((label) => monthDataMap[label].inkomst);
-    const utgiftValues = finalLabels.map((label) => -monthDataMap[label].utgift);
+    const utgiftValues = finalLabels.map((label) => -monthDataMap[label].utgift); // visas som negativa
     const resultValues = finalLabels.map(
       (label) => monthDataMap[label].inkomst - monthDataMap[label].utgift
     );
+
+    console.log("📌 Final labels:", finalLabels);
+    console.log("💰 Inkomster:", inkomstValues);
+    console.log("📉 Utgifter:", utgiftValues);
+    console.log("📈 Resultat:", resultValues);
 
     setLabels(finalLabels);
     setInkomstData(inkomstValues);
@@ -150,6 +165,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
         onChange={(e) => onYearChange(e.target.value)}
         className="px-4 py-2 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
       >
+        <option value="2025">2025</option>
         <option value="2024">2024</option>
         <option value="2023">2023</option>
         <option value="2022">2022</option>

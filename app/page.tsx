@@ -23,7 +23,7 @@ type YearDataPoint = {
 };
 
 function Home() {
-  const [year, setYear] = useState("2024");
+  const [year, setYear] = useState("2025");
   const [data, setData] = useState<YearSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,25 +40,24 @@ function Home() {
 
   return (
     <main className="items-center text-center bg-slate-950">
-      <ForvalDatabas />
-      {/* <VisaTransaktioner /> */}
-      <VisaForval />
+      {/* <ForvalDatabas />
+      <VisaTransaktioner />
+      <VisaForval /> */}
       {/* <VisaKonton /> */}
-      {/* <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
+      <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
         <>
           <Card title="Inkomster" data={data?.totalInkomst || 0} />
           <Card title="Utgifter" data={data?.totalUtgift || 0} />
           <Card title="Resultat" data={data?.totalResultat || 0} />
         </>
       </div>
-
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>
         </div>
       ) : (
         <HomeChart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
-      )} */}
+      )}
     </main>
   );
 }

@@ -88,7 +88,7 @@ export async function saveTransaction(formData: FormData) {
 
   const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
   const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString().trim() || "0");
-  let belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
+  const belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
 
   const extrafältRaw = formData.get("extrafält")?.toString();
   const extrafält = extrafältRaw ? (JSON.parse(extrafältRaw) as Record<string, ExtrafältRad>) : {};
@@ -99,15 +99,14 @@ export async function saveTransaction(formData: FormData) {
 
     const insertTransactionQuery = `
       INSERT INTO transaktioner (
-        transaktionsdatum, kontobeskrivning, kontoklass, belopp, fil, kommentar, "userId"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        transaktionsdatum, kontobeskrivning, belopp, fil, kommentar, "userId"
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING transaktions_id
     `;
 
     const res = await client.query(insertTransactionQuery, [
       new Date(transaktionsdatum),
       kontobeskrivning,
-      valtFörval.typ, // nu "kontoklass"
       belopp,
       filename,
       kommentar,
@@ -117,7 +116,7 @@ export async function saveTransaction(formData: FormData) {
     const transaktionsId = res.rows[0].transaktions_id;
     console.log("🆔 transaktions_id:", transaktionsId);
 
-    // === Hantera extrafält ===
+    // === Extrafält ===
     for (const [kontonummer, data] of Object.entries(extrafält)) {
       const kontoRes = await client.query(
         "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
@@ -125,7 +124,7 @@ export async function saveTransaction(formData: FormData) {
       );
 
       if (kontoRes.rows.length === 0) {
-        console.warn(`⛔ Konto ${kontonummer} hittades inte`);
+        console.warn(`⛔ Konto ${kontonummer} hittades inte (extrafält)`);
         continue;
       }
 
@@ -144,7 +143,7 @@ export async function saveTransaction(formData: FormData) {
       );
     }
 
-    // === Hantera vanliga konton ===
+    // === Vanliga konton ===
     const getBelopp = (konto: any, typ: "debet" | "kredit") => {
       const nr = konto.kontonummer?.toString() ?? "";
       const andel = konto.andelAv;
@@ -207,7 +206,7 @@ export async function saveTransaction(formData: FormData) {
   } catch (error) {
     client.release();
     console.error("❌ saveTransaction error:", error);
-    return { success: false, error };
+    return { success: false, error: (error as Error).message };
   }
 }
 

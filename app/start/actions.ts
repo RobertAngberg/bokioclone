@@ -56,54 +56,61 @@ export async function fetchDataFromYear(year: string) {
   const start = new Date(`${year}-01-01`);
   const end = new Date(`${+year + 1}-01-01`);
 
+  console.log("🔎 Hämtar data för år:", year, start.toISOString(), "→", end.toISOString());
+
   try {
     const client = await pool.connect();
 
     const query = `
       SELECT 
-        t.transaktionsdatum, 
-        t.kontoklass, 
-        tp.debet, 
-        tp.kredit 
+        t.transaktionsdatum,
+        tp.debet,
+        tp.kredit,
+        k.kontoklass,
+        k.kontonummer
       FROM transaktioner t
       JOIN transaktionsposter tp ON t.transaktions_id = tp.transaktions_id
+      JOIN konton k ON tp.konto_id = k.konto_id
       WHERE t.transaktionsdatum >= $1 AND t.transaktionsdatum < $2
       ORDER BY t.transaktionsdatum ASC
     `;
+
     const result = await client.query(query, [start, end]);
     client.release();
 
     const rows = result.rows;
+    console.log("✅ Antal rader hämtade:", rows.length);
+    if (rows.length > 0) console.table(rows.slice(0, 5));
 
-    const grouped: { [month: string]: { inkomst: number; utgift: number } } = {};
+    const grouped: Record<string, { inkomst: number; utgift: number }> = {};
     let totalInkomst = 0;
     let totalUtgift = 0;
 
     rows.forEach((row, i) => {
-      const rawDate = row.transaktionsdatum;
-      const typ = row.kontoklass;
+      const { transaktionsdatum, debet, kredit, kontonummer } = row;
 
-      if (!rawDate || !typ) {
-        console.warn(`⚠️ Skipping row ${i + 1} - saknar datum eller kontoklass`);
+      if (!transaktionsdatum || !kontonummer) {
+        console.warn(`⚠️ Rad ${i + 1} saknar datum eller kontonummer:`, row);
         return;
       }
 
-      const date = new Date(rawDate);
+      const date = new Date(transaktionsdatum);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
 
-      const debet = Number(row.debet ?? 0);
-      const kredit = Number(row.kredit ?? 0);
+      const deb = Number(debet ?? 0);
+      const kre = Number(kredit ?? 0);
+      const prefix = kontonummer?.toString()[0]; // "3" för intäkt, "5"-"8" för kostnad
 
       if (!grouped[key]) grouped[key] = { inkomst: 0, utgift: 0 };
 
-      if (typ === "Intäkt") {
-        grouped[key].inkomst += kredit;
-        totalInkomst += kredit;
+      if (prefix === "3") {
+        grouped[key].inkomst += kre;
+        totalInkomst += kre;
       }
 
-      if (typ === "Utgift") {
-        grouped[key].utgift += debet;
-        totalUtgift += debet;
+      if (["5", "6", "7", "8"].includes(prefix)) {
+        grouped[key].utgift += deb;
+        totalUtgift += deb;
       }
     });
 
@@ -112,6 +119,8 @@ export async function fetchDataFromYear(year: string) {
       inkomst: values.inkomst,
       utgift: values.utgift,
     }));
+
+    console.log("📊 yearData:", yearData);
 
     return {
       totalInkomst: +totalInkomst.toFixed(2),
