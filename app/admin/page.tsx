@@ -18,7 +18,7 @@ export default function Home() {
       <div className="w-full max-w-5xl mx-auto text-center">
         <h1 className="mb-6 text-3xl">Admin</h1>
         {/* Förval-databas */}
-        <section>
+        {/* <section>
           <h2
             className="text-2xl font-bold mb-4 border-b border-cyan-700 pb-1 cursor-pointer hover:text-cyan-300"
             onClick={() => setÖppen((prev) => ({ ...prev, forvalDatabas: !prev.forvalDatabas }))}
@@ -26,7 +26,7 @@ export default function Home() {
             📋 Förval-databas
           </h2>
           {öppen.forvalDatabas && <ForvalDatabas />}
-        </section>
+        </section> */}
 
         {/* Transaktioner */}
         <section>
@@ -40,7 +40,7 @@ export default function Home() {
         </section>
 
         {/* Kontoplan */}
-        <section>
+        {/* <section>
           <h2
             className="text-2xl font-bold mb-4 border-b border-cyan-700 pb-1 cursor-pointer hover:text-cyan-300"
             onClick={() => setÖppen((prev) => ({ ...prev, konton: !prev.konton }))}
@@ -48,7 +48,7 @@ export default function Home() {
             📚 Kontoplan
           </h2>
           {öppen.konton && <VisaKonton />}
-        </section>
+        </section> */}
       </div>
     </main>
   );

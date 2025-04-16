@@ -9,7 +9,7 @@ const pool = new Pool({
 export async function hämtaTransaktionsposter(transaktionsId: number) {
   const result = await pool.query(
     `
-    SELECT tp.konto_id, k.kontobeskrivning, tp.debet, tp.kredit
+    SELECT tp.konto_id, k.beskrivning, tp.debet, tp.kredit
     FROM transaktionsposter tp
     LEFT JOIN konton k ON k.konto_id = tp.konto_id
     WHERE tp.transaktions_id = $1
@@ -17,7 +17,12 @@ export async function hämtaTransaktionsposter(transaktionsId: number) {
     [transaktionsId]
   );
 
-  return result.rows;
+  return result.rows.map((rad) => ({
+    konto_id: rad.konto_id,
+    kontobeskrivning: rad.beskrivning, // vi mappar det till "kontobeskrivning" för konsistens i frontend
+    debet: Number(rad.debet ?? 0),
+    kredit: Number(rad.kredit ?? 0),
+  }));
 }
 
 export async function fetchAllaForval(filters?: { sök?: string; kategori?: string; typ?: string }) {

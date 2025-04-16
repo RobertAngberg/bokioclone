@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hämtaAllaTransaktioner, taBortTransaktion } from "./actions";
+import { hämtaAllaTransaktioner, hämtaTransaktionsposter, taBortTransaktion } from "./actions";
 
 type Transaktion = {
   transaktions_id: number;
@@ -11,11 +11,20 @@ type Transaktion = {
   fil: string;
   kommentar: string;
   userId: number | null;
+  konton?: Transaktionskonto[];
+};
+
+type Transaktionskonto = {
+  konto_id: number;
+  kontobeskrivning: string;
+  debet: number;
+  kredit: number;
 };
 
 export default function VisaTransaktioner() {
   const [transaktioner, setTransaktioner] = useState<Transaktion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [öppen, setÖppen] = useState<number | null>(null);
 
   useEffect(() => {
     const hämta = async () => {
@@ -44,6 +53,19 @@ export default function VisaTransaktioner() {
 
     await taBortTransaktion(id);
     setTransaktioner((prev) => prev.filter((t) => t.transaktions_id !== id));
+  };
+
+  const visaKonton = async (transaktionsId: number) => {
+    if (öppen === transaktionsId) {
+      setÖppen(null);
+      return;
+    }
+
+    const poster = await hämtaTransaktionsposter(transaktionsId);
+    setTransaktioner((prev) =>
+      prev.map((t) => (t.transaktions_id === transaktionsId ? { ...t, konton: poster } : t))
+    );
+    setÖppen(transaktionsId);
   };
 
   return (
@@ -76,7 +98,35 @@ export default function VisaTransaktioner() {
                   <tr key={t.transaktions_id} className={`${rowBg} text-white`}>
                     <td className="p-3">{t.transaktions_id}</td>
                     <td className="p-3">{t.transaktionsdatum}</td>
-                    <td className="p-3">{t.kontobeskrivning}</td>
+                    <td className="p-3">
+                      <button
+                        className="text-cyan-400 underline hover:text-cyan-300"
+                        onClick={() => visaKonton(t.transaktions_id)}
+                      >
+                        Visa konton
+                      </button>
+                      {t.transaktions_id === öppen && t.konton && (
+                        <ul className="mt-2 text-sm text-gray-300 space-y-1">
+                          {t.konton.map((konto, i) => (
+                            <li key={`${konto.konto_id}_${i}`}>
+                              <span className="font-medium text-white">
+                                {konto.kontobeskrivning}
+                              </span>{" "}
+                              – Debet:{" "}
+                              {konto.debet.toLocaleString("sv-SE", {
+                                style: "currency",
+                                currency: "SEK",
+                              })}{" "}
+                              | Kredit:{" "}
+                              {konto.kredit.toLocaleString("sv-SE", {
+                                style: "currency",
+                                currency: "SEK",
+                              })}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
                     <td className="p-3 text-right">
                       {t.belopp.toLocaleString("sv-SE", {
                         style: "currency",
