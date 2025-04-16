@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hämtaAllaTransaktioner, hämtaTransaktionsposter, taBortTransaktion } from "./actions";
+import { hämtaAllaTransaktioner, taBortTransaktion, hämtaTransaktionsposter } from "./actions";
 
 type Transaktion = {
   transaktions_id: number;
@@ -11,12 +11,11 @@ type Transaktion = {
   fil: string;
   kommentar: string;
   userId: number | null;
-  konton?: Transaktionskonto[];
 };
 
-type Transaktionskonto = {
-  konto_id: number;
-  kontobeskrivning: string;
+type KontoRad = {
+  kontonummer?: string;
+  beskrivning?: string;
   debet: number;
   kredit: number;
 };
@@ -24,7 +23,8 @@ type Transaktionskonto = {
 export default function VisaTransaktioner() {
   const [transaktioner, setTransaktioner] = useState<Transaktion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [öppen, setÖppen] = useState<number | null>(null);
+  const [visaKonton, setVisaKonton] = useState<Record<number, boolean>>({});
+  const [kontonPerTransaktion, setKontonPerTransaktion] = useState<Record<number, KontoRad[]>>({});
 
   useEffect(() => {
     const hämta = async () => {
@@ -47,25 +47,20 @@ export default function VisaTransaktioner() {
     hämta();
   }, []);
 
+  const toggleKonton = async (id: number) => {
+    const redanHämtade = kontonPerTransaktion[id];
+    if (!redanHämtade) {
+      const poster = await hämtaTransaktionsposter(id);
+      setKontonPerTransaktion((prev) => ({ ...prev, [id]: poster }));
+    }
+    setVisaKonton((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const handleDelete = async (id: number) => {
     const confirm = window.confirm("Ta bort denna transaktion?");
     if (!confirm) return;
-
     await taBortTransaktion(id);
     setTransaktioner((prev) => prev.filter((t) => t.transaktions_id !== id));
-  };
-
-  const visaKonton = async (transaktionsId: number) => {
-    if (öppen === transaktionsId) {
-      setÖppen(null);
-      return;
-    }
-
-    const poster = await hämtaTransaktionsposter(transaktionsId);
-    setTransaktioner((prev) =>
-      prev.map((t) => (t.transaktions_id === transaktionsId ? { ...t, konton: poster } : t))
-    );
-    setÖppen(transaktionsId);
   };
 
   return (
@@ -84,82 +79,113 @@ export default function VisaTransaktioner() {
                 <th className="p-3">ID</th>
                 <th className="p-3">Datum</th>
                 <th className="p-3">Konto</th>
-                <th className="p-3 text-right">Belopp</th>
+                <th className="p-3">Belopp</th>
                 <th className="p-3">Fil</th>
                 <th className="p-3">Kommentar</th>
                 <th className="p-3">Användare</th>
+                <th className="p-3">Konton</th>
                 <th className="p-3 text-center text-2xl">🗑</th>
               </tr>
             </thead>
             <tbody>
               {transaktioner.map((t, i) => {
                 const rowBg = i % 2 === 0 ? "bg-slate-850" : "bg-slate-800";
+                const konton = kontonPerTransaktion[t.transaktions_id] ?? [];
+
                 return (
-                  <tr key={t.transaktions_id} className={`${rowBg} text-white`}>
-                    <td className="p-3">{t.transaktions_id}</td>
-                    <td className="p-3">{t.transaktionsdatum}</td>
-                    <td className="p-3">
-                      <button
-                        className="text-cyan-400 underline hover:text-cyan-300"
-                        onClick={() => visaKonton(t.transaktions_id)}
-                      >
-                        Visa konton
-                      </button>
-                      {t.transaktions_id === öppen && t.konton && (
-                        <ul className="mt-2 text-sm text-gray-300 space-y-1">
-                          {t.konton.map((konto, i) => (
-                            <li key={`${konto.konto_id}_${i}`}>
-                              <span className="font-medium text-white">
-                                {konto.kontobeskrivning}
-                              </span>{" "}
-                              – Debet:{" "}
-                              {konto.debet.toLocaleString("sv-SE", {
-                                style: "currency",
-                                currency: "SEK",
-                              })}{" "}
-                              | Kredit:{" "}
-                              {konto.kredit.toLocaleString("sv-SE", {
-                                style: "currency",
-                                currency: "SEK",
-                              })}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </td>
-                    <td className="p-3 text-right">
-                      {t.belopp.toLocaleString("sv-SE", {
-                        style: "currency",
-                        currency: "SEK",
-                      })}
-                    </td>
-                    <td className="p-3">
-                      {t.fil ? (
-                        <span className="text-cyan-300 underline">{t.fil}</span>
-                      ) : (
-                        <span className="italic text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {t.kommentar ? t.kommentar : <span className="italic text-gray-400">—</span>}
-                    </td>
-                    <td className="p-3">
-                      {t.userId !== null ? (
-                        t.userId
-                      ) : (
-                        <span className="italic text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="p-3 text-center">
-                      <button
-                        onClick={() => handleDelete(t.transaktions_id)}
-                        className="text-red-500 hover:text-red-700"
-                        title="Radera transaktion"
-                      >
-                        ❌
-                      </button>
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={`rad-${t.transaktions_id}`} className={`${rowBg} text-white`}>
+                      <td className="p-3">{t.transaktions_id}</td>
+                      <td className="p-3">{t.transaktionsdatum}</td>
+                      <td className="p-3">{t.kontobeskrivning}</td>
+                      <td className="p-3">
+                        {t.belopp.toLocaleString("sv-SE", {
+                          style: "currency",
+                          currency: "SEK",
+                        })}
+                      </td>
+                      <td className="p-3">
+                        {t.fil ? (
+                          <span className="text-cyan-300 underline">{t.fil}</span>
+                        ) : (
+                          <span className="italic text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {t.kommentar ? (
+                          t.kommentar
+                        ) : (
+                          <span className="italic text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {t.userId !== null ? (
+                          t.userId
+                        ) : (
+                          <span className="italic text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => toggleKonton(t.transaktions_id)}
+                          className="text-cyan-400 underline"
+                        >
+                          {visaKonton[t.transaktions_id] ? "Dölj konton" : "Visa konton"}
+                        </button>
+                      </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => handleDelete(t.transaktions_id)}
+                          className="text-red-500 hover:text-red-700"
+                          title="Radera transaktion"
+                        >
+                          ❌
+                        </button>
+                      </td>
+                    </tr>
+
+                    {visaKonton[t.transaktions_id] && konton.length > 0 && (
+                      <tr key={`konton-${t.transaktions_id}`} className="bg-slate-900">
+                        <td colSpan={9} className="p-4">
+                          <table className="w-full border border-slate-700 text-sm text-white">
+                            <thead>
+                              <tr className="bg-slate-800">
+                                <th className="p-2 text-left">Konto</th>
+                                <th className="p-2 text-left">Beskrivning</th>
+                                <th className="p-2 text-left">Debet</th>
+                                <th className="p-2 text-left">Kredit</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {konton.map((rad, index) => (
+                                <tr
+                                  key={`${rad.kontonummer ?? "okänt"}-${index}`}
+                                  className="border-t border-slate-800"
+                                >
+                                  <td className="p-3 text-left">{rad.kontonummer ?? "okänt"}</td>
+                                  <td className="p-3 text-left">{rad.beskrivning ?? "okänt"}</td>
+                                  <td className="p-3 text-left">
+                                    {rad.debet > 0
+                                      ? rad.debet.toLocaleString("sv-SE", {
+                                          minimumFractionDigits: 2,
+                                        }) + " kr"
+                                      : ""}
+                                  </td>
+                                  <td className="p-3 text-left">
+                                    {rad.kredit > 0
+                                      ? rad.kredit.toLocaleString("sv-SE", {
+                                          minimumFractionDigits: 2,
+                                        }) + " kr"
+                                      : ""}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 );
               })}
             </tbody>
