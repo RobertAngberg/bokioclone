@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchAllaForval } from "./start/actions";
+import { fetchAllaForval } from "../start/actions";
 
 type KontoRad = {
   beskrivning: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hämtaAllaTransaktioner, taBortTransaktion } from "./start/actions";
+import { hämtaAllaTransaktioner, taBortTransaktion } from "./actions";
 
 type Transaktion = {
   transaktions_id: number;

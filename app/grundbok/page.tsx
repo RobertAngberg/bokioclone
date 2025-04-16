@@ -65,7 +65,6 @@ export default function Grundbok() {
     <main className="min-h-screen px-4 py-10 text-white bg-slate-950 md:px-10">
       <div className="w-full max-w-5xl mx-auto text-center">
         <h1 className="mb-6 text-3xl">Grundbok</h1>
-
         <select
           className="px-4 py-2 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
           id="year"

@@ -4,10 +4,10 @@ import React, { useState, useEffect } from "react";
 import { fetchDataFromYear } from "./start/actions";
 import { Card } from "./start/Card";
 import { HomeChart } from "./start/HomeChart";
-import VisaKonton from "./VisaKonton";
-import VisaForval from "./VisaForval";
-import VisaTransaktioner from "./VisaTransaktioner";
-import ForvalDatabas from "./ForvalDatabas";
+import VisaKonton from "./admin/VisaKonton";
+import VisaForval from "./admin/VisaForval";
+import VisaTransaktioner from "./admin/VisaTransaktioner";
+import ForvalDatabas from "./admin/ForvalDatabas";
 
 type YearSummary = {
   totalInkomst: number;

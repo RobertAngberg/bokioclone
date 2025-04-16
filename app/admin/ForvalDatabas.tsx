@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hämtaFörvalMedSökning, räknaFörval, taBortFörval, uppdateraFörval } from "./start/actions";
+import {
+  hämtaFörvalMedSökning,
+  räknaFörval,
+  taBortFörval,
+  uppdateraFörval,
+} from "../start/actions";
 
 type KontoRad = {
   kontonummer: string;
@@ -86,7 +91,7 @@ export default function ForvalDatabas() {
   };
 
   return (
-    <main className="px-6 py-10 text-white">
+    <main className="px-6 text-white">
       <h1 className="mb-6 text-3xl font-bold text-center">Förval-databas</h1>
 
       <div className="flex justify-center mb-6">
