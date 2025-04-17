@@ -92,9 +92,8 @@ export default function ForvalDatabas() {
 
   return (
     <main className="px-6 text-white">
-      <h1 className="mb-6 text-3xl font-bold text-center">Förval-databas</h1>
-
-      <div className="flex justify-center mb-6">
+      <h1 className="text-3xl font-bold py-6 text-white">Förval</h1>
+      <div className="flex mb-6">
         <input
           type="text"
           placeholder="🔍 Sök förval..."

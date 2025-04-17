@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SokForval from "./SokForval";
 import Steg2 from "./Steg2";
 import Steg3 from "./Steg3";
 import Steg4 from "./Steg4";
-import React from "react";
 
 type KontoRad = {
   beskrivning: string;
@@ -35,7 +34,6 @@ type Forval = {
 
 function Bokför() {
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [searchText, setSearchText] = useState("");
   const [kontonummer, setKontonummer] = useState<string>("");
   const [kontobeskrivning, setKontobeskrivning] = useState<string>();
   const [fil, setFil] = useState<File | null>(null);
@@ -48,54 +46,61 @@ function Bokför() {
     Record<string, { label: string; debet: number; kredit: number }>
   >({});
 
+  // Om man kommer in med ett redan valt förval, hoppa direkt till steg 2
+  useEffect(() => {
+    if (currentStep === 1 && valtFörval) {
+      setCurrentStep(2);
+    }
+  }, [currentStep, valtFörval]);
+
   return (
     <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10">
       <div className="max-w-5xl mx-auto">
-        {currentStep === 1 && (
-          <div className="w-full p-8 text-gray-100 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+        <div className="w-full p-8 text-gray-100 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+          {currentStep === 1 && (
             <SokForval
               setCurrentStep={setCurrentStep}
               setvaltFörval={setValtFörval}
               setKontonummer={setKontonummer}
               setKontobeskrivning={setKontobeskrivning}
             />
-          </div>
-        )}
+          )}
 
-        {currentStep === 2 && (
-          <Steg2
-            setCurrentStep={setCurrentStep}
-            fil={fil}
-            setFil={setFil}
-            pdfUrl={pdfUrl}
-            setPdfUrl={setPdfUrl}
-            belopp={belopp}
-            setBelopp={setBelopp}
-            transaktionsdatum={transaktionsdatum}
-            setTransaktionsdatum={setTransaktionsdatum}
-            kommentar={kommentar}
-            setKommentar={setKommentar}
-            valtFörval={valtFörval}
-            extrafält={extrafält}
-            setExtrafält={setExtrafält}
-          />
-        )}
+          {currentStep === 2 && (
+            <Steg2
+              setCurrentStep={setCurrentStep}
+              fil={fil}
+              setFil={setFil}
+              pdfUrl={pdfUrl}
+              setPdfUrl={setPdfUrl}
+              belopp={belopp}
+              setBelopp={setBelopp}
+              transaktionsdatum={transaktionsdatum}
+              setTransaktionsdatum={setTransaktionsdatum}
+              kommentar={kommentar}
+              setKommentar={setKommentar}
+              valtFörval={valtFörval}
+              extrafält={extrafält}
+              setExtrafält={setExtrafält}
+            />
+          )}
 
-        {currentStep === 3 && (
-          <Steg3
-            kontonummer={kontonummer}
-            kontobeskrivning={kontobeskrivning ?? ""}
-            fil={fil ?? undefined}
-            belopp={belopp ?? 0}
-            transaktionsdatum={transaktionsdatum ?? ""}
-            kommentar={kommentar ?? ""}
-            valtFörval={valtFörval}
-            setCurrentStep={setCurrentStep}
-            extrafält={extrafält}
-          />
-        )}
+          {currentStep === 3 && (
+            <Steg3
+              kontonummer={kontonummer}
+              kontobeskrivning={kontobeskrivning ?? ""}
+              fil={fil ?? undefined}
+              belopp={belopp ?? 0}
+              transaktionsdatum={transaktionsdatum ?? ""}
+              kommentar={kommentar ?? ""}
+              valtFörval={valtFörval}
+              setCurrentStep={setCurrentStep}
+              extrafält={extrafält}
+            />
+          )}
 
-        {currentStep === 4 && <Steg4 />}
+          {currentStep === 4 && <Steg4 />}
+        </div>
       </div>
     </main>
   );

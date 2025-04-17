@@ -155,7 +155,7 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
   };
 
   return (
-    <div className="w-full h-screen text-white md:mx-auto md:w-4/5">
+    <div className="w-full text-white md:mx-auto md:w-4/5">
       <label className="p-3 font-bold text-white" htmlFor="year">
         Visa år:
       </label>

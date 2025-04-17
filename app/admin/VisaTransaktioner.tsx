@@ -64,9 +64,11 @@ export default function VisaTransaktioner() {
   };
 
   return (
-    <main className="p-6 text-white my-10 max-w-6xl mx-auto">
-      <h1 className="mb-6 text-3xl font-bold text-center">Transaktioner</h1>
-
+    <main className="p-6 text-white max-w-6xl mx-auto">
+      <h1 className="mb-6 text-3xl font-bold">Transaktioner</h1>
+      <p className="text-gray-400 mb-6">
+        {transaktioner.length} transaktion{transaktioner.length !== 1 ? "er" : ""}
+      </p>
       {loading ? (
         <p className="text-center text-gray-300">🔄 Laddar transaktioner...</p>
       ) : transaktioner.length === 0 ? (
