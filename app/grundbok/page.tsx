@@ -28,6 +28,7 @@ export default function Grundbok() {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  /* --- ladda transaktioner --- */
   useEffect(() => {
     const loadTransaktioner = async () => {
       setIsLoading(true);
@@ -49,6 +50,7 @@ export default function Grundbok() {
     loadTransaktioner();
   }, [year]);
 
+  /* --- expandera rad --- */
   const handleRowClick = async (id: number) => {
     if (id === activeId) {
       setActiveId(null);
@@ -61,38 +63,44 @@ export default function Grundbok() {
     }
   };
 
+  /* ---------- UI ---------- */
   return (
-    <main className="min-h-screen px-4 py-10 text-white bg-slate-950 md:px-10">
-      <div className="w-full max-w-5xl mx-auto text-center">
-        <h1 className="mb-6 text-3xl">Grundbok</h1>
-        <select
-          className="px-4 py-2 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-          id="year"
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-        >
-          <option value="2025">2025</option>
-          <option value="2024">2024</option>
-          <option value="2023">2023</option>
-          <option value="2022">2022</option>
-          <option value="2021">2021</option>
-          <option value="2020">2020</option>
-        </select>
-      </div>
+    <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10 text-slate-100">
+      <div className="max-w-5xl mx-auto">
+        {/* kortet */}
+        <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+          {/* rubrik + årsväljare */}
+          <div className="text-center mb-8 space-y-4">
+            <h1 className="text-3xl">Grundbok</h1>
 
-      <div className="w-full mt-10">
-        {isLoading ? (
-          <div className="flex items-center justify-center w-full h-64">
-            <div className="w-16 h-16 border-t-4 border-cyan-600 border-solid rounded-full animate-spin" />
+            <select
+              className="px-4 py-2 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
+              id="year"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            >
+              {["2025", "2024", "2023", "2022", "2021", "2020"].map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
           </div>
-        ) : (
-          <Table
-            historyData={historyData}
-            handleRowClick={handleRowClick}
-            activeId={activeId}
-            details={activeId ? (detailsMap[activeId] ?? []) : []}
-          />
-        )}
+
+          {/* tabell / spinner */}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="w-16 h-16 border-t-4 border-cyan-400 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <Table
+              historyData={historyData}
+              handleRowClick={handleRowClick}
+              activeId={activeId}
+              details={activeId ? (detailsMap[activeId] ?? []) : []}
+            />
+          )}
+        </div>
       </div>
     </main>
   );

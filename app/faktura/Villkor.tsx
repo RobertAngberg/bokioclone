@@ -7,7 +7,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import { sv } from "date-fns/locale";
 
 export default function Villkor() {
-  const [isOpen, setIsOpen] = useState(false);
   const { formData, setFormData } = useFakturaContext();
 
   const addDays = (date: Date, days: number) => {
@@ -51,75 +50,63 @@ export default function Villkor() {
   };
 
   return (
-    <div className="mb-4 rounded bg-cyan-950 p-1">
-      <div
-        className="flex justify-between items-center bg-cyan-950 px-4 py-3 cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <h2 className="text-xl font-bold text-white">Villkor</h2>
-        <span className="text-white">{isOpen ? "▲" : "▼"}</span>
-      </div>
-
-      {isOpen && (
-        <div className="transition-all duration-300 ease-in-out bg-cyan-900 p-6 text-white space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Fakturadatum</label>
-              <DatePicker
-                selected={fakturadatumDate}
-                onChange={handleFakturadatumChange}
-                dateFormat="yyyy-MM-dd"
-                locale={sv}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Förfallodatum</label>
-              <DatePicker
-                selected={forfalloDate}
-                onChange={handleForfallodatumChange}
-                dateFormat="yyyy-MM-dd"
-                locale={sv}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">Betalningsvillkor (dagar)</label>
-              <input
-                type="text"
-                name="betalningsvillkor"
-                value={formData.betalningsvillkor}
-                onChange={handleTextChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">Dröjsmålsränta</label>
-              <input
-                type="text"
-                name="drojsmalsranta"
-                value={formData.drojsmalsranta}
-                onChange={handleTextChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium">Leverans</label>
-              <input
-                type="text"
-                name="leverans"
-                value={formData.leverans}
-                onChange={handleTextChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-white mb-1">Fakturadatum</label>
+          <DatePicker
+            selected={fakturadatumDate}
+            onChange={handleFakturadatumChange}
+            dateFormat="yyyy-MM-dd"
+            locale={sv}
+            className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
+          />
         </div>
-      )}
+
+        <div>
+          <label className="block text-sm font-medium text-white mb-1">Förfallodatum</label>
+          <DatePicker
+            selected={forfalloDate}
+            onChange={handleForfallodatumChange}
+            dateFormat="yyyy-MM-dd"
+            locale={sv}
+            className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-white">Betalningsvillkor (dagar)</label>
+          <input
+            type="text"
+            name="betalningsvillkor"
+            value={formData.betalningsvillkor}
+            onChange={handleTextChange}
+            className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-white">Dröjsmålsränta</label>
+          <input
+            type="text"
+            name="drojsmalsranta"
+            value={formData.drojsmalsranta}
+            onChange={handleTextChange}
+            className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-white">Leverans</label>
+          <input
+            type="text"
+            name="leverans"
+            value={formData.leverans}
+            onChange={handleTextChange}
+            className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
+          />
+        </div>
+      </div>
     </div>
   );
 }

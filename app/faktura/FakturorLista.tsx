@@ -5,119 +5,91 @@ import { useFakturaContext } from "./FakturaProvider";
 import { getAllInvoices, deleteInvoice, updateFakturanummer } from "./actions";
 
 export default function FakturorLista() {
-  const [isOpen, setIsOpen] = useState(false);
   const [fakturor, setFakturor] = useState<any[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [editedNummer, setEditedNummer] = useState("");
   const { setFormData } = useFakturaContext();
 
   useEffect(() => {
-    const fetchFakturor = async () => {
-      const result = await getAllInvoices();
-      if (result.success) {
-        setFakturor(result.invoices || []);
-      } else {
-        console.error("Misslyckades att hämta fakturor");
-      }
-    };
-
-    fetchFakturor();
+    (async () => {
+      const res = await getAllInvoices();
+      if (res.success) setFakturor(res.invoices || []);
+    })();
   }, []);
 
-  const laddaFaktura = (faktura: any) => {
-    setFormData({
-      ...faktura,
-      artiklar: faktura.artiklar || [],
-    });
+  const laddaFaktura = (f: any) => setFormData({ ...f, artiklar: f.artiklar || [] });
+
+  const handleDelete = async (id: number) => {
+    const res = await deleteInvoice(id);
+    if (res.success) setFakturor((p) => p.filter((f) => f.id !== id));
   };
 
-  const handleDelete = async (fakturaId: number) => {
-    const result = await deleteInvoice(fakturaId);
-    if (result.success) {
-      setFakturor((prev) => prev.filter((f) => f.id !== fakturaId));
-    } else {
-      console.error("❌ Misslyckades att radera faktura.");
-    }
-  };
-
-  const handleSaveNummer = async (fakturaId: number) => {
-    const result = await updateFakturanummer(fakturaId, editedNummer);
-    if (result.success) {
+  const handleSaveNummer = async (id: number) => {
+    const res = await updateFakturanummer(id, editedNummer);
+    if (res.success) {
       setFakturor((prev) =>
-        prev.map((f) => (f.id === fakturaId ? { ...f, fakturanummer: editedNummer } : f))
+        prev.map((f) => (f.id === id ? { ...f, fakturanummer: editedNummer } : f))
       );
       setEditId(null);
-    } else {
-      console.error("❌ Misslyckades att uppdatera fakturanummer.");
     }
   };
 
   return (
-    <div className="mb-4 rounded bg-cyan-950 p-1">
-      <div
-        className="flex justify-between items-center bg-cyan-950 px-4 py-3 cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <h2 className="text-xl font-bold text-white">Tidigare fakturor</h2>
-        <span className="text-white">{isOpen ? "▲" : "▼"}</span>
-      </div>
+    <div className="space-y-2">
+      {fakturor.length === 0 ? (
+        <p className="text-sm text-gray-300">Inga sparade fakturor hittades.</p>
+      ) : (
+        fakturor.map((f) => (
+          <div key={f.id} className="flex items-center gap-2 group transition">
+            {/* Ladda */}
+            <button
+              onClick={() => laddaFaktura(f)}
+              className="flex-1 flex items-center justify-between px-6 py-2 bg-cyan-800 hover:bg-cyan-700 rounded-lg text-left"
+            >
+              <span>
+                {f.fakturanummer} – {f.kundnamn}
+              </span>
+              <span className="ml-auto text-sm">
+                {new Date(f.fakturadatum).toLocaleDateString("sv-SE")}
+              </span>
+            </button>
 
-      {isOpen && (
-        <div className="bg-cyan-900 p-6 text-white space-y-2">
-          {fakturor.length === 0 ? (
-            <p className="text-sm text-gray-300">Inga sparade fakturor hittades.</p>
-          ) : (
-            fakturor.map((faktura) => (
-              <div key={faktura.id} className="flex items-center gap-2">
+            {/* Redigera */}
+            {editId === f.id ? (
+              <>
+                <input
+                  value={editedNummer}
+                  onChange={(e) => setEditedNummer(e.target.value)}
+                  className="w-32 shrink-0 px-3 py-2 text-black rounded-lg"
+                />
                 <button
-                  onClick={() => laddaFaktura(faktura)}
-                  className="flex-1 flex justify-between items-center text-left px-6 py-2 bg-cyan-800 rounded hover:bg-cyan-700"
+                  onClick={() => handleSaveNummer(f.id)}
+                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg shrink-0"
                 >
-                  <span>
-                    {faktura.fakturanummer} – {faktura.kundnamn}
-                  </span>
-                  <span className="ml-auto text-sm">
-                    {new Date(faktura.fakturadatum).toLocaleDateString("sv-SE")}
-                  </span>
+                  Spara
                 </button>
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  setEditId(f.id);
+                  setEditedNummer(f.fakturanummer);
+                }}
+                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg shrink-0"
+              >
+                ✏️ Ändra
+              </button>
+            )}
 
-                {editId === faktura.id ? (
-                  <>
-                    <input
-                      type="text"
-                      value={editedNummer}
-                      onChange={(e) => setEditedNummer(e.target.value)}
-                      className="px-3 py-2 rounded text-black w-32 shrink-0"
-                    />
-                    <button
-                      onClick={() => handleSaveNummer(faktura.id)}
-                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded shrink-0"
-                    >
-                      Spara
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setEditId(faktura.id);
-                      setEditedNummer(faktura.fakturanummer);
-                    }}
-                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded shrink-0"
-                  >
-                    ✏️ Ändra
-                  </button>
-                )}
-
-                <button
-                  onClick={() => handleDelete(faktura.id)}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded shrink-0"
-                >
-                  ❌ Ta bort
-                </button>
-              </div>
-            ))
-          )}
-        </div>
+            {/* Ta bort */}
+            <button
+              onClick={() => handleDelete(f.id)}
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg shrink-0"
+            >
+              ❌
+            </button>
+          </div>
+        ))
       )}
     </div>
   );

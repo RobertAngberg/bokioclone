@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 export default function Avsandare() {
   const { data: session } = useSession();
   const { formData, setFormData } = useFakturaContext();
-  const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
-
   const MAX_SIZE_BYTES = 1024 * 1024;
 
   useEffect(() => {
@@ -29,9 +28,9 @@ export default function Avsandare() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const compressImage = (file: File): Promise<Blob> => {
+  const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve) => {
-      const img = new Image();
+      const img = document.createElement("img");
       img.onload = () => {
         const canvas = document.createElement("canvas");
         canvas.width = img.width;
@@ -40,7 +39,13 @@ export default function Avsandare() {
         ctx?.drawImage(img, 0, 0);
         canvas.toBlob(
           (blob) => {
-            if (blob) resolve(blob);
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            }
           },
           "image/jpeg",
           0.7
@@ -60,7 +65,7 @@ export default function Avsandare() {
 
   const handleFileUpload = async (file: File) => {
     setError("");
-    let finalBlob: Blob = file;
+    let finalBlob = file;
 
     if (file.size > MAX_SIZE_BYTES) {
       finalBlob = await compressImage(file);
@@ -77,177 +82,121 @@ export default function Avsandare() {
   };
 
   return (
-    <div className="mb-4 rounded bg-cyan-950 p-1">
-      <div
-        className="flex justify-between items-center bg-cyan-950 px-4 py-3 cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <h2 className="text-xl font-bold text-white">Avsändare</h2>
-        <span className="text-white">{isOpen ? "▲" : "▼"}</span>
+    <div className="p-6 bg-slate-900 text-white space-y-6 rounded-b-lg">
+      {/* Logotyp */}
+      <div className="flex flex-col items-center justify-center gap-4">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileUpload(file);
+            }}
+            className="hidden"
+          />
+          <span className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800">
+            Ladda upp logotyp
+          </span>
+        </label>
+
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+
+        {formData.logo && (
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-20 h-20 relative rounded shadow overflow-hidden">
+              <Image src={formData.logo} alt="Logotyp" fill className="object-contain" />
+            </div>
+            <button
+              onClick={() => {
+                setFormData((prev) => ({ ...prev, logo: "" }));
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                setError("");
+              }}
+              className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800"
+            >
+              🗑️ Ta bort logotyp
+            </button>
+          </div>
+        )}
       </div>
 
-      {isOpen && (
-        <div className="bg-cyan-900 p-6 text-white space-y-6">
-          <div className="flex flex-col items-center justify-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file);
-                }}
-                className="hidden"
-              />
-              <span className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800">
-                Ladda upp logotyp
-              </span>
-            </label>
+      {/* Fält */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Input label="Namn" value={name} readOnly />
+        <Input label="E-post" value={email} readOnly />
 
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+        <Input
+          name="företagsnamn"
+          label="Företagsnamn"
+          value={formData.företagsnamn}
+          onChange={handleChange}
+        />
+        <Input name="adress" label="Adress" value={formData.adress} onChange={handleChange} />
+        <Input
+          name="postnummer"
+          label="Postnummer"
+          value={formData.postnummer}
+          onChange={handleChange}
+        />
+        <Input name="stad" label="Stad" value={formData.stad} onChange={handleChange} />
+        <Input
+          name="organisationsnummer"
+          label="Organisationsnummer"
+          value={formData.organisationsnummer}
+          onChange={handleChange}
+        />
+        <Input
+          name="momsregistreringsnummer"
+          label="Momsregistreringsnummer"
+          value={formData.momsregistreringsnummer}
+          onChange={handleChange}
+        />
+        <Input
+          name="telefonnummer"
+          label="Telefonnummer"
+          value={formData.telefonnummer}
+          onChange={handleChange}
+        />
+        <Input name="bankinfo" label="Bankinfo" value={formData.bankinfo} onChange={handleChange} />
+        <Input
+          name="webbplats"
+          label="Webbplats"
+          value={formData.webbplats}
+          onChange={handleChange}
+        />
+      </div>
+    </div>
+  );
+}
 
-            {formData.logo && (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-20 h-20 relative rounded shadow overflow-hidden">
-                  <img src={formData.logo} alt="Logotyp" className="object-contain w-full h-full" />
-                </div>
-                <button
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, logo: "" }));
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                    setError("");
-                  }}
-                  className="px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-                >
-                  🗑️ Ta bort logotyp
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Namn</label>
-              <input
-                type="text"
-                value={name}
-                readOnly
-                className="w-full px-3 py-2 text-black bg-gray-100 cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">E-post</label>
-              <input
-                type="email"
-                value={email}
-                readOnly
-                className="w-full px-3 py-2 text-black bg-gray-100 cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Företagsnamn</label>
-              <input
-                type="text"
-                name="företagsnamn"
-                value={formData.företagsnamn ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Adress</label>
-              <input
-                type="text"
-                name="adress"
-                value={formData.adress ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Postnummer</label>
-              <input
-                type="text"
-                name="postnummer"
-                value={formData.postnummer ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Stad</label>
-              <input
-                type="text"
-                name="stad"
-                value={formData.stad ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Organisationsnummer</label>
-              <input
-                type="text"
-                name="organisationsnummer"
-                value={formData.organisationsnummer ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Momsregistreringsnummer</label>
-              <input
-                type="text"
-                name="momsregistreringsnummer"
-                value={formData.momsregistreringsnummer ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Telefonnummer</label>
-              <input
-                type="text"
-                name="telefonnummer"
-                value={formData.telefonnummer ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Bankinfo</label>
-              <input
-                type="text"
-                name="bankinfo"
-                value={formData.bankinfo ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Webbplats</label>
-              <input
-                type="text"
-                name="webbplats"
-                value={formData.webbplats ?? ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-black"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+function Input({
+  label,
+  name,
+  value,
+  onChange,
+  readOnly = false,
+}: {
+  label: string;
+  name?: string;
+  value: string | undefined;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readOnly?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1">{label}</label>
+      <input
+        type="text"
+        name={name}
+        value={value ?? ""}
+        onChange={onChange}
+        readOnly={readOnly}
+        className={`w-full px-3 py-2 ${
+          readOnly ? "cursor-not-allowed" : ""
+        } text-white bg-slate-900 border border-slate-700 rounded-lg`}
+      />
     </div>
   );
 }

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchDataFromYear, fetchFavoritforval } from "./start/actions";
-import { Card } from "./start/Card";
-import { HomeChart } from "./start/HomeChart";
+import Card from "./start/Card";
+import HomeChart from "./start/HomeChart";
 import Steg2 from "./bokfor/Steg2";
 import Steg3 from "./bokfor/Steg3";
 import Steg4 from "./bokfor/Steg4";
@@ -91,92 +91,89 @@ export default function Home() {
   };
 
   return (
-    <main className="items-center text-center bg-slate-950 text-white min-h-screen">
-      {currentStep === 1 && (
-        <>
-          <div className="flex flex-col justify-center p-10 md:flex-row md:justify-center md:space-x-2 mb-5">
-            <Card title="Inkomster" data={data?.totalInkomst || 0} />
-            <Card title="Utgifter" data={data?.totalUtgift || 0} />
-            <Card title="Resultat" data={data?.totalResultat || 0} />
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>
-            </div>
-          ) : (
-            <HomeChart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
-          )}
-
-          {favoriter.length > 0 && (
-            <div className="max-w-5xl mx-auto px-4 mt-6 mb-8 text-left">
-              <h2 className="text-xl font-semibold text-cyan-300 mb-4">
-                ⭐ Dina vanligaste förval
-              </h2>
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-                {favoriter.map((f) => (
-                  <div
-                    key={f.id}
-                    className="bg-slate-900 border border-gray-700 rounded-lg p-4 shadow hover:bg-slate-800 cursor-pointer"
-                    onClick={() => väljFörval(f)}
-                  >
-                    <div className="text-white font-bold mb-1">{f.namn}</div>
-                    <div className="text-sm text-gray-400 mb-1">
-                      {f.typ} • {f.kategori}
-                    </div>
-                    <pre className="text-gray-300 text-sm whitespace-pre-wrap italic">
-                      {f.beskrivning}
-                    </pre>
-                  </div>
-                ))}
+    <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10 text-slate-100">
+      <div className="max-w-5xl mx-auto">
+        <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+          {/* <h1 className="mb-8 text-3xl text-center">Översikt</h1> */}
+          {currentStep === 1 && (
+            <>
+              <div className="flex flex-wrap justify-center gap-4 mb-8 text-center">
+                <Card title="Inkomster" data={data?.totalInkomst || 0} />
+                <Card title="Utgifter" data={data?.totalUtgift || 0} />
+                <Card title="Resultat" data={data?.totalResultat || 0} />
               </div>
-            </div>
+
+              {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>
+                </div>
+              ) : (
+                <HomeChart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
+              )}
+
+              {favoriter.length > 0 && (
+                <div className="mt-10">
+                  <h2 className="text-xl font-semibold mb-4 text-center">
+                    ⭐ Dina vanligaste förval
+                  </h2>
+                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                    {favoriter.map((f) => (
+                      <div
+                        key={f.id}
+                        className="bg-slate-900 border border-gray-700 rounded-lg p-4 shadow hover:bg-slate-800 cursor-pointer"
+                        onClick={() => väljFörval(f)}
+                      >
+                        <div className="text-white font-bold mb-1">{f.namn}</div>
+                        <div className="text-sm text-gray-400 mb-1">
+                          {f.typ} • {f.kategori}
+                        </div>
+                        <pre className="text-gray-300 text-sm whitespace-pre-wrap italic">
+                          {f.beskrivning}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
 
-      {currentStep === 2 && valtFörval && (
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <Steg2
-            setCurrentStep={setCurrentStep}
-            fil={fil}
-            setFil={setFil}
-            pdfUrl={pdfUrl}
-            setPdfUrl={setPdfUrl}
-            belopp={belopp}
-            setBelopp={setBelopp}
-            transaktionsdatum={transaktionsdatum}
-            setTransaktionsdatum={setTransaktionsdatum}
-            kommentar={kommentar}
-            setKommentar={setKommentar}
-            valtFörval={valtFörval}
-            extrafält={extrafält}
-            setExtrafält={setExtrafält}
-          />
-        </div>
-      )}
+          {currentStep === 2 && valtFörval && (
+            <Steg2
+              setCurrentStep={setCurrentStep}
+              fil={fil}
+              setFil={setFil}
+              pdfUrl={pdfUrl}
+              setPdfUrl={setPdfUrl}
+              belopp={belopp}
+              setBelopp={setBelopp}
+              transaktionsdatum={transaktionsdatum}
+              setTransaktionsdatum={setTransaktionsdatum}
+              kommentar={kommentar}
+              setKommentar={setKommentar}
+              valtFörval={valtFörval}
+              extrafält={extrafält}
+              setExtrafält={setExtrafält}
+            />
+          )}
 
-      {currentStep === 3 && valtFörval && transaktionsdatum && belopp !== null && (
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <Steg3
-            kontonummer={kontonummer}
-            kontobeskrivning={kontobeskrivning}
-            fil={fil}
-            belopp={belopp}
-            transaktionsdatum={transaktionsdatum}
-            kommentar={kommentar ?? ""}
-            valtFörval={valtFörval}
-            setCurrentStep={setCurrentStep}
-            extrafält={extrafält}
-          />
-        </div>
-      )}
+          {currentStep === 3 && valtFörval && transaktionsdatum && belopp !== null && (
+            <Steg3
+              kontonummer={kontonummer}
+              kontobeskrivning={kontobeskrivning}
+              fil={fil}
+              belopp={belopp}
+              transaktionsdatum={transaktionsdatum}
+              kommentar={kommentar ?? ""}
+              valtFörval={valtFörval}
+              setCurrentStep={setCurrentStep}
+              extrafält={extrafält}
+            />
+          )}
 
-      {currentStep === 4 && (
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <Steg4 />
+          {currentStep === 4 && <Steg4 />}
         </div>
-      )}
+      </div>
     </main>
   );
 }

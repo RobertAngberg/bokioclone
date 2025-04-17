@@ -19,74 +19,129 @@ function InnerFakturaPage() {
 
   const handleSave = async () => {
     const fd = new FormData();
-
-    for (const [key, value] of Object.entries(formData)) {
-      if (key === "artiklar") {
-        fd.append(key, JSON.stringify(value));
-      } else {
-        fd.append(key, String(value ?? ""));
-      }
-    }
-
-    const result = await saveInvoice(fd);
-    if (result.success) {
-      alert("✅ Faktura sparad!");
-    } else {
-      alert("❌ Kunde inte spara fakturan.");
-    }
+    Object.entries(formData).forEach(([k, v]) =>
+      fd.append(k, k === "artiklar" ? JSON.stringify(v) : String(v ?? ""))
+    );
+    const res = await saveInvoice(fd);
+    alert(res.success ? "✅ Faktura sparad!" : "❌ Kunde inte spara fakturan.");
   };
 
   return (
-    <main className="flex justify-center p-4 print:hidden">
-      <div className="w-full max-w-3xl space-y-4 mx-auto">
-        <h1 className="mt-6 mb-10 text-3xl text-center text-white">Fakturor</h1>
-        <FakturorLista />
-        <ArtiklarTjanster />
-        <Avsandare />
-        <KundUppgifter />
-        <Villkor />
-        <Ovrigt />
+    <main className="min-h-screen bg-slate-950 px-4 py-10 print:hidden text-slate-100 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto">
+        <div
+          className="
+            w-full space-y-6 p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg
+            [&_details]:border [&_details]:border-slate-700 [&_details]:rounded-lg
+            [&_details>summary]:rounded-lg [&_details>summary]:cursor-pointer
+            [&_input]:rounded-lg [&_select]:rounded-lg [&_textarea]:rounded-lg
+            [&_input]:bg-slate-900 [&_select]:bg-slate-900 [&_textarea]:bg-slate-900
+            [&_input]:text-white [&_select]:text-white [&_textarea]:text-white
+            [&_input]:border [&_select]:border [&_textarea]:border border-slate-700
+          "
+        >
+          <h1 className="text-3xl text-center">Fakturor</h1>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleSave}
-              className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-            >
-              💾 Spara
-            </button>
-            <ExportPdfButton />
-            <button
-              onClick={() => window.print()}
-              className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-            >
-              🖨️ Skriv ut
-            </button>
+          {/* Tidigare fakturor */}
+          <details>
+            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
+              🧾 Tidigare fakturor <span className="ml-auto text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 rounded-b-lg">
+              <FakturorLista />
+            </div>
+          </details>
+
+          {/* Artiklar & Tjänster */}
+          <details>
+            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
+              📦 Artiklar & Tjänster <span className="ml-auto text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 rounded-b-lg">
+              <ArtiklarTjanster />
+            </div>
+          </details>
+
+          {/* Avsändare */}
+          <details>
+            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800 rounded-lg cursor-pointer">
+              🧑‍💼 Avsändare <span className="ml-auto text-white">▼</span>
+            </summary>
+            <Avsandare />
+          </details>
+
+          {/* Kunduppgifter */}
+          <details>
+            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
+              🧑‍💻 Kunduppgifter <span className="ml-auto text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 rounded-b-lg">
+              <KundUppgifter />
+            </div>
+          </details>
+
+          {/* Villkor */}
+          <details>
+            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
+              ⚖️ Villkor <span className="ml-auto text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 rounded-b-lg">
+              <Villkor />
+            </div>
+          </details>
+
+          {/* Övrigt */}
+          <details>
+            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
+              🗒️ Övrigt <span className="ml-auto text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 rounded-b-lg">
+              <Ovrigt />
+            </div>
+          </details>
+
+          {/* Knapprad */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleSave}
+                className="h-10 px-4 bg-cyan-700 rounded-lg hover:bg-cyan-800"
+              >
+                💾 Spara
+              </button>
+              <ExportPdfButton />
+              <button
+                onClick={() => window.print()}
+                className="h-10 px-4 bg-cyan-700 rounded-lg hover:bg-cyan-800"
+              >
+                🖨️ Skriv ut
+              </button>
+            </div>
+
+            <ForhandsgranskaKnapp
+              onClick={() => setShowPreview(true)}
+              className="h-10 px-4 bg-cyan-700 rounded-lg hover:bg-cyan-800"
+            />
           </div>
-
-          <ForhandsgranskaKnapp
-            onClick={() => setShowPreview(true)}
-            className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-          />
         </div>
       </div>
 
-      {/* Osynlig version för PDF-export */}
+      {/* Dold för PDF-export */}
       <div style={{ position: "absolute", top: "-9999px", left: "-9999px" }}>
         <Forhandsgranskning />
       </div>
 
-      {/* Modal med förhandsgranskning */}
+      {/* Modal */}
       {showPreview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="relative shadow-xl rounded overflow-auto max-h-[95vh] max-w-[95vw] bg-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="relative bg-white shadow-xl rounded-2xl max-w-[95vw] max-h-[95vh] overflow-auto">
             <button
               onClick={() => setShowPreview(false)}
-              className="absolute top-2 right-2 text-black bg-gray-200 hover:bg-gray-300 rounded px-3 py-1 z-10"
+              className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 rounded px-3 py-1"
             >
               Stäng
             </button>
-            <div className="p-4 flex justify-center items-center">
+            <div className="p-4 flex justify-center">
               <div className="w-[210mm] h-[297mm] shadow border">
                 <Forhandsgranskning />
               </div>

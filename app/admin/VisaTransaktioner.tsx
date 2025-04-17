@@ -96,11 +96,79 @@ export default function VisaTransaktioner() {
 
                 return (
                   <Fragment key={t.transaktions_id}>
-                    {" "}
-                    {/* ⬅️ unikt key här */}
-                    <tr className={`${rowBg} text-white`}>{/* ... första raden ... */}</tr>
+                    <tr className={`${rowBg} text-white`}>
+                      <td className="p-3">{t.transaktions_id}</td>
+                      <td className="p-3">{t.transaktionsdatum}</td>
+                      <td className="p-3">{t.kontobeskrivning}</td>
+                      <td className="p-3">
+                        {t.belopp.toLocaleString("sv-SE", { style: "currency", currency: "SEK" })}
+                      </td>
+                      <td className="p-3">
+                        {t.fil ? (
+                          <span className="text-cyan-300 underline">{t.fil}</span>
+                        ) : (
+                          <span className="text-gray-400 italic">—</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {t.kommentar || <span className="text-gray-400 italic">—</span>}
+                      </td>
+                      <td className="p-3">
+                        {t.userId ?? <span className="text-gray-400 italic">—</span>}
+                      </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => toggleKonton(t.transaktions_id)}
+                          className="text-cyan-400 hover:underline"
+                        >
+                          {visaKonton[t.transaktions_id] ? "Dölj" : "Visa"}
+                        </button>
+                      </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => handleDelete(t.transaktions_id)}
+                          className="hover:text-red-500"
+                        >
+                          ❌
+                        </button>
+                      </td>
+                    </tr>
+
+                    {/* Konton-rader */}
                     {visaKonton[t.transaktions_id] && konton.length > 0 && (
-                      <tr className="bg-slate-900">{/* ... kontotabell ... */}</tr>
+                      <tr className="bg-slate-900">
+                        <td colSpan={9} className="p-3">
+                          <table className="w-full text-sm border-t border-slate-700 mt-2">
+                            <thead>
+                              <tr className="text-left text-cyan-300">
+                                <th className="p-2">Konto</th>
+                                <th className="p-2 text-right">Debet</th>
+                                <th className="p-2 text-right">Kredit</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {konton.map((konto, idx) => (
+                                <tr key={idx} className={idx % 2 ? "bg-slate-950" : "bg-slate-900"}>
+                                  <td className="p-2">
+                                    {konto.kontonummer}{" "}
+                                    {konto.beskrivning ? `– ${konto.beskrivning}` : ""}
+                                  </td>
+                                  <td className="p-2 text-right">
+                                    {konto.debet
+                                      ? konto.debet.toLocaleString("sv-SE") + " kr"
+                                      : "—"}
+                                  </td>
+                                  <td className="p-2 text-right">
+                                    {konto.kredit
+                                      ? konto.kredit.toLocaleString("sv-SE") + " kr"
+                                      : "—"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
                     )}
                   </Fragment>
                 );

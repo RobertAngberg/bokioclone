@@ -1,97 +1,88 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 export type FakturaFormData = {
-  logo: string;
-  logoSize: number;
-  logoUrl: string;
-  logoHeight: number;
-  logoWidth: number;
-  företagsnamn: string;
-  adress: string;
-  postnummer: string;
-  stad: string;
-  email: string;
-  organisationsnummer: string;
-  momsregistreringsnummer: string;
-  telefonnummer: string;
-  bankinfo: string;
-  webbplats: string;
-  kundtyp: string;
-  kundnamn: string;
-  kundadress: string;
-  kundpostnummer: string;
-  kundstad: string;
-  kundemail: string;
-  fakturadatum: string;
-  forfallodatum: string;
-  fakturanummer: string;
-  betalningsmetod: string;
-  betalningsinfo: string;
-  visaMoms: "Inklusive" | "Exklusive";
+  // Avsändare
+  företagsnamn?: string;
+  adress?: string;
+  postnummer?: string;
+  stad?: string;
+  organisationsnummer?: string;
+  momsregistreringsnummer?: string;
+  telefonnummer?: string;
+  bankinfo?: string;
+  webbplats?: string;
+  logo?: string;
+  email?: string;
+
+  // Kund
+  kundtyp?: string;
+  kundnamn?: string;
+  kundadress?: string;
+  kundpostnummer?: string;
+  kundstad?: string;
+  kundemail?: string;
+
+  // Artiklar
   artiklar: {
     beskrivning: string;
     antal: string;
     prisPerEnhet: string;
-    moms: string;
     valuta: string;
+    moms: string;
     typ: string;
   }[];
-  betalningsvillkor: string;
-  drojsmalsranta: string;
-  leverans: string;
+
+  // Villkor
+  fakturadatum: string;
+  forfallodatum?: string;
+  betalningsvillkor?: string;
+  drojsmalsranta?: string;
+  leverans?: string;
+
+  // Övrigt
+  momsvisning?: string;
+  nummer?: string;
+  betalningsmetod?: string;
+  fakturanummer?: string;
 };
 
-const defaultFormData: FakturaFormData = {
-  logo: "",
-  logoSize: 200,
-  logoUrl: "",
-  logoHeight: 200,
-  logoWidth: 200,
-  företagsnamn: "",
-  adress: "",
-  postnummer: "",
-  stad: "",
-  email: "",
-  organisationsnummer: "",
-  momsregistreringsnummer: "",
-  telefonnummer: "",
-  bankinfo: "",
-  webbplats: "",
-  kundtyp: "Företag",
-  kundnamn: "",
-  kundadress: "",
-  kundpostnummer: "",
-  kundstad: "",
-  kundemail: "",
-  fakturadatum: new Date().toISOString().slice(0, 10),
-  forfallodatum: "",
-  fakturanummer: "1",
-  betalningsmetod: "Bankgiro",
-  betalningsinfo: "",
-  visaMoms: "Inklusive",
-  artiklar: [],
-  betalningsvillkor: "30",
-  drojsmalsranta: "12%",
-  leverans: "Fritt vårt lager",
-};
-
-const FakturaContext = createContext<{
+type ContextType = {
   formData: FakturaFormData;
   setFormData: React.Dispatch<React.SetStateAction<FakturaFormData>>;
-} | null>(null);
+};
 
-export function FakturaProvider({ children }: { children: React.ReactNode }) {
-  const [formData, setFormData] = useState<FakturaFormData>(defaultFormData);
+const FakturaContext = createContext<ContextType | undefined>(undefined);
+
+export const FakturaProvider = ({ children }: { children: ReactNode }) => {
+  const [formData, setFormData] = useState<FakturaFormData>({
+    artiklar: [
+      {
+        beskrivning: "",
+        antal: "",
+        prisPerEnhet: "",
+        valuta: "SEK",
+        moms: "25",
+        typ: "Varor",
+      },
+    ],
+    fakturadatum: new Date().toISOString().slice(0, 10),
+    betalningsmetod: "Bankgiro",
+    momsvisning: "Inklusive",
+    fakturanummer: "1",
+    nummer: "",
+  });
 
   return (
     <FakturaContext.Provider value={{ formData, setFormData }}>{children}</FakturaContext.Provider>
   );
-}
+};
 
-export function useFakturaContext() {
+export const useFakturaContext = () => {
   const context = useContext(FakturaContext);
-  if (!context) throw new Error("useFakturaContext måste användas inom FakturaProvider");
+  if (!context) {
+    throw new Error("useFakturaContext måste användas inom FakturaProvider");
+  }
   return context;
-}
+};

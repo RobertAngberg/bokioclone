@@ -17,15 +17,13 @@ type Props = {
   chartData: ChartRow[];
 };
 
-export function HomeChart({ year, onYearChange, chartData }: Props) {
+export default function HomeChart({ year, onYearChange, chartData }: Props) {
   const [labels, setLabels] = useState<string[]>([]);
   const [inkomstData, setInkomstData] = useState<number[]>([]);
   const [utgiftData, setUtgiftData] = useState<number[]>([]);
   const [resultData, setResultData] = useState<number[]>([]);
 
   useEffect(() => {
-    console.log("📊 chartData som kom in:", chartData);
-
     const monthNames = [
       "Jan",
       "Feb",
@@ -40,17 +38,11 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
       "Nov",
       "Dec",
     ];
-
     const monthDataMap: { [key: string]: { inkomst: number; utgift: number } } = {};
 
-    chartData.forEach((row, index) => {
-      console.log(`📅 Row ${index + 1}:`, row);
-
+    chartData.forEach((row) => {
       const parsedDate = new Date(`${row.month}T00:00:00Z`);
-      if (isNaN(parsedDate.getTime())) {
-        console.warn("⚠️ Ogiltigt datum i row:", row.month);
-        return;
-      }
+      if (isNaN(parsedDate.getTime())) return;
 
       const monthIndex = parsedDate.getMonth();
       const label = monthNames[monthIndex];
@@ -63,19 +55,12 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
       monthDataMap[label].utgift += row.utgift;
     });
 
-    console.log("✅ Sammanställt monthDataMap:", monthDataMap);
-
     const finalLabels = monthNames.filter((m) => monthDataMap[m]);
     const inkomstValues = finalLabels.map((label) => monthDataMap[label].inkomst);
-    const utgiftValues = finalLabels.map((label) => -monthDataMap[label].utgift); // visas som negativa
+    const utgiftValues = finalLabels.map((label) => -monthDataMap[label].utgift);
     const resultValues = finalLabels.map(
       (label) => monthDataMap[label].inkomst - monthDataMap[label].utgift
     );
-
-    console.log("📌 Final labels:", finalLabels);
-    console.log("💰 Inkomster:", inkomstValues);
-    console.log("📉 Utgifter:", utgiftValues);
-    console.log("📈 Resultat:", resultValues);
 
     setLabels(finalLabels);
     setInkomstData(inkomstValues);
@@ -155,25 +140,24 @@ export function HomeChart({ year, onYearChange, chartData }: Props) {
   };
 
   return (
-    <div className="w-full text-white md:mx-auto md:w-4/5">
-      <label className="p-3 font-bold text-white" htmlFor="year">
-        Visa år:
-      </label>
-      <select
-        id="year"
-        value={year}
-        onChange={(e) => onYearChange(e.target.value)}
-        className="px-4 py-2 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
-      >
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-        <option value="2023">2023</option>
-        <option value="2022">2022</option>
-        <option value="2021">2021</option>
-        <option value="2020">2020</option>
-      </select>
+    <div className="w-full m-0 p-0">
+      <div className="flex justify-center my-12 mb-6">
+        <select
+          id="year"
+          value={year}
+          onChange={(e) => onYearChange(e.target.value)}
+          className="px-4 py-2 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
+        >
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+          <option value="2022">2022</option>
+          <option value="2021">2021</option>
+          <option value="2020">2020</option>
+        </select>
+      </div>
 
-      <div className="relative p-10" style={{ height: "80vh" }}>
+      <div className="relative w-full h-[75vh] p-0 m-0">
         <Chart type="bar" datasetIdKey="id" options={options} data={data} />
       </div>
     </div>
