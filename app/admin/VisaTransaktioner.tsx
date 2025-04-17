@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { hämtaAllaTransaktioner, taBortTransaktion, hämtaTransaktionsposter } from "./actions";
 
 type Transaktion = {
@@ -95,99 +95,14 @@ export default function VisaTransaktioner() {
                 const konton = kontonPerTransaktion[t.transaktions_id] ?? [];
 
                 return (
-                  <>
-                    <tr key={`rad-${t.transaktions_id}`} className={`${rowBg} text-white`}>
-                      <td className="p-3">{t.transaktions_id}</td>
-                      <td className="p-3">{t.transaktionsdatum}</td>
-                      <td className="p-3">{t.kontobeskrivning}</td>
-                      <td className="p-3">
-                        {t.belopp.toLocaleString("sv-SE", {
-                          style: "currency",
-                          currency: "SEK",
-                        })}
-                      </td>
-                      <td className="p-3">
-                        {t.fil ? (
-                          <span className="text-cyan-300 underline">{t.fil}</span>
-                        ) : (
-                          <span className="italic text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {t.kommentar ? (
-                          t.kommentar
-                        ) : (
-                          <span className="italic text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {t.userId !== null ? (
-                          t.userId
-                        ) : (
-                          <span className="italic text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => toggleKonton(t.transaktions_id)}
-                          className="text-cyan-400 underline"
-                        >
-                          {visaKonton[t.transaktions_id] ? "Dölj konton" : "Visa konton"}
-                        </button>
-                      </td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => handleDelete(t.transaktions_id)}
-                          className="text-red-500 hover:text-red-700"
-                          title="Radera transaktion"
-                        >
-                          ❌
-                        </button>
-                      </td>
-                    </tr>
-
+                  <Fragment key={t.transaktions_id}>
+                    {" "}
+                    {/* ⬅️ unikt key här */}
+                    <tr className={`${rowBg} text-white`}>{/* ... första raden ... */}</tr>
                     {visaKonton[t.transaktions_id] && konton.length > 0 && (
-                      <tr key={`konton-${t.transaktions_id}`} className="bg-slate-900">
-                        <td colSpan={9} className="p-4">
-                          <table className="w-full border border-slate-700 text-sm text-white">
-                            <thead>
-                              <tr className="bg-slate-800">
-                                <th className="p-2 text-left">Konto</th>
-                                <th className="p-2 text-left">Beskrivning</th>
-                                <th className="p-2 text-left">Debet</th>
-                                <th className="p-2 text-left">Kredit</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {konton.map((rad, index) => (
-                                <tr
-                                  key={`${rad.kontonummer ?? "okänt"}-${index}`}
-                                  className="border-t border-slate-800"
-                                >
-                                  <td className="p-3 text-left">{rad.kontonummer ?? "okänt"}</td>
-                                  <td className="p-3 text-left">{rad.beskrivning ?? "okänt"}</td>
-                                  <td className="p-3 text-left">
-                                    {rad.debet > 0
-                                      ? rad.debet.toLocaleString("sv-SE", {
-                                          minimumFractionDigits: 2,
-                                        }) + " kr"
-                                      : ""}
-                                  </td>
-                                  <td className="p-3 text-left">
-                                    {rad.kredit > 0
-                                      ? rad.kredit.toLocaleString("sv-SE", {
-                                          minimumFractionDigits: 2,
-                                        }) + " kr"
-                                      : ""}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
+                      <tr className="bg-slate-900">{/* ... kontotabell ... */}</tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>

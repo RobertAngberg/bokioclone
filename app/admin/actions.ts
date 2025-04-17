@@ -359,3 +359,23 @@ export async function hämtaAllaKonton() {
     client.release();
   }
 }
+
+export async function körSQL(sql: string) {
+  try {
+    const result = await pool.query(sql);
+
+    // Om SELECT eller liknande – returnera rader
+    if (result.rows?.length) {
+      return { rows: result.rows };
+    }
+
+    // Annars visa antal rader som påverkades (INSERT/UPDATE/DELETE)
+    return {
+      rowCount: result.rowCount,
+      command: result.command,
+    };
+  } catch (err: any) {
+    console.error("SQL-fel:", err);
+    throw new Error(`Fel: ${err.message}`);
+  }
+}
