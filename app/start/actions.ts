@@ -338,27 +338,3 @@ export async function fetchForvalMedFel() {
     client.release();
   }
 }
-
-export async function fetchFavoritforval() {
-  const session = await auth();
-  if (!session?.user?.id) return [];
-
-  const userId = parseInt(session.user.id);
-
-  const query = `
-    SELECT f.*
-    FROM favoritförval ff
-    JOIN förval f ON ff.forval_id = f.id
-    WHERE ff.user_id = $1
-    ORDER BY ff.antal DESC
-    LIMIT 10
-  `;
-
-  const client = await pool.connect();
-  try {
-    const res = await client.query(query, [userId]);
-    return res.rows;
-  } finally {
-    client.release();
-  }
-}

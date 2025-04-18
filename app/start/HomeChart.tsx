@@ -151,7 +151,7 @@ export default function HomeChart({ year, onYearChange, chartData }: Props) {
       <div className="relative w-full h-[75vh] p-0 m-0">
         <Chart type="bar" datasetIdKey="id" options={options} data={data} />
       </div>
-      <div className="flex justify-center my-6">
+      <div className="flex justify-center -mt-4">
         <select
           id="year"
           value={year}

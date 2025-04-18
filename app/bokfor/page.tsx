@@ -46,12 +46,6 @@ export default function Bokför() {
     Record<string, { label: string; debet: number; kredit: number }>
   >({});
 
-  useEffect(() => {
-    if (currentStep === 1 && valtFörval) {
-      setCurrentStep(2);
-    }
-  }, [currentStep, valtFörval]);
-
   return (
     <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10 text-slate-100">
       <div className="max-w-5xl mx-auto">
@@ -95,11 +89,6 @@ export default function Bokför() {
               valtFörval={valtFörval}
               setCurrentStep={setCurrentStep}
               extrafält={extrafält}
-              embedded={true}
-              // Skicka `embedded={true}` till Steg3 för att signalera att komponenten redan är omsluten av en wrapper från Bokför.
-              // Detta gör att Steg3 INTE renderar sin egen <main> och <div>-layout, vilket annars skulle orsaka dubbla padding/margins
-              // och göra att layouten ser fel ut jämfört med steg 1 och 2.
-              // Tror används pga val på framsidan
             />
           )}
 

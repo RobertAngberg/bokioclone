@@ -43,6 +43,7 @@ type Step2Props = {
 export default function Steg2(props: Step2Props) {
   const { valtFörval } = props;
 
+  // Rendera specialförval om sådant finns
   if (valtFörval?.specialtyp) {
     try {
       const SpecialComponent = require(`./SpecialFörval/${valtFörval.specialtyp}`).default;
@@ -56,10 +57,12 @@ export default function Steg2(props: Step2Props) {
     }
   }
 
+  // Standardformulär
   return (
     <>
       <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Fyll i uppgifter</h1>
       <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
+        {/* Formulärsektion */}
         <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
           <LaddaUppFil
             fil={props.fil}
@@ -68,13 +71,16 @@ export default function Steg2(props: Step2Props) {
             setBelopp={props.setBelopp}
             setTransaktionsdatum={props.setTransaktionsdatum}
           />
+
           <Information
             belopp={props.belopp ?? 0}
             setBelopp={props.setBelopp}
             transaktionsdatum={props.transaktionsdatum}
             setTransaktionsdatum={props.setTransaktionsdatum}
           />
+
           <Kommentar kommentar={props.kommentar ?? ""} setKommentar={props.setKommentar} />
+
           <button
             type="button"
             onClick={() => props.setCurrentStep(3)}
@@ -84,6 +90,7 @@ export default function Steg2(props: Step2Props) {
           </button>
         </div>
 
+        {/* Förhandsgranskning */}
         <Forhandsgranskning fil={props.fil} pdfUrl={props.pdfUrl} />
       </div>
     </>

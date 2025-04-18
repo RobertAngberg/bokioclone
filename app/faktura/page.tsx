@@ -1,5 +1,9 @@
 "use client";
 
+// Context används för att centralt hantera fakturaformulärets data (formData)
+// så att flera komponenter (t.ex. Avsändare, KundUppgifter, Artiklar och Förhandsgranskning)
+// kan läsa och uppdatera datan utan att props behöver skickas runt manuellt.
+
 import { useState } from "react";
 import { FakturaProvider, useFakturaContext } from "./FakturaProvider";
 import ArtiklarTjanster from "./ArtiklarTjanster";

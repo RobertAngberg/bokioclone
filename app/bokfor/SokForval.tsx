@@ -56,17 +56,11 @@ export default function SokForval({
   }, []);
 
   useEffect(() => {
-    const laddaFavoriter = async () => {
+    const hämtaFavoriter = async () => {
       const favs = await fetchFavoritforval();
-      const begränsade = favs.slice(0, 6);
-      setFavoriter(begränsade);
-
-      if (searchText.trim().length < 2 && begränsade.length > 0) {
-        setResults(begränsade);
-        setHighlightedIndex(0);
-      }
+      setFavoriter(favs.slice(0, 6));
     };
-    laddaFavoriter();
+    hämtaFavoriter();
   }, []);
 
   useEffect(() => {
@@ -74,12 +68,8 @@ export default function SokForval({
       const input = searchText.trim();
 
       if (input.length < 2) {
-        if (favoriter.length > 0) {
-          setResults(favoriter);
-          setHighlightedIndex(0);
-        } else {
-          setResults([]);
-        }
+        setResults(favoriter);
+        setHighlightedIndex(0);
         setLoading(false);
         return;
       }
@@ -89,26 +79,25 @@ export default function SokForval({
       const q = normalize(input);
 
       function score(f: Forval): number {
-        const input = normalize(searchText);
         let poäng = 0;
 
         const namn = normalize(f.namn);
-        if (namn === input) poäng += 200;
-        else if (namn.startsWith(input)) poäng += 100;
-        else if (namn.includes(input)) poäng += 40;
+        if (namn === q) poäng += 200;
+        else if (namn.startsWith(q)) poäng += 100;
+        else if (namn.includes(q)) poäng += 40;
 
         for (const ord of f.sökord || []) {
           const s = normalize(ord);
-          if (s === input) poäng += 300;
-          else if (s.startsWith(input)) poäng += 150;
-          else if (s.includes(input)) poäng += 60;
+          if (s === q) poäng += 300;
+          else if (s.startsWith(q)) poäng += 150;
+          else if (s.includes(q)) poäng += 60;
         }
 
         const desc = normalize(f.beskrivning);
-        if (desc.includes(input)) poäng += 30;
+        if (desc.includes(q)) poäng += 30;
 
-        if (normalize(f.typ).includes(input)) poäng += 20;
-        if (normalize(f.kategori).includes(input)) poäng += 20;
+        if (normalize(f.typ).includes(q)) poäng += 20;
+        if (normalize(f.kategori).includes(q)) poäng += 20;
 
         return poäng;
       }
@@ -186,57 +175,7 @@ export default function SokForval({
         </div>
       )}
 
-      {!loading && searchText.trim().length < 2 && favoriter.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-white text-xl font-semibold mb-4 text-center">Mest använda förval</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-            {favoriter.map((f, index) => (
-              <div
-                key={f.id}
-                className="relative rounded-xl p-4 transition-all duration-200 shadow-md cursor-pointer border border-gray-700 bg-slate-900"
-                onClick={() => väljFörval(f)}
-              >
-                <div className="text-xl font-semibold text-white mb-2">✓ {f.namn}</div>
-                <pre className="whitespace-pre-wrap text-sm italic text-gray-300 mb-2 font-sans">
-                  {f.beskrivning}
-                </pre>
-
-                <p className="text-sm text-gray-400 my-4">
-                  <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
-                  <strong>Kategori:</strong> {f.kategori}
-                </p>
-
-                <table className="w-full border border-gray-700 text-sm text-gray-300">
-                  <thead className="bg-slate-800 text-white">
-                    <tr>
-                      <th className="border border-gray-700 px-2 py-1 text-left">Konto</th>
-                      <th className="border border-gray-700 px-2 py-1 text-center">Debet</th>
-                      <th className="border border-gray-700 px-2 py-1 text-center">Kredit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {f.konton.map((konto, i) => (
-                      <tr key={i}>
-                        <td className="border border-gray-700 px-2 py-1">
-                          {konto.kontonummer} {konto.beskrivning}
-                        </td>
-                        <td className="border border-gray-700 px-2 py-1 text-center">
-                          {konto.debet === true ? "✓" : (konto.debet ?? "")}
-                        </td>
-                        <td className="border border-gray-700 px-2 py-1 text-center">
-                          {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {!loading && results.length > 0 && searchText.trim().length >= 2 && (
+      {!loading && results.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 animate-fade-in">
           {results.map((f, index) => (
             <div
