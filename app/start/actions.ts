@@ -12,7 +12,7 @@ export async function hämtaTransaktionsposter(transaktionsId: number) {
     `
     SELECT tp.konto_id, k.kontobeskrivning, tp.debet, tp.kredit
     FROM transaktionsposter tp
-    LEFT JOIN konton k ON k.konto_id = tp.konto_id
+    LEFT JOIN konton k ON k.id = tp.konto_id
     WHERE tp.transaktions_id = $1
   `,
     [transaktionsId]
@@ -70,8 +70,8 @@ export async function fetchDataFromYear(year: string) {
         k.kontoklass,
         k.kontonummer
       FROM transaktioner t
-      JOIN transaktionsposter tp ON t.transaktions_id = tp.transaktions_id
-      JOIN konton k ON tp.konto_id = k.konto_id
+      JOIN transaktionsposter tp ON t.id = tp.transaktions_id
+      JOIN konton k ON tp.konto_id = k.id
       WHERE t.transaktionsdatum >= $1 AND t.transaktionsdatum < $2
       ORDER BY t.transaktionsdatum ASC
     `;
@@ -100,7 +100,7 @@ export async function fetchDataFromYear(year: string) {
 
       const deb = Number(debet ?? 0);
       const kre = Number(kredit ?? 0);
-      const prefix = kontonummer?.toString()[0]; // "3" för intäkt, "5"-"8" för kostnad
+      const prefix = kontonummer?.toString()[0];
 
       if (!grouped[key]) grouped[key] = { inkomst: 0, utgift: 0 };
 
@@ -145,16 +145,16 @@ export async function hämtaAllaTransaktioner() {
     const client = await pool.connect();
     const res = await client.query(`
       SELECT 
-        transaktions_id,
+        id,
         transaktionsdatum,
         kontobeskrivning,
-        kontoklass, -- ✅ rätt namn
+        kontoklass,
         belopp,
         fil,
         kommentar,
         "userId"
       FROM transaktioner
-      ORDER BY transaktions_id DESC
+      ORDER BY id DESC
     `);
     client.release();
 
@@ -304,7 +304,7 @@ export async function taBortFörval(id: number) {
 export async function taBortTransaktion(id: number) {
   const client = await pool.connect();
   try {
-    await client.query(`DELETE FROM transaktioner WHERE transaktions_id = $1`, [id]);
+    await client.query(`DELETE FROM transaktioner WHERE id = $1`, [id]);
   } finally {
     client.release();
   }
@@ -326,7 +326,7 @@ export async function fetchForvalMedFel() {
         );
       } catch (err) {
         console.error("❌ JSON parse-fel i förval id:", f.id);
-        return true; // räkna som felaktig om JSON är trasig
+        return true;
       }
     });
 

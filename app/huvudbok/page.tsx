@@ -93,10 +93,10 @@ export default function Huvudbok() {
                       {showHeading && (
                         <h2 className="text-xl text-white font-semibold mb-2">
                           {section === "Företagskonto"
-                            ? "💰 Företagskonto"
+                            ? "Företagskonto"
                             : section === "Momskonton"
-                              ? "💼 Momskonton"
-                              : `📚 ${section}`}
+                              ? "Momskonton"
+                              : `${section}`}
                         </h2>
                       )}
 

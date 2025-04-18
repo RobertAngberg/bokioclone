@@ -11,15 +11,15 @@ export async function fetchHuvudbok() {
     const query = `
       SELECT 
         k.kontonummer,
-        k.beskrivning, -- ändrad här
+        k.beskrivning,
         t.transaktionsdatum,
         t.fil,
         p.debet,
         p.kredit
       FROM transaktionsposter p
-      JOIN konton k ON p.konto_id = k.konto_id
-      JOIN transaktioner t ON p.transaktions_id = t.transaktions_id
-      ORDER BY k.konto_id ASC, t.transaktionsdatum ASC
+      JOIN konton k ON p.konto_id = k.id
+      JOIN transaktioner t ON p.transaktions_id = t.id
+      ORDER BY k.id ASC, t.transaktionsdatum ASC
     `;
 
     const res = await client.query(query);
@@ -27,7 +27,7 @@ export async function fetchHuvudbok() {
 
     return res.rows.map((row) => ({
       kontonummer: row.kontonummer,
-      beskrivning: row.beskrivning, // ändrad här
+      beskrivning: row.beskrivning,
       transaktionsdatum: row.transaktionsdatum?.toISOString?.() ?? "",
       fil: row.fil ?? "",
       debet: row.debet,

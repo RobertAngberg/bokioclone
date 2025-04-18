@@ -101,7 +101,7 @@ export async function saveTransaction(formData: FormData) {
       INSERT INTO transaktioner (
         transaktionsdatum, kontobeskrivning, belopp, fil, kommentar, "userId"
       ) VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING transaktions_id
+      RETURNING id
     `;
 
     const res = await client.query(insertTransactionQuery, [
@@ -113,22 +113,21 @@ export async function saveTransaction(formData: FormData) {
       userId,
     ]);
 
-    const transaktionsId = res.rows[0].transaktions_id;
+    const transaktionsId = res.rows[0].id;
     console.log("🆔 transaktions_id:", transaktionsId);
 
     // === Extrafält ===
     for (const [kontonummer, data] of Object.entries(extrafält)) {
-      const kontoRes = await client.query(
-        "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
-        [kontonummer]
-      );
+      const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
+        kontonummer,
+      ]);
 
       if (kontoRes.rows.length === 0) {
         console.warn(`⛔ Konto ${kontonummer} hittades inte (extrafält)`);
         continue;
       }
 
-      const konto_id = kontoRes.rows[0].konto_id;
+      const kontoId = kontoRes.rows[0].id;
       const debet = Number(data.debet ?? 0);
       const kredit = Number(data.kredit ?? 0);
 
@@ -139,7 +138,7 @@ export async function saveTransaction(formData: FormData) {
       await client.query(
         `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
          VALUES ($1, $2, $3, $4)`,
-        [transaktionsId, konto_id, debet, kredit]
+        [transaktionsId, kontoId, debet, kredit]
       );
     }
 
@@ -174,17 +173,16 @@ export async function saveTransaction(formData: FormData) {
       const kontonummer = konto.kontonummer?.toString().trim();
       if (!kontonummer) continue;
 
-      const kontoRes = await client.query(
-        "SELECT konto_id FROM konton WHERE kontonummer::text = $1",
-        [kontonummer]
-      );
+      const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
+        kontonummer,
+      ]);
 
       if (kontoRes.rows.length === 0) {
         console.warn(`⛔ Konto ${kontonummer} hittades inte`);
         continue;
       }
 
-      const konto_id = kontoRes.rows[0].konto_id;
+      const kontoId = kontoRes.rows[0].id;
       const debet = konto.debet ? getBelopp(konto, "debet") : 0;
       const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
 
@@ -195,7 +193,7 @@ export async function saveTransaction(formData: FormData) {
       await client.query(
         `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
          VALUES ($1, $2, $3, $4)`,
-        [transaktionsId, konto_id, debet, kredit]
+        [transaktionsId, kontoId, debet, kredit]
       );
     }
 
@@ -207,6 +205,15 @@ export async function saveTransaction(formData: FormData) {
     client.release();
     console.error("❌ saveTransaction error:", error);
     return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function taBortTransaktion(id: number) {
+  const client = await pool.connect();
+  try {
+    await client.query(`DELETE FROM transaktioner WHERE id = $1`, [id]);
+  } finally {
+    client.release();
   }
 }
 

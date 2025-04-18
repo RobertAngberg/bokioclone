@@ -15,7 +15,7 @@ export async function hämtaTransaktionsposter(transaktionsId: number) {
       tp.debet, 
       tp.kredit
     FROM transaktionsposter tp
-    LEFT JOIN konton k ON k.konto_id = tp.konto_id
+    LEFT JOIN konton k ON k.id = tp.konto_id
     WHERE tp.transaktions_id = $1
   `,
     [transaktionsId]
@@ -72,8 +72,8 @@ export async function fetchDataFromYear(year: string) {
         k.kontoklass,
         k.kontonummer
       FROM transaktioner t
-      JOIN transaktionsposter tp ON t.transaktions_id = tp.transaktions_id
-      JOIN konton k ON tp.konto_id = k.konto_id
+      JOIN transaktionsposter tp ON t.id = tp.transaktions_id
+      JOIN konton k ON tp.konto_id = k.id
       WHERE t.transaktionsdatum >= $1 AND t.transaktionsdatum < $2
       ORDER BY t.transaktionsdatum ASC
     `,
@@ -139,7 +139,7 @@ export async function hämtaAllaTransaktioner() {
     const client = await pool.connect();
     const res = await client.query(`
       SELECT 
-        transaktions_id,
+        id,
         transaktionsdatum,
         kontobeskrivning,
         belopp,
@@ -147,7 +147,7 @@ export async function hämtaAllaTransaktioner() {
         kommentar,
         "userId"
       FROM transaktioner
-      ORDER BY transaktions_id DESC
+      ORDER BY id DESC
     `);
     client.release();
     return res.rows;
@@ -292,7 +292,7 @@ export async function taBortFörval(id: number) {
 export async function taBortTransaktion(id: number) {
   const client = await pool.connect();
   try {
-    await client.query(`DELETE FROM transaktioner WHERE transaktions_id = $1`, [id]);
+    await client.query(`DELETE FROM transaktioner WHERE id = $1`, [id]);
   } finally {
     client.release();
   }
@@ -364,12 +364,10 @@ export async function körSQL(sql: string) {
   try {
     const result = await pool.query(sql);
 
-    // Om SELECT eller liknande – returnera rader
     if (result.rows?.length) {
       return { rows: result.rows };
     }
 
-    // Annars visa antal rader som påverkades (INSERT/UPDATE/DELETE)
     return {
       rowCount: result.rowCount,
       command: result.command,

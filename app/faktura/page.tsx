@@ -47,32 +47,22 @@ function InnerFakturaPage() {
           <h1 className="text-3xl text-center">Fakturor</h1>
 
           {/* Tidigare fakturor */}
-          <details>
+          {/* <details>
             <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
               🧾 Tidigare fakturor <span className="ml-auto text-white">▼</span>
             </summary>
             <div className="p-4 bg-slate-900 rounded-b-lg">
               <FakturorLista />
             </div>
-          </details>
-
-          {/* Artiklar & Tjänster */}
-          <details>
-            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
-              📦 Artiklar & Tjänster <span className="ml-auto text-white">▼</span>
-            </summary>
-            <div className="p-4 bg-slate-900 rounded-b-lg">
-              <ArtiklarTjanster />
-            </div>
-          </details>
+          </details> */}
 
           {/* Avsändare */}
-          <details>
+          {/* <details>
             <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800 rounded-lg cursor-pointer">
               🧑‍💼 Avsändare <span className="ml-auto text-white">▼</span>
             </summary>
             <Avsandare />
-          </details>
+          </details> */}
 
           {/* Kunduppgifter */}
           <details>
@@ -81,6 +71,16 @@ function InnerFakturaPage() {
             </summary>
             <div className="p-4 bg-slate-900 rounded-b-lg">
               <KundUppgifter />
+            </div>
+          </details>
+
+          {/* Artiklar & Tjänster */}
+          <details>
+            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
+              📦 Produkter & Tjänster <span className="ml-auto text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 rounded-b-lg">
+              <ArtiklarTjanster />
             </div>
           </details>
 

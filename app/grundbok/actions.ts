@@ -43,7 +43,7 @@ export async function fetchTransactionDetails(transaktionsId: number) {
         tp.debet, 
         tp.kredit
       FROM transaktionsposter tp
-      LEFT JOIN konton k ON tp.konto_id = k.konto_id
+      LEFT JOIN konton k ON tp.konto_id = k.id
       WHERE tp.transaktions_id = $1
       ORDER BY tp.transaktionspost_id ASC
     `;
