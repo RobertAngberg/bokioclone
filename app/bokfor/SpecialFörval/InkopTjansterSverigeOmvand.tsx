@@ -91,7 +91,7 @@ export default function InkopTjansterSverigeOmvand(props: Props) {
     };
 
     return (
-      <div className="p-6 bg-cyan-950 text-white border border-cyan-800 rounded-2xl shadow-lg">
+      <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center text-white">
           Steg 2: Inköp tjänster Sverige (omvänd moms)
         </h1>

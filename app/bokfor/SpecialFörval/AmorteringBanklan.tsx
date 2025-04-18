@@ -82,7 +82,7 @@ export default function AmorteringBanklan(props: Props) {
     };
 
     return (
-      <div className="p-6 bg-cyan-950 text-white border border-cyan-800 rounded-2xl shadow-lg">
+      <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Amortering av banklån</h1>
 
         <div className="flex flex-col-reverse md:flex-row justify-between max-w-5xl gap-8 mx-auto">

@@ -32,7 +32,7 @@ type Forval = {
   extrafält?: Extrafält[];
 };
 
-function Bokför() {
+export default function Bokför() {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [kontonummer, setKontonummer] = useState<string>("");
   const [kontobeskrivning, setKontobeskrivning] = useState<string>();
@@ -46,7 +46,6 @@ function Bokför() {
     Record<string, { label: string; debet: number; kredit: number }>
   >({});
 
-  // Om man kommer in med ett redan valt förval, hoppa direkt till steg 2
   useEffect(() => {
     if (currentStep === 1 && valtFörval) {
       setCurrentStep(2);
@@ -54,9 +53,9 @@ function Bokför() {
   }, [currentStep, valtFörval]);
 
   return (
-    <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10">
+    <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10 text-slate-100">
       <div className="max-w-5xl mx-auto">
-        <div className="w-full p-8 text-gray-100 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+        <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
           {currentStep === 1 && (
             <SokForval
               setCurrentStep={setCurrentStep}
@@ -96,6 +95,11 @@ function Bokför() {
               valtFörval={valtFörval}
               setCurrentStep={setCurrentStep}
               extrafält={extrafält}
+              embedded={true}
+              // Skicka `embedded={true}` till Steg3 för att signalera att komponenten redan är omsluten av en wrapper från Bokför.
+              // Detta gör att Steg3 INTE renderar sin egen <main> och <div>-layout, vilket annars skulle orsaka dubbla padding/margins
+              // och göra att layouten ser fel ut jämfört med steg 1 och 2.
+              // Tror används pga val på framsidan
             />
           )}
 
@@ -105,5 +109,3 @@ function Bokför() {
     </main>
   );
 }
-
-export default Bokför;

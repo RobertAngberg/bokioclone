@@ -81,7 +81,7 @@ export default function Rantekostnader(props: Props) {
     };
 
     return (
-      <div className="p-6 bg-cyan-950 text-white border border-cyan-800 rounded-2xl shadow-lg">
+      <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Räntekostnader</h1>
         <div className="flex flex-col-reverse md:flex-row justify-between gap-8">
           <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">

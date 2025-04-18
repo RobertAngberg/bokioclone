@@ -57,7 +57,7 @@ export default function Steg2(props: Step2Props) {
   }
 
   return (
-    <div className="p-6 bg-cyan-950 text-white border border-cyan-800 rounded-2xl shadow-lg">
+    <>
       <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Fyll i uppgifter</h1>
       <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
         <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
@@ -86,6 +86,6 @@ export default function Steg2(props: Step2Props) {
 
         <Forhandsgranskning fil={props.fil} pdfUrl={props.pdfUrl} />
       </div>
-    </div>
+    </>
   );
 }

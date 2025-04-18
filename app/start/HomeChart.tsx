@@ -84,13 +84,13 @@ export default function HomeChart({ year, onYearChange, chartData }: Props) {
         stack: undefined,
       },
       {
-        label: "Inkomster",
+        label: "Intäkter", // ← ändrat här
         data: inkomstData,
         backgroundColor: "rgb(0, 128, 128)",
         stack: "stack1",
       },
       {
-        label: "Utgifter",
+        label: "Kostnader", // ← redan ändrat innan
         data: utgiftData,
         backgroundColor: "rgb(255, 99, 132)",
         stack: "stack1",
@@ -102,6 +102,12 @@ export default function HomeChart({ year, onYearChange, chartData }: Props) {
     maintainAspectRatio: false,
     indexAxis: "x" as const,
     responsive: true,
+    layout: {
+      padding: {
+        top: 20, // luft överst
+        bottom: 30, // extra luft under legenden
+      },
+    },
     scales: {
       x: {
         stacked: true,
@@ -130,6 +136,7 @@ export default function HomeChart({ year, onYearChange, chartData }: Props) {
         labels: {
           color: "white",
           font: { size: 14 },
+          padding: 20, // mer space under varje legendrad
         },
       },
       tooltip: {
@@ -141,7 +148,10 @@ export default function HomeChart({ year, onYearChange, chartData }: Props) {
 
   return (
     <div className="w-full m-0 p-0">
-      <div className="flex justify-center my-12 mb-6">
+      <div className="relative w-full h-[75vh] p-0 m-0">
+        <Chart type="bar" datasetIdKey="id" options={options} data={data} />
+      </div>
+      <div className="flex justify-center my-6">
         <select
           id="year"
           value={year}
@@ -155,10 +165,6 @@ export default function HomeChart({ year, onYearChange, chartData }: Props) {
           <option value="2021">2021</option>
           <option value="2020">2020</option>
         </select>
-      </div>
-
-      <div className="relative w-full h-[75vh] p-0 m-0">
-        <Chart type="bar" datasetIdKey="id" options={options} data={data} />
       </div>
     </div>
   );

@@ -68,7 +68,7 @@ export default function Home() {
   useEffect(() => {
     const hämtaFavoriter = async () => {
       const favs = await fetchFavoritforval();
-      setFavoriter(favs.slice(0, 10));
+      setFavoriter(favs.slice(0, 6));
     };
     hämtaFavoriter();
   }, []);
@@ -98,8 +98,8 @@ export default function Home() {
           {currentStep === 1 && (
             <>
               <div className="flex flex-wrap justify-center gap-4 mb-8 text-center">
-                <Card title="Inkomster" data={data?.totalInkomst || 0} />
-                <Card title="Utgifter" data={data?.totalUtgift || 0} />
+                <Card title="Intäkter" data={data?.totalInkomst || 0} />
+                <Card title="Kostnader" data={data?.totalUtgift || 0} />
                 <Card title="Resultat" data={data?.totalResultat || 0} />
               </div>
 
@@ -113,23 +113,55 @@ export default function Home() {
 
               {favoriter.length > 0 && (
                 <div className="mt-10">
-                  <h2 className="text-xl font-semibold mb-4 text-center">
+                  <h2 className="text-xl font-semibold mb-8 text-center">
                     ⭐ Dina vanligaste förval
                   </h2>
-                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                     {favoriter.map((f) => (
                       <div
                         key={f.id}
-                        className="bg-slate-900 border border-gray-700 rounded-lg p-4 shadow hover:bg-slate-800 cursor-pointer"
+                        className="relative rounded-xl p-4 transition-all duration-200 shadow-md cursor-pointer border border-gray-700 bg-slate-900 hover:bg-slate-800"
                         onClick={() => väljFörval(f)}
                       >
-                        <div className="text-white font-bold mb-1">{f.namn}</div>
-                        <div className="text-sm text-gray-400 mb-1">
-                          {f.typ} • {f.kategori}
-                        </div>
-                        <pre className="text-gray-300 text-sm whitespace-pre-wrap italic">
+                        <div className="text-xl font-semibold text-white mb-2">✓ {f.namn}</div>
+
+                        <pre className="whitespace-pre-wrap text-sm italic text-gray-300 mb-2 font-sans">
                           {f.beskrivning}
                         </pre>
+
+                        <p className="text-sm text-gray-400 mb-4">
+                          <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
+                          <strong>Kategori:</strong> {f.kategori}
+                        </p>
+
+                        <table className="w-full border border-gray-700 text-sm text-gray-300">
+                          <thead className="bg-slate-800 text-white">
+                            <tr>
+                              <th className="border border-gray-700 px-2 py-1 text-left">Konto</th>
+                              <th className="border border-gray-700 px-2 py-1 text-center">
+                                Debet
+                              </th>
+                              <th className="border border-gray-700 px-2 py-1 text-center">
+                                Kredit
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {f.konton.map((konto, i) => (
+                              <tr key={i}>
+                                <td className="border border-gray-700 px-2 py-1">
+                                  {konto.kontonummer} {konto.beskrivning}
+                                </td>
+                                <td className="border border-gray-700 px-2 py-1 text-center">
+                                  {konto.debet === true ? "✓" : (konto.debet ?? "")}
+                                </td>
+                                <td className="border border-gray-700 px-2 py-1 text-center">
+                                  {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     ))}
                   </div>
