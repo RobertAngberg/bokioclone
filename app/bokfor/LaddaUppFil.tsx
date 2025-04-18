@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Tesseract from "tesseract.js";
+import extractTextFromPDF from "pdf-parser-client-side";
 import { extractDataFromOCR } from "./actions";
-import React from "react";
+import Tesseract from "tesseract.js";
 
 interface FileUploadProps {
   setFil: (file: File | null) => void;
@@ -23,7 +23,7 @@ export default function LaddaUppFil({
   const [isLoading, setIsLoading] = useState(false);
   const [timeoutTriggered, setTimeoutTriggered] = useState(false);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -31,20 +31,30 @@ export default function LaddaUppFil({
     setPdfUrl(fileUrl);
     setFil(file);
 
-    if (file.type.startsWith("image/")) {
-      setIsLoading(true);
-      setTimeoutTriggered(false);
+    setIsLoading(true);
+    setTimeoutTriggered(false);
 
-      // Timeout fallback after 7s
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-        setTimeoutTriggered(true);
-      }, 7000);
+    // Timeout fallback after 10s
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+      setTimeoutTriggered(true);
+    }, 10000);
 
-      Tesseract.recognize(file, "swe").then((result) => {
-        clearTimeout(timeout); // Cancel timeout if done in time
-        setRecognizedText(result.data.text);
-      });
+    try {
+      let text = "";
+
+      if (file.type === "application/pdf") {
+        text = (await extractTextFromPDF(file, "clean")) || "";
+      } else if (file.type.startsWith("image/")) {
+        text = await förbättraOchLäsBild(file);
+      }
+
+      clearTimeout(timeout);
+      setRecognizedText(text);
+    } catch (error) {
+      clearTimeout(timeout);
+      setTimeoutTriggered(true);
+      console.error("Fel vid textextraktion:", error);
     }
   };
 
@@ -54,8 +64,7 @@ export default function LaddaUppFil({
     (async () => {
       try {
         const parsed = await extractDataFromOCR(recognizedText);
-
-        console.log("Parsed data:", parsed);
+        console.log("📄 Parsed data från OpenAI:", parsed);
 
         if (parsed?.datum) setTransaktionsdatum(parsed.datum);
         if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
@@ -80,13 +89,13 @@ export default function LaddaUppFil({
         htmlFor="fileUpload"
         className="flex items-center justify-center px-4 py-2 mb-6 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
       >
-        Välj fil
+        Välj PDF eller bild
       </label>
 
       {isLoading && (
         <div className="flex flex-col items-center justify-center mb-6 text-white">
           <div className="w-6 h-6 mb-2 border-4 rounded-full border-cyan-400 border-t-transparent animate-spin" />
-          <span className="text-sm text-cyan-200">Analyserar underlaget...</span>
+          <span className="text-sm text-cyan-200">Läser och tolkar dokument...</span>
         </div>
       )}
 
@@ -97,4 +106,37 @@ export default function LaddaUppFil({
       )}
     </>
   );
+}
+
+// 🧠 Förbättrad OCR-funktion för bilder
+async function förbättraOchLäsBild(file: File): Promise<string> {
+  const img = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) throw new Error("Kunde inte skapa canvas");
+
+  canvas.width = img.width * 2;
+  canvas.height = img.height * 2;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+    const bw = avg > 150 ? 255 : 0;
+    imageData.data[i] = bw;
+    imageData.data[i + 1] = bw;
+    imageData.data[i + 2] = bw;
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  const processedBlob = await new Promise<Blob>((resolve) =>
+    canvas.toBlob((b) => resolve(b!), "image/png")
+  );
+
+  const result = await Tesseract.recognize(processedBlob, "swe+eng", {
+    logger: (m) => console.log(m),
+  });
+
+  return result.data.text;
 }
