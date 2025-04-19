@@ -2,34 +2,39 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export interface FakturaFormData {
-  företagsnamn?: string;
-  adress?: string;
-  postnummer?: string;
-  stad?: string;
-  kundnamn?: string;
-  kundadress?: string;
-  kundpostnummer?: string;
-  kundstad?: string;
-  fakturanummer?: string;
-  fakturadatum?: string;
-  forfallodatum?: string;
-  betalningsmetod?: string;
-  betalningsvillkor?: number;
-  artiklar?: Array<{
-    beskrivning?: string;
-    antal?: string;
-    prisPerEnhet?: string;
-    moms?: string;
-    valuta?: string;
-    typ?: string;
-  }>;
-  logo?: string;
-  email?: string;
-  logoWidth?: number;
+export type FakturaFormData = {
+  id?: number;
+  fakturanummer: string;
+  fakturadatum: string;
+  forfallodatum: string;
+  betalningsmetod: string;
+  betalningsvillkor: string;
+  drojsmalsranta: string;
+  leverans: string;
+  kommentar: string;
+  kundId?: string;
   momsvisning?: string;
   nummer?: string;
-}
+
+  kundtyp?: string;
+  kundnamn?: string;
+  kundnummer?: string;
+  kundorganisationsnummer?: string;
+  kundvatnummer?: string;
+  kundadress?: string;
+  kundadress2?: string;
+  kundpostnummer?: string;
+  kundstad?: string;
+
+  artiklar: {
+    beskrivning: string;
+    antal: number;
+    prisPerEnhet: number;
+    moms: number;
+    valuta: string;
+    typ: "vara" | "tjänst";
+  }[];
+};
 
 type ContextType = {
   formData: FakturaFormData;
@@ -40,21 +45,27 @@ const FakturaContext = createContext<ContextType | undefined>(undefined);
 
 export const FakturaProvider = ({ children }: { children: ReactNode }) => {
   const [formData, setFormData] = useState<FakturaFormData>({
+    fakturanummer: "1",
+    fakturadatum: new Date().toISOString().slice(0, 10),
+    forfallodatum: new Date().toISOString().slice(0, 10),
+    betalningsmetod: "Bankgiro",
+    betalningsvillkor: "",
+    drojsmalsranta: "",
+    leverans: "",
+    kommentar: "",
+    momsvisning: "Inklusive",
+    nummer: "",
+
     artiklar: [
       {
         beskrivning: "",
-        antal: "",
-        prisPerEnhet: "",
+        antal: 1,
+        prisPerEnhet: 0,
+        moms: 25,
         valuta: "SEK",
-        moms: "25",
-        typ: "Varor",
+        typ: "vara",
       },
     ],
-    fakturadatum: new Date().toISOString().slice(0, 10),
-    betalningsmetod: "Bankgiro",
-    momsvisning: "Inklusive",
-    fakturanummer: "1",
-    nummer: "",
   });
 
   return (
@@ -64,8 +75,6 @@ export const FakturaProvider = ({ children }: { children: ReactNode }) => {
 
 export const useFakturaContext = () => {
   const context = useContext(FakturaContext);
-  if (!context) {
-    throw new Error("useFakturaContext måste användas inom FakturaProvider");
-  }
+  if (!context) throw new Error("useFakturaContext måste användas inom FakturaProvider");
   return context;
 };

@@ -23,9 +23,24 @@ export default function Steg2() {
 
   const handleSave = async () => {
     const fd = new FormData();
-    Object.entries(formData).forEach(([k, v]) =>
-      fd.append(k, k === "artiklar" ? JSON.stringify(v) : String(v ?? ""))
-    );
+
+    Object.entries(formData).forEach(([k, v]) => {
+      if (k === "artiklar") {
+        fd.append(k, JSON.stringify(v));
+      } else if (v !== undefined && v !== null) {
+        fd.append(k, String(v));
+      }
+    });
+
+    // ✅ Logga hela formData-objektet
+    console.log("✅ formData som skickas:", formData);
+
+    // ✅ Logga alla nyckel-värdepar i FormData
+    console.log("📦 FormData innehåll:");
+    for (const [key, value] of fd.entries()) {
+      console.log(`🔑 ${key}:`, value);
+    }
+
     const res = await saveInvoice(fd);
     alert(res.success ? "✅ Faktura sparad!" : "❌ Kunde inte spara fakturan.");
   };

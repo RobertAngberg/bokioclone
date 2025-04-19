@@ -13,14 +13,11 @@ export async function getAllInvoices() {
 
   try {
     const client = await pool.connect();
-
-    // dubbelkolla exakt citat runt kolumnnamn
     const res = await client.query(`SELECT * FROM fakturor WHERE "userId" = $1 ORDER BY id DESC`, [
       userId,
     ]);
     const fakturor = res.rows;
 
-    // hämta artiklar separat
     for (const faktura of fakturor) {
       const artiklarRes = await client.query(`SELECT * FROM fakturarad WHERE "fakturaId" = $1`, [
         faktura.id,
@@ -57,7 +54,9 @@ export async function saveInvoice(formData: FormData) {
     f("drojsmalsranta"),
     f("leverans"),
     f("kommentar"),
-    f("kundId") ? parseInt(f("kundId")!) : null, // 👈 viktigt!
+    f("kundId") ? parseInt(f("kundId")!) : null,
+    f("nummer"),
+    f("momsvisning"),
   ];
 
   try {
@@ -70,24 +69,27 @@ export async function saveInvoice(formData: FormData) {
         `UPDATE fakturor SET
           "userId" = $1, fakturanummer = $2, fakturadatum = $3, forfallodatum = $4,
           betalningsmetod = $5, betalningsvillkor = $6, drojsmalsranta = $7,
-          leverans = $8, kommentar = $9, "kundId" = $10
-         WHERE id = $11`,
+          leverans = $8, kommentar = $9, "kundId" = $10, nummer = $11, momsvisning = $12
+         WHERE id = $13`,
         [...fakturaData, fakturaId]
       );
       faktura = { id: fakturaId };
+      console.log("✅ Uppdaterade faktura med ID:", fakturaId);
     } else {
       const res = await client.query(
         `INSERT INTO fakturor (
           "userId", fakturanummer, fakturadatum, forfallodatum,
           betalningsmetod, betalningsvillkor, drojsmalsranta,
-          leverans, kommentar, "kundId"
-        ) VALUES (${Array.from({ length: 10 }, (_, i) => `$${i + 1}`).join(", ")})
+          leverans, kommentar, "kundId", nummer, momsvisning
+        ) VALUES (${Array.from({ length: 12 }, (_, i) => `$${i + 1}`).join(", ")})
         RETURNING id`,
         fakturaData
       );
       faktura = res.rows[0];
+      console.log("✅ Skapade ny faktura med ID:", faktura.id);
     }
 
+    // Spara rader
     for (const rad of artiklar) {
       await client.query(
         `INSERT INTO fakturarader ("fakturaId", beskrivning, antal, "prisPerEnhet", moms, valuta, typ)
@@ -96,6 +98,7 @@ export async function saveInvoice(formData: FormData) {
       );
     }
 
+    console.log("📦 Faktura sparad med data:", fakturaData);
     client.release();
     revalidatePath("/fakturor");
     return { success: true, id: faktura.id };
@@ -183,6 +186,78 @@ export async function hämtaSparadeKunder() {
   } catch (error) {
     console.error("❌ Fel vid hämtning av kunder:", error);
     return [];
+  } finally {
+    client.release();
+  }
+}
+
+export async function hämtaSparadeFakturor() {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const userId = parseInt(session.user.id);
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `SELECT id, fakturanummer, fakturadatum, "kundId" FROM fakturor WHERE "userId" = $1 ORDER BY id DESC`,
+      [userId]
+    );
+
+    return res.rows;
+  } catch (error) {
+    console.error("❌ Fel vid hämtning av fakturor:", error);
+    return [];
+  } finally {
+    client.release();
+  }
+}
+
+export async function hämtaFakturaMedRader(fakturaId: number) {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const client = await pool.connect();
+  try {
+    const fakturaRes = await client.query(
+      `SELECT * FROM fakturor WHERE id = $1 AND "userId" = $2`,
+      [fakturaId, parseInt(session.user.id)]
+    );
+
+    const raderRes = await client.query(
+      `SELECT * FROM fakturarader WHERE "fakturaId" = $1 ORDER BY id ASC`,
+      [fakturaId]
+    );
+
+    const faktura = fakturaRes.rows[0];
+    const artiklar = raderRes.rows;
+
+    return {
+      faktura,
+      artiklar,
+    };
+  } catch (err) {
+    console.error("❌ Kunde inte hämta faktura:", err);
+    return null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getKundById(kundId: number) {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(`SELECT * FROM kunder WHERE id = $1 AND "userId" = $2`, [
+      kundId,
+      parseInt(session.user.id),
+    ]);
+    return res.rows[0] ?? null;
+  } catch (err) {
+    console.error("❌ Kunde inte hämta kund:", err);
+    return null;
   } finally {
     client.release();
   }

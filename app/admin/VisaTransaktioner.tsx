@@ -148,7 +148,10 @@ export default function VisaTransaktioner() {
                             </thead>
                             <tbody>
                               {konton.map((konto, idx) => (
-                                <tr key={idx} className={idx % 2 ? "bg-slate-950" : "bg-slate-900"}>
+                                <tr
+                                  key={`${t.transaktions_id}-${konto.kontonummer ?? "konto"}-${idx}`}
+                                  className={idx % 2 ? "bg-slate-950" : "bg-slate-900"}
+                                >
                                   <td className="p-2">
                                     {konto.kontonummer}{" "}
                                     {konto.beskrivning ? `– ${konto.beskrivning}` : ""}

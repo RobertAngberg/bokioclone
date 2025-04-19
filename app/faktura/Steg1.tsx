@@ -1,15 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { sparaNyKund, hämtaSparadeKunder } from "./actions";
-import Steg2 from "./Steg2";
 import { useFakturaContext } from "./FakturaProvider";
+import Steg2 from "./Steg2";
+import {
+  sparaNyKund,
+  hämtaSparadeKunder,
+  hämtaSparadeFakturor,
+  hämtaFakturaMedRader,
+} from "./actions";
 
 export default function Steg1() {
   const { setFormData } = useFakturaContext();
   const [visaForm, setVisaForm] = useState(false);
   const [visaKunder, setVisaKunder] = useState(false);
+  const [visaFakturor, setVisaFakturor] = useState(false);
   const [visaSteg2, setVisaSteg2] = useState(false);
+  const [kunder, setKunder] = useState<any[]>([]);
+  const [fakturor, setFakturor] = useState<any[]>([]);
   const [kundData, setKundData] = useState({
     kundtyp: "Företag",
     kundnamn: "",
@@ -21,9 +29,10 @@ export default function Steg1() {
     kundpostnummer: "",
     kundstad: "",
   });
+
   const [sparatMeddelande, setSparatMeddelande] = useState(false);
-  const [kunder, setKunder] = useState<any[]>([]);
   const [laddarKunder, setLaddarKunder] = useState(false);
+  const [laddarFakturor, setLaddarFakturor] = useState(false);
 
   const toggleForm = () => {
     setVisaForm(!visaForm);
@@ -38,6 +47,16 @@ export default function Steg1() {
       const res = await hämtaSparadeKunder();
       if (Array.isArray(res)) setKunder(res);
       setLaddarKunder(false);
+    }
+  };
+
+  const toggleFakturor = async () => {
+    setVisaFakturor(!visaFakturor);
+    if (!visaFakturor) {
+      setLaddarFakturor(true);
+      const res = await hämtaSparadeFakturor();
+      if (Array.isArray(res)) setFakturor(res);
+      setLaddarFakturor(false);
     }
   };
 
@@ -78,6 +97,52 @@ export default function Steg1() {
     setVisaSteg2(true);
   };
 
+  const hanteraValdFaktura = async (id: number) => {
+    const data = await hämtaFakturaMedRader(id);
+    if (!data || !data.faktura) {
+      alert("❌ Kunde inte hämta faktura");
+      return;
+    }
+
+    const { faktura, artiklar } = data;
+
+    setFormData({
+      id: faktura.id,
+      fakturanummer: faktura.fakturanummer ?? "",
+      fakturadatum: faktura.fakturadatum?.toISOString?.().slice(0, 10) ?? "",
+      forfallodatum: faktura.forfallodatum?.toISOString?.().slice(0, 10) ?? "",
+      betalningsmetod: faktura.betalningsmetod ?? "",
+      betalningsvillkor: faktura.betalningsvillkor ?? "",
+      drojsmalsranta: faktura.drojsmalsranta ?? "",
+      leverans: faktura.leverans ?? "",
+      kommentar: faktura.kommentar ?? "",
+      kundId: faktura.kundId?.toString() ?? "",
+      nummer: faktura.nummer ?? "",
+      momsvisning: faktura.momsvisning ?? "Inklusive",
+
+      kundtyp: faktura.kundtyp ?? "",
+      kundnamn: faktura.kundnamn ?? "",
+      kundnummer: faktura.kundnummer ?? "",
+      kundorganisationsnummer: faktura.kundorganisationsnummer ?? "",
+      kundvatnummer: faktura.kundvatnummer ?? "",
+      kundadress: faktura.kundadress ?? "",
+      kundadress2: faktura.kundadress2 ?? "",
+      kundpostnummer: faktura.kundpostnummer ?? "",
+      kundstad: faktura.kundstad ?? "",
+
+      artiklar: artiklar.map((rad: any) => ({
+        beskrivning: rad.beskrivning,
+        antal: Number(rad.antal),
+        prisPerEnhet: Number(rad.prisPerEnhet),
+        moms: Number(rad.moms),
+        valuta: rad.valuta ?? "SEK",
+        typ: rad.typ === "tjänst" ? "tjänst" : "vara",
+      })),
+    });
+
+    setVisaSteg2(true);
+  };
+
   if (visaSteg2) return <Steg2 />;
 
   return (
@@ -104,14 +169,16 @@ export default function Steg1() {
           >
             🗂️ Befintliga kunder
           </button>
+          <button
+            onClick={toggleFakturor}
+            className="px-6 py-3 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-lg"
+          >
+            🧾 Sparade fakturor
+          </button>
         </div>
 
-        {/* Formulär */}
         {visaForm && (
-          <form
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 transition-all duration-300"
-            style={{ overflow: "hidden" }}
-          >
+          <form className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="col-span-2">
               <label className="block mb-1 text-sm">Kundtyp</label>
               <div className="flex gap-4">
@@ -164,7 +231,6 @@ export default function Steg1() {
           </form>
         )}
 
-        {/* Kundlista */}
         {visaKunder && (
           <div className="mt-6 space-y-2">
             {laddarKunder ? (
@@ -181,6 +247,30 @@ export default function Steg1() {
                   className="cursor-pointer px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded"
                 >
                   {kund.kundnamn} ({kund.kundnummer})
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {visaFakturor && (
+          <div className="mt-6 space-y-2">
+            {laddarFakturor ? (
+              <div className="flex justify-center items-center py-4">
+                <div className="h-6 w-6 border-2 border-t-transparent border-white rounded-full animate-spin" />
+              </div>
+            ) : fakturor.length === 0 ? (
+              <div className="text-sm italic text-center text-gray-400">
+                Inga fakturor hittades.
+              </div>
+            ) : (
+              fakturor.map((faktura: any) => (
+                <div
+                  key={faktura.id}
+                  onClick={() => hanteraValdFaktura(faktura.id)}
+                  className="cursor-pointer px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded"
+                >
+                  {faktura.fakturanummer} ({faktura.fakturadatum?.slice?.(0, 10)})
                 </div>
               ))
             )}
