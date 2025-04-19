@@ -2,7 +2,7 @@
 
 import { useFakturaContext } from "./FakturaProvider";
 
-export default function ArtiklarTjanster() {
+export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
 
   const handleChange = (

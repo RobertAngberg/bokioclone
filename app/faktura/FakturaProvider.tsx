@@ -2,51 +2,34 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type FakturaFormData = {
-  // Avsändare
+export interface FakturaFormData {
   företagsnamn?: string;
   adress?: string;
   postnummer?: string;
   stad?: string;
-  organisationsnummer?: string;
-  momsregistreringsnummer?: string;
-  telefonnummer?: string;
-  bankinfo?: string;
-  webbplats?: string;
-  logo?: string;
-  email?: string;
-
-  // Kund
-  kundtyp?: string;
   kundnamn?: string;
   kundadress?: string;
   kundpostnummer?: string;
   kundstad?: string;
-  kundemail?: string;
-
-  // Artiklar
-  artiklar: {
-    beskrivning: string;
-    antal: string;
-    prisPerEnhet: string;
-    valuta: string;
-    moms: string;
-    typ: string;
-  }[];
-
-  // Villkor
-  fakturadatum: string;
+  fakturanummer?: string;
+  fakturadatum?: string;
   forfallodatum?: string;
-  betalningsvillkor?: string;
-  drojsmalsranta?: string;
-  leverans?: string;
-
-  // Övrigt
+  betalningsmetod?: string;
+  betalningsvillkor?: number;
+  artiklar?: Array<{
+    beskrivning?: string;
+    antal?: string;
+    prisPerEnhet?: string;
+    moms?: string;
+    valuta?: string;
+    typ?: string;
+  }>;
+  logo?: string;
+  email?: string;
+  logoWidth?: number;
   momsvisning?: string;
   nummer?: string;
-  betalningsmetod?: string;
-  fakturanummer?: string;
-};
+}
 
 type ContextType = {
   formData: FakturaFormData;

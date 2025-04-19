@@ -1,5 +1,6 @@
 "use client";
 
+import VisaAllt from "./VisaAllt";
 import VisaTransaktioner from "./VisaTransaktioner";
 import ForvalDatabas from "./ForvalDatabas";
 import VisaKonton from "./VisaKonton";
@@ -24,6 +25,16 @@ export default function Home() {
         >
           <h1 className="text-3xl text-center text-white mb-6">Adminpanel</h1>
 
+          {/* =============  Alla tabeller  ============= */}
+          <details className="group">
+            <summary>
+              📑 Visa alla tabeller <span className="text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 group-open:rounded-b-lg">
+              <VisaAllt />
+            </div>
+          </details>
+
           {/* =============  SQL‑verktyg  ============= */}
           <details className="group">
             <summary>
@@ -47,7 +58,7 @@ export default function Home() {
           {/* =============  Kontoplan  ============= */}
           <details className="group">
             <summary>
-              📚 Kontoplan <span className="text-white">▼</span>
+              📚 Konton <span className="text-white">▼</span>
             </summary>
             <div className="p-4 bg-slate-900 group-open:rounded-b-lg">
               <VisaKonton />
