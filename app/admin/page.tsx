@@ -5,6 +5,7 @@ import VisaTransaktioner from "./VisaTransaktioner";
 import ForvalDatabas from "./ForvalDatabas";
 import VisaKonton from "./VisaKonton";
 import SQLEditor from "./SQLEditor";
+import Foretagsprofil from "./Foretagsprofil";
 
 export default function Home() {
   return (
@@ -24,6 +25,16 @@ export default function Home() {
           "
         >
           <h1 className="text-3xl text-center text-white mb-6">Adminpanel</h1>
+
+          {/* =============  Företagsprofil  ============= */}
+          <details className="group">
+            <summary>
+              🧑‍💼 Företagsprofil <span className="text-white">▼</span>
+            </summary>
+            <div className="p-4 bg-slate-900 group-open:rounded-b-lg">
+              <Foretagsprofil />
+            </div>
+          </details>
 
           {/* =============  Alla tabeller  ============= */}
           <details className="group">

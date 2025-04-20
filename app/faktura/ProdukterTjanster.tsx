@@ -1,187 +1,183 @@
 "use client";
 
 import { useFakturaContext } from "./FakturaProvider";
+import { useState } from "react";
 
 export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
 
-  const handleChange = (
-    index: number,
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    const updated = [...formData.artiklar];
-    updated[index] = { ...updated[index], [name]: value };
-    setFormData((prev) => ({ ...prev, artiklar: updated }));
-  };
-
-  const createEmptyRow = (copy?: (typeof formData.artiklar)[number]) => ({
-    beskrivning: copy?.beskrivning || "",
-    antal: copy?.antal || "",
-    prisPerEnhet: copy?.prisPerEnhet || "",
-    valuta: copy?.valuta || "SEK",
-    moms: copy?.moms || "25",
-    typ: copy?.typ || "Varor",
+  const [nyArtikel, setNyArtikel] = useState({
+    beskrivning: "",
+    antal: "1",
+    prisPerEnhet: "0",
+    moms: "25",
+    valuta: "SEK",
+    typ: "vara",
   });
 
-  const addAnotherRow = () => {
-    const last = formData.artiklar.at(-1);
-    const newRow = createEmptyRow(last);
-    setFormData((prev) => ({ ...prev, artiklar: [...prev.artiklar, newRow] }));
-  };
-
-  const removeRow = (index: number) => {
-    const updated = formData.artiklar.filter((_, i) => i !== index);
-    setFormData((prev) => ({ ...prev, artiklar: updated }));
-  };
-
-  const formatCurrency = (value: number, valuta: string) => {
-    const localeMap: Record<string, string> = {
-      SEK: "sv-SE",
-      EUR: "de-DE",
-      USD: "en-US",
-      GBP: "en-GB",
-      NOK: "nb-NO",
-      DKK: "da-DK",
+  const handleAddArtikel = () => {
+    const artikel = {
+      beskrivning: nyArtikel.beskrivning,
+      antal: Number(nyArtikel.antal),
+      prisPerEnhet: Number(nyArtikel.prisPerEnhet),
+      moms: Number(nyArtikel.moms),
+      valuta: nyArtikel.valuta,
+      typ: nyArtikel.typ as "vara" | "tjänst",
     };
-    const locale = localeMap[valuta] || "sv-SE";
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: valuta,
-    }).format(value);
+
+    setFormData((prev) => ({
+      ...prev,
+      artiklar: [...(prev.artiklar || []), artikel],
+    }));
+
+    setNyArtikel({
+      beskrivning: "",
+      antal: "1",
+      prisPerEnhet: "0",
+      moms: "25",
+      valuta: "SEK",
+      typ: "vara",
+    });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNyArtikel((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleDelete = (index: number) => {
+    const updated = [...(formData.artiklar || [])];
+    updated.splice(index, 1);
+    setFormData((prev) => ({
+      ...prev,
+      artiklar: updated,
+    }));
   };
 
   return (
-    <div className="space-y-6">
-      {formData.artiklar.map((row, index) => {
-        const antal = parseFloat(row.antal || "0");
-        const pris = parseFloat(row.prisPerEnhet || "0");
-        const momsProcent = parseFloat(row.moms);
-        const totalExkl = antal * pris;
-        const totalInkl = totalExkl * (1 + momsProcent / 100);
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block mb-1 text-sm">Beskrivning</label>
+          <input
+            name="beskrivning"
+            placeholder="Beskrivning"
+            value={nyArtikel.beskrivning}
+            onChange={handleChange}
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+          />
+        </div>
 
-        return (
-          <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block font-medium">Beskrivning</label>
+        <div>
+          <label className="block mb-1 text-sm">Antal</label>
+          <input
+            name="antal"
+            type="number"
+            min={0}
+            value={nyArtikel.antal}
+            onChange={handleChange}
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm">Pris per enhet</label>
+          <input
+            name="prisPerEnhet"
+            type="number"
+            min={0}
+            value={nyArtikel.prisPerEnhet}
+            onChange={handleChange}
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm">Valuta</label>
+          <select
+            name="valuta"
+            value={nyArtikel.valuta}
+            onChange={handleChange}
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+          >
+            <option value="SEK">SEK</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm">Moms</label>
+          <select
+            name="moms"
+            value={nyArtikel.moms}
+            onChange={handleChange}
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+          >
+            <option value="25">25%</option>
+            <option value="12">12%</option>
+            <option value="6">6%</option>
+            <option value="0">0%</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm">Typ</label>
+          <div className="flex gap-4 mt-1">
+            <label className="flex items-center gap-2">
               <input
-                name="beskrivning"
-                value={row.beskrivning}
-                onChange={(e) => handleChange(index, e)}
-                className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg"
+                type="radio"
+                name="typ"
+                value="vara"
+                checked={nyArtikel.typ === "vara"}
+                onChange={handleChange}
               />
-            </div>
-
-            <div>
-              <label className="block font-medium">Antal och enhet</label>
+              Varor
+            </label>
+            <label className="flex items-center gap-2">
               <input
-                name="antal"
-                value={row.antal}
-                onChange={(e) => handleChange(index, e)}
-                className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg"
+                type="radio"
+                name="typ"
+                value="tjänst"
+                checked={nyArtikel.typ === "tjänst"}
+                onChange={handleChange}
               />
-            </div>
-
-            <div>
-              <label className="block font-medium">Pris per enhet exkl. moms</label>
-              <input
-                name="prisPerEnhet"
-                value={row.prisPerEnhet}
-                onChange={(e) => handleChange(index, e)}
-                className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium">Valuta</label>
-              <select
-                name="valuta"
-                value={row.valuta}
-                onChange={(e) => handleChange(index, e)}
-                className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg"
-              >
-                <option value="SEK">SEK (kr)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="USD">USD ($)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="NOK">NOK (kr)</option>
-                <option value="DKK">DKK (kr)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-medium">Moms</label>
-              <select
-                name="moms"
-                value={row.moms}
-                onChange={(e) => handleChange(index, e)}
-                className="w-full p-2 bg-slate-900 border border-slate-700 text-white rounded-lg"
-              >
-                <option value="25">25%</option>
-                <option value="12">12%</option>
-                <option value="6">6%</option>
-                <option value="0">0%</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-medium">Typ</label>
-              <div className="flex space-x-4 mt-1">
-                <label>
-                  <input
-                    type="radio"
-                    name={`typ-${index}`}
-                    value="Varor"
-                    checked={row.typ === "Varor"}
-                    onChange={(e) => handleChange(index, e)}
-                  />
-                  <span className="ml-1">Varor</span>
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={`typ-${index}`}
-                    value="Tjänster"
-                    checked={row.typ === "Tjänster"}
-                    onChange={(e) => handleChange(index, e)}
-                  />
-                  <span className="ml-1">Tjänster</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="md:col-span-2 mt-2 flex justify-between items-center">
-              <div>
-                <div>
-                  Totalt exkl. moms: <strong>{formatCurrency(totalExkl, row.valuta)}</strong>
-                </div>
-                <div>
-                  Totalt inkl. moms: <strong>{formatCurrency(totalInkl, row.valuta)}</strong>
-                </div>
-              </div>
-
-              {formData.artiklar.length > 1 && (
-                <button
-                  onClick={() => removeRow(index)}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg"
-                >
-                  ❌ Ta bort
-                </button>
-              )}
-            </div>
+              Tjänster
+            </label>
           </div>
-        );
-      })}
-
-      <div className="pt-4">
-        <button
-          type="button"
-          onClick={addAnotherRow}
-          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg"
-        >
-          ➕ Lägg till en till
-        </button>
+        </div>
       </div>
+
+      <button
+        onClick={handleAddArtikel}
+        className="mt-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-800 rounded"
+      >
+        ➕ Lägg till artikel
+      </button>
+
+      {formData.artiklar?.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-2">Tillagda artiklar</h3>
+          <ul className="space-y-2">
+            {formData.artiklar.map((a, idx) => (
+              <li key={idx} className="p-3 bg-slate-800 rounded flex items-center justify-between">
+                <div>
+                  {a.typ === "tjänst" ? "🛠" : "📦"} {a.beskrivning} – {a.antal} x {a.prisPerEnhet}{" "}
+                  {a.valuta} ({a.moms}% moms)
+                </div>
+                <button
+                  onClick={() => handleDelete(idx)}
+                  className="text-red-400 hover:text-red-600 ml-4"
+                >
+                  🗑
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

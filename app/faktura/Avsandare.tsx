@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { hamtaFöretagsprofil } from "../admin/actions";
 
 export default function Avsandare() {
   const { data: session } = useSession();
@@ -21,6 +22,26 @@ export default function Avsandare() {
       företagsnamn: prev.företagsnamn ?? name,
       email: prev.email ?? email,
     }));
+
+    const hämtaProfil = async () => {
+      const profil = await hamtaFöretagsprofil();
+      if (!profil) return;
+
+      setFormData((prev) => ({
+        ...prev,
+        företagsnamn: prev.företagsnamn ?? profil.företagsnamn,
+        adress: prev.adress ?? profil.adress,
+        postnummer: prev.postnummer ?? profil.postnummer,
+        stad: prev.stad ?? profil.stad,
+        organisationsnummer: prev.organisationsnummer ?? profil.organisationsnummer,
+        momsregistreringsnummer: prev.momsregistreringsnummer ?? profil.momsregistreringsnummer,
+        telefonnummer: prev.telefonnummer ?? profil.telefonnummer,
+        bankinfo: prev.bankinfo ?? profil.bankinfo,
+        webbplats: prev.webbplats ?? profil.webbplats,
+      }));
+    };
+
+    hämtaProfil();
   }, [name, email, setFormData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

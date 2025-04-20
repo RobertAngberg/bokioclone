@@ -31,7 +31,7 @@ export default function VisaTransaktioner() {
       const data = await hämtaAllaTransaktioner();
 
       const konverterade = data.map((rad: any) => ({
-        transaktions_id: rad.transaktions_id,
+        transaktions_id: rad.transaktions_id ?? rad.id,
         transaktionsdatum: new Date(rad.transaktionsdatum).toISOString().split("T")[0],
         kontobeskrivning: rad.kontobeskrivning ?? "",
         belopp: Number(rad.belopp ?? 0),
@@ -67,7 +67,8 @@ export default function VisaTransaktioner() {
     <main className="p-6 text-white max-w-6xl mx-auto">
       <h1 className="mb-6 text-3xl font-bold">Transaktioner</h1>
       <p className="text-gray-400 mb-6">
-        {transaktioner.length} transaktion{transaktioner.length !== 1 ? "er" : ""}
+        {transaktioner.length} transaktion
+        {transaktioner.length !== 1 ? "er" : ""}
       </p>
       {loading ? (
         <p className="text-center text-gray-300">🔄 Laddar transaktioner...</p>
@@ -95,13 +96,16 @@ export default function VisaTransaktioner() {
                 const konton = kontonPerTransaktion[t.transaktions_id] ?? [];
 
                 return (
-                  <Fragment key={t.transaktions_id}>
+                  <Fragment key={`trans-${t.transaktions_id}`}>
                     <tr className={`${rowBg} text-white`}>
                       <td className="p-3">{t.transaktions_id}</td>
                       <td className="p-3">{t.transaktionsdatum}</td>
                       <td className="p-3">{t.kontobeskrivning}</td>
                       <td className="p-3">
-                        {t.belopp.toLocaleString("sv-SE", { style: "currency", currency: "SEK" })}
+                        {t.belopp.toLocaleString("sv-SE", {
+                          style: "currency",
+                          currency: "SEK",
+                        })}
                       </td>
                       <td className="p-3">
                         {t.fil ? (
@@ -134,7 +138,6 @@ export default function VisaTransaktioner() {
                       </td>
                     </tr>
 
-                    {/* Konton-rader */}
                     {visaKonton[t.transaktions_id] && konton.length > 0 && (
                       <tr className="bg-slate-900">
                         <td colSpan={9} className="p-3">
@@ -149,7 +152,7 @@ export default function VisaTransaktioner() {
                             <tbody>
                               {konton.map((konto, idx) => (
                                 <tr
-                                  key={`${t.transaktions_id}-${konto.kontonummer ?? "konto"}-${idx}`}
+                                  key={`konto-${t.transaktions_id}-${konto.kontonummer ?? "xx"}-${idx}`}
                                   className={idx % 2 ? "bg-slate-950" : "bg-slate-900"}
                                 >
                                   <td className="p-2">

@@ -1,11 +1,7 @@
 "use client";
 
-// Context används för att centralt hantera fakturaformulärets data (formData)
-// så att flera komponenter (t.ex. Avsändare, KundUppgifter, Artiklar och Förhandsgranskning)
-// kan läsa och uppdatera datan utan att props behöver skickas runt manuellt.
-
-import { useState } from "react";
-import { FakturaProvider, useFakturaContext } from "./FakturaProvider";
+import { useState, useEffect } from "react";
+import { useFakturaContext } from "./FakturaProvider";
 import ProdukterTjanster from "./ProdukterTjanster";
 import Avsandare from "./Avsandare";
 import KundUppgifter from "./KundUppgifter";
@@ -21,6 +17,15 @@ export default function Steg2() {
   const [showPreview, setShowPreview] = useState(false);
   const { formData } = useFakturaContext();
 
+  useEffect(() => {
+    console.log("🔍 Kunduppgifter vid mount:", {
+      kundnamn: formData.kundnamn,
+      kundnummer: formData.kundnummer,
+      kundadress: formData.kundadress,
+      kundemail: formData.kundemail,
+    });
+  }, []);
+
   const handleSave = async () => {
     const fd = new FormData();
 
@@ -32,10 +37,7 @@ export default function Steg2() {
       }
     });
 
-    // ✅ Logga hela formData-objektet
     console.log("✅ formData som skickas:", formData);
-
-    // ✅ Logga alla nyckel-värdepar i FormData
     console.log("📦 FormData innehåll:");
     for (const [key, value] of fd.entries()) {
       console.log(`🔑 ${key}:`, value);
@@ -61,31 +63,23 @@ export default function Steg2() {
         >
           <h1 className="text-3xl text-center">Fakturor</h1>
 
-          <p>
+          <p className="text-center text-gray-400">
             I förhandsgranskningen visas inte egna uppgifter, det är nog därför kunduppgifterna
             ligger så onion.
           </p>
 
-          {/* Tidigare fakturor */}
-          {/* <details>
-            <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
-              🧾 Tidigare fakturor <span className="ml-auto text-white">▼</span>
-            </summary>
-            <div className="p-4 bg-slate-900 rounded-b-lg">
-              <FakturorLista />
-            </div>
-          </details> */}
-
           {/* Avsändare */}
-          {/* <details>
+          <details>
             <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800 rounded-lg cursor-pointer">
               🧑‍💼 Avsändare <span className="ml-auto text-white">▼</span>
             </summary>
-            <Avsandare />
-          </details> */}
+            <div className="p-4 bg-slate-900 rounded-b-lg">
+              <Avsandare />
+            </div>
+          </details>
 
-          {/* Kunduppgifter */}
-          <details>
+          {/* Kunduppgifter - öppen om kundnamn finns */}
+          <details open={!!formData.kundnamn}>
             <summary className="px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800">
               🧑‍💻 Kunduppgifter <span className="ml-auto text-white">▼</span>
             </summary>
@@ -155,7 +149,7 @@ export default function Steg2() {
         <Forhandsgranskning />
       </div>
 
-      {/* Modal */}
+      {/* Modal för förhandsgranskning */}
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="relative bg-white shadow-xl rounded-2xl max-w-[95vw] max-h-[95vh] overflow-auto">

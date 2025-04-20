@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
+
+export type Artikel = {
+  beskrivning: string;
+  antal: number;
+  prisPerEnhet: number;
+  moms: number;
+  valuta: string;
+  typ: "vara" | "tjänst";
+};
 
 export type FakturaFormData = {
   id?: number;
@@ -12,69 +21,93 @@ export type FakturaFormData = {
   drojsmalsranta: string;
   leverans: string;
   kommentar: string;
-  kundId?: string;
-  momsvisning?: string;
-  nummer?: string;
+  momsvisning: string;
+  kundmomsnummer?: string;
+  nummer: string;
+  artiklar: Artikel[];
 
-  kundtyp?: string;
-  kundnamn?: string;
-  kundnummer?: string;
-  kundorganisationsnummer?: string;
-  kundvatnummer?: string;
-  kundadress?: string;
-  kundadress2?: string;
-  kundpostnummer?: string;
-  kundstad?: string;
+  // Kund
+  kundId: string;
+  kundtyp: string;
+  kundnamn: string;
+  kundnummer: string;
+  kundorganisationsnummer: string;
+  kundvatnummer: string;
+  kundadress: string;
+  kundadress2: string;
+  kundpostnummer: string;
+  kundstad: string;
+  kundemail: string;
 
-  artiklar: {
-    beskrivning: string;
-    antal: number;
-    prisPerEnhet: number;
-    moms: number;
-    valuta: string;
-    typ: "vara" | "tjänst";
-  }[];
+  // Avsändare / Företag
+  företagsnamn: string;
+  email: string;
+  adress: string;
+  postnummer: string;
+  stad: string;
+  organisationsnummer: string;
+  momsregistreringsnummer: string;
+  telefonnummer: string;
+  bankinfo: string;
+  webbplats: string;
+  logo: string;
 };
 
-type ContextType = {
+const defaultFormData: FakturaFormData = {
+  id: undefined,
+  fakturanummer: "",
+  fakturadatum: "",
+  forfallodatum: "",
+  betalningsmetod: "",
+  betalningsvillkor: "",
+  drojsmalsranta: "",
+  leverans: "",
+  kommentar: "",
+  momsvisning: "",
+  nummer: "",
+  artiklar: [],
+
+  kundId: "",
+  kundtyp: "",
+  kundnamn: "",
+  kundnummer: "",
+  kundorganisationsnummer: "",
+  kundvatnummer: "",
+  kundadress: "",
+  kundadress2: "",
+  kundpostnummer: "",
+  kundstad: "",
+  kundemail: "",
+
+  företagsnamn: "",
+  email: "",
+  adress: "",
+  postnummer: "",
+  stad: "",
+  organisationsnummer: "",
+  momsregistreringsnummer: "",
+  telefonnummer: "",
+  bankinfo: "",
+  webbplats: "",
+  logo: "",
+};
+
+const FakturaContext = createContext<{
   formData: FakturaFormData;
   setFormData: React.Dispatch<React.SetStateAction<FakturaFormData>>;
-};
+}>({
+  formData: defaultFormData,
+  setFormData: () => {},
+});
 
-const FakturaContext = createContext<ContextType | undefined>(undefined);
-
-export const FakturaProvider = ({ children }: { children: ReactNode }) => {
-  const [formData, setFormData] = useState<FakturaFormData>({
-    fakturanummer: "1",
-    fakturadatum: new Date().toISOString().slice(0, 10),
-    forfallodatum: new Date().toISOString().slice(0, 10),
-    betalningsmetod: "Bankgiro",
-    betalningsvillkor: "",
-    drojsmalsranta: "",
-    leverans: "",
-    kommentar: "",
-    momsvisning: "Inklusive",
-    nummer: "",
-
-    artiklar: [
-      {
-        beskrivning: "",
-        antal: 1,
-        prisPerEnhet: 0,
-        moms: 25,
-        valuta: "SEK",
-        typ: "vara",
-      },
-    ],
-  });
+export function FakturaProvider({ children }: { children: ReactNode }) {
+  const [formData, setFormData] = useState<FakturaFormData>(defaultFormData);
 
   return (
     <FakturaContext.Provider value={{ formData, setFormData }}>{children}</FakturaContext.Provider>
   );
-};
+}
 
-export const useFakturaContext = () => {
-  const context = useContext(FakturaContext);
-  if (!context) throw new Error("useFakturaContext måste användas inom FakturaProvider");
-  return context;
-};
+export function useFakturaContext() {
+  return useContext(FakturaContext);
+}

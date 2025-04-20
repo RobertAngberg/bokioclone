@@ -11,125 +11,125 @@ export async function getAllInvoices() {
   if (!session?.user?.id) return { success: false, invoices: [] };
   const userId = parseInt(session.user.id);
 
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
     const res = await client.query(`SELECT * FROM fakturor WHERE "userId" = $1 ORDER BY id DESC`, [
       userId,
     ]);
     const fakturor = res.rows;
 
     for (const faktura of fakturor) {
-      const artiklarRes = await client.query(`SELECT * FROM fakturarad WHERE "fakturaId" = $1`, [
+      const artiklarRes = await client.query(`SELECT * FROM fakturarader WHERE "fakturaId" = $1`, [
         faktura.id,
       ]);
       faktura.artiklar = artiklarRes.rows;
     }
 
-    client.release();
     return { success: true, invoices: fakturor };
   } catch (error: any) {
     console.error("❌ Error fetching invoices:", error.message);
     return { success: false, invoices: [] };
+  } finally {
+    client.release();
   }
 }
 
 export async function saveInvoice(formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Ingen inloggad användare");
+  if (!session?.user?.id) return { success: false };
+
   const userId = parseInt(session.user.id);
-
-  const fakturaId = formData.get("id")?.toString();
-  const artiklar = JSON.parse(formData.get("artiklar")?.toString() || "[]");
-
-  const f = (key: string) => formData.get(key)?.toString() || null;
-  const d = (key: string) => new Date(formData.get(key)?.toString() || new Date());
-
-  const fakturaData = [
-    userId,
-    f("fakturanummer"),
-    d("fakturadatum"),
-    d("forfallodatum"),
-    f("betalningsmetod"),
-    f("betalningsvillkor"),
-    f("drojsmalsranta"),
-    f("leverans"),
-    f("kommentar"),
-    f("kundId") ? parseInt(f("kundId")!) : null,
-    f("nummer"),
-    f("momsvisning"),
-  ];
+  const client = await pool.connect();
 
   try {
-    const client = await pool.connect();
-    let faktura;
+    const artiklar = JSON.parse((formData.get("artiklar") as string) || "[]");
 
-    if (fakturaId) {
-      await client.query(`DELETE FROM fakturarader WHERE "fakturaId" = $1`, [fakturaId]);
-      await client.query(
-        `UPDATE fakturor SET
-          "userId" = $1, fakturanummer = $2, fakturadatum = $3, forfallodatum = $4,
-          betalningsmetod = $5, betalningsvillkor = $6, drojsmalsranta = $7,
-          leverans = $8, kommentar = $9, "kundId" = $10, nummer = $11, momsvisning = $12
-         WHERE id = $13`,
-        [...fakturaData, fakturaId]
-      );
-      faktura = { id: fakturaId };
-      console.log("✅ Uppdaterade faktura med ID:", fakturaId);
-    } else {
-      const res = await client.query(
-        `INSERT INTO fakturor (
-          "userId", fakturanummer, fakturadatum, forfallodatum,
-          betalningsmetod, betalningsvillkor, drojsmalsranta,
-          leverans, kommentar, "kundId", nummer, momsvisning
-        ) VALUES (${Array.from({ length: 12 }, (_, i) => `$${i + 1}`).join(", ")})
-        RETURNING id`,
-        fakturaData
-      );
-      faktura = res.rows[0];
-      console.log("✅ Skapade ny faktura med ID:", faktura.id);
-    }
+    const fakturadatum = formData.get("fakturadatum")?.toString();
+    const forfallodatum = formData.get("forfallodatum")?.toString();
 
-    // Spara rader
+    const insertFaktura = await client.query(
+      `
+      INSERT INTO fakturor (
+        "userId", fakturanummer, fakturadatum, forfallodatum,
+        betalningsmetod, betalningsvillkor, drojsmalsranta,
+        leverans, kommentar, "kundId", nummer, momsvisning
+      ) VALUES (
+        $1, $2, $3::timestamp, $4::timestamp,
+        $5, $6, $7,
+        $8, $9, $10, $11, $12
+      )
+      RETURNING id
+    `,
+      [
+        userId,
+        formData.get("fakturanummer"),
+        fakturadatum,
+        forfallodatum,
+        formData.get("betalningsmetod"),
+        formData.get("betalningsvillkor"),
+        formData.get("drojsmalsranta"),
+        formData.get("leverans"),
+        formData.get("kommentar"),
+        formData.get("kundId") ? parseInt(formData.get("kundId")!.toString()) : null,
+        formData.get("nummer"),
+        formData.get("momsvisning"),
+      ]
+    );
+
+    const fakturaId = insertFaktura.rows[0].id;
+
     for (const rad of artiklar) {
       await client.query(
-        `INSERT INTO fakturarader ("fakturaId", beskrivning, antal, "prisPerEnhet", moms, valuta, typ)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [faktura.id, rad.beskrivning, rad.antal, rad.prisPerEnhet, rad.moms, rad.valuta, rad.typ]
+        `
+        INSERT INTO fakturarader (
+          "fakturaId", beskrivning, antal, "prisPerEnhet", moms, valuta, typ
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+        [
+          fakturaId,
+          rad.beskrivning,
+          rad.antal.toString(),
+          rad.prisPerEnhet.toString(),
+          rad.moms.toString(),
+          rad.valuta,
+          rad.typ,
+        ]
       );
     }
 
-    console.log("📦 Faktura sparad med data:", fakturaData);
+    return { success: true, id: fakturaId };
+  } catch (err) {
+    console.error("❌ saveInvoice error:", err);
+    return { success: false };
+  } finally {
     client.release();
-    revalidatePath("/fakturor");
-    return { success: true, id: faktura.id };
-  } catch (error) {
-    console.error("❌ Error vid sparande av faktura:", error);
-    return { success: false, error };
   }
 }
 
 export async function deleteInvoice(fakturaId: number) {
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
-    await client.query(`DELETE FROM fakturarader WHERE fakturaId = $1`, [fakturaId]);
+    await client.query(`DELETE FROM fakturarader WHERE "fakturaId" = $1`, [fakturaId]);
     await client.query(`DELETE FROM fakturor WHERE id = $1`, [fakturaId]);
-    client.release();
     return { success: true };
   } catch (error) {
     console.error("❌ deleteInvoice error:", error);
     return { success: false, error };
+  } finally {
+    client.release();
   }
 }
 
 export async function updateFakturanummer(id: number, nyttNummer: string) {
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
     await client.query(`UPDATE fakturor SET fakturanummer = $1 WHERE id = $2`, [nyttNummer, id]);
-    client.release();
     return { success: true };
   } catch (error) {
     console.error("❌ updateFakturanummer error:", error);
     return { success: false, error };
+  } finally {
+    client.release();
   }
 }
 
@@ -140,34 +140,37 @@ export async function sparaNyKund(formData: FormData) {
 
   const f = (key: string) => formData.get(key)?.toString() ?? "";
 
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
     await client.query(
       `
       INSERT INTO kunder (
-        "userId", kundtyp, kundnamn, kundnummer, kundorgnummer, kundmomsnummer,
-        kundadress1, kundadress2, kundpostnummer, kundstad
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      `,
+        "userId", kundtyp, kundnamn, kundorgnummer, kundnummer, kundmomsnummer,
+        kundadress1, kundadress2, kundpostnummer, kundstad, kundemail
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    `,
       [
         userId,
         f("kundtyp"),
         f("kundnamn"),
-        f("kundnummer"),
         f("kundorgnummer"),
+        f("kundnummer"),
         f("kundmomsnummer"),
         f("kundadress1"),
         f("kundadress2"),
         f("kundpostnummer"),
         f("kundstad"),
+        f("kundemail"),
       ]
     );
 
-    client.release();
     return { success: true };
-  } catch (error) {
-    console.error("❌ Kunde inte spara kund:", error);
-    return { success: false, error };
+  } catch (err) {
+    console.error("❌ Kunde inte spara kund:", err);
+    return { success: false };
+  } finally {
+    client.release();
   }
 }
 
@@ -200,7 +203,18 @@ export async function hämtaSparadeFakturor() {
 
   try {
     const res = await client.query(
-      `SELECT id, fakturanummer, fakturadatum, "kundId" FROM fakturor WHERE "userId" = $1 ORDER BY id DESC`,
+      `
+      SELECT
+        f.id,
+        f.fakturanummer,
+        f.fakturadatum,
+        f."kundId",
+        k.kundnamn
+      FROM fakturor f
+      LEFT JOIN kunder k ON f."kundId" = k.id
+      WHERE f."userId" = $1
+      ORDER BY f.id DESC
+      `,
       [userId]
     );
 
@@ -213,31 +227,79 @@ export async function hämtaSparadeFakturor() {
   }
 }
 
-export async function hämtaFakturaMedRader(fakturaId: number) {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-
+export async function hämtaFakturaMedRader(id: number) {
   const client = await pool.connect();
+
   try {
     const fakturaRes = await client.query(
-      `SELECT * FROM fakturor WHERE id = $1 AND "userId" = $2`,
-      [fakturaId, parseInt(session.user.id)]
+      `
+      SELECT
+        f.id,
+        f."userId",
+        f.fakturanummer,
+        f.fakturadatum,
+        f.forfallodatum,
+        f.betalningsmetod,
+        f.betalningsvillkor,
+        f.drojsmalsranta,
+        f.leverans,
+        f.kommentar,
+        f."kundId",
+        f.nummer,
+        f.momsvisning,
+        f."createdAt",
+
+        -- Kunduppgifter
+        k.kundtyp,
+        k.kundnamn,
+        k.kundnummer,
+        k.kundorgnummer AS "kundorganisationsnummer",
+        k.kundmomsnummer AS "kundvatnummer",
+        k.kundadress1 AS "kundadress",
+        k.kundadress2,
+        k.kundpostnummer,
+        k.kundstad,
+        k.kundemail
+
+      FROM fakturor f
+      LEFT JOIN kunder k ON f."kundId" = k.id
+      WHERE f.id = $1
+      `,
+      [id]
     );
 
-    const raderRes = await client.query(
-      `SELECT * FROM fakturarader WHERE "fakturaId" = $1 ORDER BY id ASC`,
-      [fakturaId]
-    );
+    if (fakturaRes.rows.length === 0) return null;
 
     const faktura = fakturaRes.rows[0];
-    const artiklar = raderRes.rows;
+
+    const raderRes = await client.query(
+      `
+      SELECT *
+      FROM fakturarader
+      WHERE "fakturaId" = $1
+      `,
+      [id]
+    );
+
+    const artiklar = raderRes.rows.map((rad) => ({
+      beskrivning: rad.beskrivning,
+      antal: parseFloat(rad.antal),
+      prisPerEnhet: parseFloat(rad.prisPerEnhet),
+      moms: parseFloat(rad.moms),
+      valuta: rad.valuta,
+      typ: rad.typ === "tjänst" ? "tjänst" : "vara",
+    }));
 
     return {
-      faktura,
+      faktura: {
+        ...faktura,
+        fakturadatum: faktura.fakturadatum?.toISOString().slice(0, 10),
+        forfallodatum: faktura.forfallodatum?.toISOString().slice(0, 10),
+      },
       artiklar,
     };
-  } catch (err) {
-    console.error("❌ Kunde inte hämta faktura:", err);
+  } catch (error) {
+    console.error("❌ hämtaFakturaMedRader error:", error);
     return null;
   } finally {
     client.release();

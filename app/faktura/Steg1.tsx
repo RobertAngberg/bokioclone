@@ -28,6 +28,7 @@ export default function Steg1() {
     kundadress2: "",
     kundpostnummer: "",
     kundstad: "",
+    kundemail: "",
   });
 
   const [sparatMeddelande, setSparatMeddelande] = useState(false);
@@ -82,8 +83,11 @@ export default function Steg1() {
   };
 
   const hanteraValdKund = (kund: any) => {
+    console.log("✅ Vald kund id:", kund.id); // <-- detta måste logga ett nummer t.ex. 18
+
     setFormData((prev) => ({
       ...prev,
+      kundId: kund.id?.toString() ?? "", // 💥 måste bli t.ex. "18"
       kundtyp: kund.kundtyp,
       kundnamn: kund.kundnamn,
       kundnummer: kund.kundnummer,
@@ -93,7 +97,9 @@ export default function Steg1() {
       kundadress2: kund.kundadress2,
       kundpostnummer: kund.kundpostnummer,
       kundstad: kund.kundstad,
+      kundemail: kund.kundemail,
     }));
+
     setVisaSteg2(true);
   };
 
@@ -109,8 +115,8 @@ export default function Steg1() {
     setFormData({
       id: faktura.id,
       fakturanummer: faktura.fakturanummer ?? "",
-      fakturadatum: faktura.fakturadatum?.toISOString?.().slice(0, 10) ?? "",
-      forfallodatum: faktura.forfallodatum?.toISOString?.().slice(0, 10) ?? "",
+      fakturadatum: faktura.fakturadatum ?? "",
+      forfallodatum: faktura.forfallodatum ?? "",
       betalningsmetod: faktura.betalningsmetod ?? "",
       betalningsvillkor: faktura.betalningsvillkor ?? "",
       drojsmalsranta: faktura.drojsmalsranta ?? "",
@@ -129,6 +135,20 @@ export default function Steg1() {
       kundadress2: faktura.kundadress2 ?? "",
       kundpostnummer: faktura.kundpostnummer ?? "",
       kundstad: faktura.kundstad ?? "",
+      kundemail: faktura.kundemail ?? "",
+
+      // Saknade fält som krävs av FakturaFormData
+      företagsnamn: "",
+      email: "",
+      adress: "",
+      postnummer: "",
+      stad: "",
+      organisationsnummer: "",
+      momsregistreringsnummer: "",
+      telefonnummer: "",
+      bankinfo: "",
+      webbplats: "",
+      logo: "",
 
       artiklar: artiklar.map((rad: any) => ({
         beskrivning: rad.beskrivning,
@@ -206,6 +226,7 @@ export default function Steg1() {
               ["kundadress2", "Postadress 2"],
               ["kundpostnummer", "Postnummer"],
               ["kundstad", "Stad"],
+              ["kundemail", "E-post"],
             ].map(([name, label]) => (
               <div key={name}>
                 <label className="block mb-1 text-sm">{label}</label>
@@ -268,9 +289,24 @@ export default function Steg1() {
                 <div
                   key={faktura.id}
                   onClick={() => hanteraValdFaktura(faktura.id)}
-                  className="cursor-pointer px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded"
+                  className="flex items-center justify-between w-full px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded"
                 >
-                  {faktura.fakturanummer} ({faktura.fakturadatum?.slice?.(0, 10)})
+                  {/* Fakturanummer */}
+                  <div className="text-white whitespace-nowrap">📄 {faktura.fakturanummer}</div>
+
+                  {/* Datum */}
+                  <div className="text-white text-center flex-1">
+                    {faktura.fakturadatum
+                      ? new Date(faktura.fakturadatum).toLocaleDateString("sv-SE", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-"}
+                  </div>
+
+                  {/* Kundnamn */}
+                  <div className="text-white whitespace-nowrap">{faktura.kundnamn || "-"}</div>
                 </div>
               ))
             )}

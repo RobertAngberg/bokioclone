@@ -1,6 +1,7 @@
 "use server";
 
 import { Pool } from "pg";
+import { auth } from "@/auth";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -375,5 +376,72 @@ export async function körSQL(sql: string) {
   } catch (err: any) {
     console.error("SQL-fel:", err);
     throw new Error(`Fel: ${err.message}`);
+  }
+}
+
+export async function sparaForetagsprofil(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false };
+  const userId = parseInt(session.user.id);
+
+  const f = (key: string) => formData.get(key)?.toString() ?? "";
+
+  try {
+    const client = await pool.connect();
+    await client.query(
+      `
+      INSERT INTO företagsprofil (
+        "userId", företagsnamn, adress, postnummer, stad,
+        organisationsnummer, momsregistreringsnummer,
+        telefonnummer, bankinfo, webbplats
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      ON CONFLICT ("userId") DO UPDATE SET
+        företagsnamn = EXCLUDED.företagsnamn,
+        adress = EXCLUDED.adress,
+        postnummer = EXCLUDED.postnummer,
+        stad = EXCLUDED.stad,
+        organisationsnummer = EXCLUDED.organisationsnummer,
+        momsregistreringsnummer = EXCLUDED.momsregistreringsnummer,
+        telefonnummer = EXCLUDED.telefonnummer,
+        bankinfo = EXCLUDED.bankinfo,
+        webbplats = EXCLUDED.webbplats
+    `,
+      [
+        userId,
+        f("företagsnamn"),
+        f("adress"),
+        f("postnummer"),
+        f("stad"),
+        f("organisationsnummer"),
+        f("momsregistreringsnummer"),
+        f("telefonnummer"),
+        f("bankinfo"),
+        f("webbplats"),
+      ]
+    );
+
+    client.release();
+    return { success: true };
+  } catch (err) {
+    console.error("❌ Kunde inte spara företagsprofil:", err);
+    return { success: false };
+  }
+}
+
+export async function hamtaFöretagsprofil() {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const userId = parseInt(session.user.id);
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(`SELECT * FROM företagsprofil WHERE "userId" = $1`, [userId]);
+    return res.rows[0] ?? null;
+  } catch (err) {
+    console.error("❌ Kunde inte hämta företagsprofil:", err);
+    return null;
+  } finally {
+    client.release();
   }
 }
