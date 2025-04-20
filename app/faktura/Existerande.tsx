@@ -1,0 +1,162 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { hämtaSparadeKunder, hämtaSparadeFakturor, deleteKund, deleteFaktura } from "./actions";
+
+interface Props {
+  onSelectCustomer: (kund: any) => void;
+  onSelectInvoice: (id: number) => void;
+}
+
+export default function Existerande({ onSelectCustomer, onSelectInvoice }: Props) {
+  const [kunder, setKunder] = useState<any[]>([]);
+  const [fakturor, setFakturor] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [showLoadedMsg, setShowLoadedMsg] = useState(false);
+  const [fadeOutMsg, setFadeOutMsg] = useState(false);
+
+  const [showFakturaMsg, setShowFakturaMsg] = useState(false);
+  const [fadeOutFakturaMsg, setFadeOutFakturaMsg] = useState(false);
+
+  async function fetchData() {
+    const [kundRes, fakturaRes] = await Promise.all([hämtaSparadeKunder(), hämtaSparadeFakturor()]);
+    setKunder(kundRes ?? []);
+    setFakturor(fakturaRes ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSelectCustomer = (kund: any) => {
+    onSelectCustomer(kund);
+    setShowLoadedMsg(true);
+    setFadeOutMsg(false);
+    setTimeout(() => setFadeOutMsg(true), 700);
+    setTimeout(() => setShowLoadedMsg(false), 1300);
+  };
+
+  const handleSelectInvoice = (id: number) => {
+    onSelectInvoice(id);
+    setShowFakturaMsg(true);
+    setFadeOutFakturaMsg(false);
+    setTimeout(() => setFadeOutFakturaMsg(true), 700);
+    setTimeout(() => setShowFakturaMsg(false), 1300);
+  };
+
+  const handleDeleteKund = async (id: number) => {
+    if (!confirm("Ta bort denna kund?")) return;
+    const res = await deleteKund(id);
+    if (res.success) {
+      await fetchData();
+    } else {
+      alert("❌ Kunde inte ta bort kund.");
+    }
+  };
+
+  const handleDeleteFaktura = async (id: number) => {
+    if (!confirm("Ta bort denna faktura?")) return;
+    const res = await deleteFaktura(id);
+    if (res.success) {
+      await fetchData();
+    } else {
+      alert("❌ Kunde inte ta bort fakturan.");
+    }
+  };
+
+  if (loading) return <p className="text-white">Laddar...</p>;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white">
+      {/* Kunder */}
+      <div>
+        <h3 className="text-xl font-semibold mb-2">Kunder</h3>
+
+        {showLoadedMsg && (
+          <div
+            className={`mb-2 text-sm text-white transition-opacity duration-500 ease-in-out ${
+              fadeOutMsg ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            ✔️ Kunduppgifter laddade
+          </div>
+        )}
+
+        {kunder.length === 0 ? (
+          <p className="text-gray-400 italic">Inga kunder hittades.</p>
+        ) : (
+          <ul className="space-y-2">
+            {kunder.map((kund) => (
+              <li
+                key={kund.id}
+                className="bg-slate-900 border border-slate-700 rounded px-4 py-2 flex justify-between items-center hover:bg-slate-800"
+              >
+                <span className="cursor-pointer" onClick={() => handleSelectCustomer(kund)}>
+                  {kund.kundnamn}
+                  {kund.kundemail && <span className="text-gray-400"> – {kund.kundemail}</span>}
+                </span>
+                <button
+                  onClick={() => handleDeleteKund(kund.id)}
+                  className="text-red-400 hover:text-red-300 text-sm ml-4"
+                  title="Ta bort kund"
+                >
+                  🗑️
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Fakturor */}
+      <div>
+        <h3 className="text-xl font-semibold mb-2">Fakturor</h3>
+
+        {showFakturaMsg && (
+          <div
+            className={`mb-2 text-sm text-white transition-opacity duration-500 ease-in-out ${
+              fadeOutFakturaMsg ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            ✔️ Faktura laddad
+          </div>
+        )}
+
+        {fakturor.length === 0 ? (
+          <p className="text-gray-400 italic">Inga fakturor hittades.</p>
+        ) : (
+          <ul className="space-y-2">
+            {fakturor.map((faktura) => {
+              const datum = faktura.fakturadatum
+                ? new Date(faktura.fakturadatum).toLocaleDateString("sv-SE", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })
+                : "";
+              return (
+                <li
+                  key={faktura.id}
+                  className="bg-slate-900 border border-slate-700 rounded px-4 py-2 flex justify-between items-center hover:bg-slate-800"
+                >
+                  <span className="cursor-pointer" onClick={() => handleSelectInvoice(faktura.id)}>
+                    🧾 #{faktura.fakturanummer} – {datum} – {faktura.kundnamn ?? "Okänd kund"}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteFaktura(faktura.id)}
+                    className="text-red-400 hover:text-red-300 text-sm ml-4"
+                    title="Ta bort faktura"
+                  >
+                    🗑️
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}

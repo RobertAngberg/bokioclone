@@ -1,114 +1,160 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useFakturaContext } from "./FakturaProvider";
-import { useEffect } from "react";
+import { sparaNyKund, uppdateraKund } from "./actions";
+
+type KundSaveResponse = {
+  success: boolean;
+  id?: number;
+};
 
 export default function KundUppgifter() {
-  const { formData, setFormData } = useFakturaContext();
-
-  useEffect(() => {
-    console.log("🔍 Kunduppgifter formData:", formData);
-  }, [formData]);
+  const { formData, setFormData, kundStatus, setKundStatus, resetKund } = useFakturaContext();
+  const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    const fd = new FormData();
+    fd.append("kundnamn", formData.kundnamn);
+    fd.append("kundorgnummer", formData.kundorganisationsnummer);
+    fd.append("kundnummer", formData.kundnummer);
+    fd.append("kundmomsnummer", formData.kundmomsnummer);
+    fd.append("kundadress1", formData.kundadress);
+    fd.append("kundpostnummer", formData.kundpostnummer);
+    fd.append("kundstad", formData.kundstad);
+    fd.append("kundemail", formData.kundemail);
+
+    let res: KundSaveResponse;
+    if (kundStatus === "loaded" && formData.kundId) {
+      res = await uppdateraKund(parseInt(formData.kundId, 10), fd);
+    } else {
+      res = await sparaNyKund(fd);
+    }
+
+    setLoading(false);
+
+    if (res.success && res.id) {
+      setFormData((p) => ({ ...p, kundId: res.id!.toString() }));
+      setKundStatus("editing"); // Behåll formuläret öppet
+      setShowSuccess(true);
+      setFadeOut(false);
+
+      setTimeout(() => setFadeOut(true), 1500);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } else {
+      alert("❌ Kunde inte spara kund");
+    }
   };
 
   return (
-    <div className="space-y-8">
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="col-span-2 flex gap-6">
-          <label className="flex items-center gap-2 text-white">
-            <input
-              type="radio"
-              name="kundtyp"
-              value="Företag"
-              checked={formData.kundtyp === "Företag"}
-              onChange={handleChange}
-            />
-            Företag
-          </label>
-          <label className="flex items-center gap-2 text-white">
-            <input
-              type="radio"
-              name="kundtyp"
-              value="Privatkund"
-              checked={formData.kundtyp === "Privatkund"}
-              onChange={handleChange}
-            />
-            Privatkund
-          </label>
+    <div className="space-y-4 text-white">
+      {formData.kundId && (
+        <div className="text-gray-400 italic">
+          📝 Redigerar befintlig kund (ID: {formData.kundId})
         </div>
+      )}
 
-        <Input label="Kundnamn" name="kundnamn" value={formData.kundnamn} onChange={handleChange} />
-        <Input
-          label="Organisationsnummer"
-          name="kundorganisationsnummer"
-          value={formData.kundorganisationsnummer}
-          onChange={handleChange}
-        />
-        <Input
-          label="VAT-nummer"
-          name="kundvatnummer"
-          value={formData.kundvatnummer}
-          onChange={handleChange}
-        />
-        <Input
-          label="Kundnummer"
-          name="kundnummer"
-          value={formData.kundnummer}
-          onChange={handleChange}
-        />
-        <Input
-          label="Adress"
-          name="kundadress"
-          value={formData.kundadress}
-          onChange={handleChange}
-        />
-        <Input
-          label="Adress 2"
-          name="kundadress2"
-          value={formData.kundadress2}
-          onChange={handleChange}
-        />
-        <Input
-          label="Postnummer"
-          name="kundpostnummer"
-          value={formData.kundpostnummer}
-          onChange={handleChange}
-        />
-        <Input label="Stad" name="kundstad" value={formData.kundstad} onChange={handleChange} />
-        <Input label="E-post" name="kundemail" value={formData.kundemail} onChange={handleChange} />
-      </form>
-    </div>
-  );
-}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Kundnamn</label>
+          <input
+            name="kundnamn"
+            value={formData.kundnamn}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Organisationsnummer</label>
+          <input
+            name="kundorganisationsnummer"
+            value={formData.kundorganisationsnummer}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Kundnummer</label>
+          <input
+            name="kundnummer"
+            value={formData.kundnummer}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Momsnummer</label>
+          <input
+            name="kundmomsnummer"
+            value={formData.kundmomsnummer}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">E‑post</label>
+          <input
+            name="kundemail"
+            value={formData.kundemail}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Adress</label>
+          <input
+            name="kundadress"
+            value={formData.kundadress}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Postnummer</label>
+          <input
+            name="kundpostnummer"
+            value={formData.kundpostnummer}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Stad</label>
+          <input
+            name="kundstad"
+            value={formData.kundstad}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded"
+          />
+        </div>
+      </div>
 
-function Input({
-  label,
-  name,
-  value,
-  onChange,
-}: {
-  label: string;
-  name: string;
-  value?: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-white mb-2">{label}</label>
-      <input
-        type="text"
-        name={name}
-        value={value ?? ""}
-        onChange={onChange}
-        className="w-full px-4 py-3 bg-slate-900 text-white border border-slate-700 rounded-lg"
-      />
+      <div className="pt-4 flex items-center gap-4">
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="px-6 py-2 bg-cyan-700 hover:bg-cyan-800 rounded"
+        >
+          {loading ? "Sparar…" : "Spara kund"}
+        </button>
+        {showSuccess && (
+          <span
+            className={`text-green-400 transition-opacity duration-500 ${
+              fadeOut ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            ✅ Sparat! Kunden finns nu under <em>Existerande → Kunder</em>
+          </span>
+        )}
+      </div>
     </div>
   );
 }

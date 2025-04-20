@@ -19,7 +19,6 @@ export default function Avsandare() {
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      företagsnamn: prev.företagsnamn ?? name,
       email: prev.email ?? email,
     }));
 
@@ -29,20 +28,20 @@ export default function Avsandare() {
 
       setFormData((prev) => ({
         ...prev,
-        företagsnamn: prev.företagsnamn ?? profil.företagsnamn,
-        adress: prev.adress ?? profil.adress,
-        postnummer: prev.postnummer ?? profil.postnummer,
-        stad: prev.stad ?? profil.stad,
-        organisationsnummer: prev.organisationsnummer ?? profil.organisationsnummer,
-        momsregistreringsnummer: prev.momsregistreringsnummer ?? profil.momsregistreringsnummer,
-        telefonnummer: prev.telefonnummer ?? profil.telefonnummer,
-        bankinfo: prev.bankinfo ?? profil.bankinfo,
-        webbplats: prev.webbplats ?? profil.webbplats,
+        företagsnamn: profil.företagsnamn ?? "",
+        adress: profil.adress ?? "",
+        postnummer: profil.postnummer ?? "",
+        stad: profil.stad ?? "",
+        organisationsnummer: profil.organisationsnummer ?? "",
+        momsregistreringsnummer: profil.momsregistreringsnummer ?? "",
+        telefonnummer: profil.telefonnummer ?? "",
+        bankinfo: profil.bankinfo ?? "",
+        webbplats: profil.webbplats ?? "",
       }));
     };
 
     hämtaProfil();
-  }, [name, email, setFormData]);
+  }, [email, setFormData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

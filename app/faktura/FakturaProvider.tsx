@@ -1,45 +1,29 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
-
-export type Artikel = {
-  beskrivning: string;
-  antal: number;
-  prisPerEnhet: number;
-  moms: number;
-  valuta: string;
-  typ: "vara" | "tjänst";
-};
+import React, { createContext, useContext, useState } from "react";
 
 export type FakturaFormData = {
-  id?: number;
+  id: string;
   fakturanummer: string;
   fakturadatum: string;
   forfallodatum: string;
   betalningsmetod: string;
   betalningsvillkor: string;
   drojsmalsranta: string;
-  leverans: string;
-  kommentar: string;
-  momsvisning: string;
-  kundmomsnummer?: string;
-  nummer: string;
-  artiklar: Artikel[];
-
-  // Kund
   kundId: string;
-  kundtyp: string;
+  nummer: string;
+
+  // Kunduppgifter
   kundnamn: string;
   kundnummer: string;
   kundorganisationsnummer: string;
-  kundvatnummer: string;
+  kundmomsnummer: string;
   kundadress: string;
-  kundadress2: string;
   kundpostnummer: string;
   kundstad: string;
   kundemail: string;
 
-  // Avsändare / Företag
+  // Avsändare
   företagsnamn: string;
   email: string;
   adress: string;
@@ -51,63 +35,90 @@ export type FakturaFormData = {
   bankinfo: string;
   webbplats: string;
   logo: string;
+
+  artiklar: Array<{
+    beskrivning: string;
+    antal: number;
+    prisPerEnhet: number;
+    moms: number;
+    valuta: string;
+    typ: "tjänst" | "vara";
+  }>;
 };
 
-const defaultFormData: FakturaFormData = {
-  id: undefined,
-  fakturanummer: "",
-  fakturadatum: "",
-  forfallodatum: "",
-  betalningsmetod: "",
-  betalningsvillkor: "",
-  drojsmalsranta: "",
-  leverans: "",
-  kommentar: "",
-  momsvisning: "",
-  nummer: "",
-  artiklar: [],
+type KundStatus = "none" | "loaded" | "editing";
 
-  kundId: "",
-  kundtyp: "",
-  kundnamn: "",
-  kundnummer: "",
-  kundorganisationsnummer: "",
-  kundvatnummer: "",
-  kundadress: "",
-  kundadress2: "",
-  kundpostnummer: "",
-  kundstad: "",
-  kundemail: "",
-
-  företagsnamn: "",
-  email: "",
-  adress: "",
-  postnummer: "",
-  stad: "",
-  organisationsnummer: "",
-  momsregistreringsnummer: "",
-  telefonnummer: "",
-  bankinfo: "",
-  webbplats: "",
-  logo: "",
-};
-
-const FakturaContext = createContext<{
+interface FakturaContextType {
   formData: FakturaFormData;
   setFormData: React.Dispatch<React.SetStateAction<FakturaFormData>>;
-}>({
-  formData: defaultFormData,
-  setFormData: () => {},
-});
+  kundStatus: KundStatus;
+  setKundStatus: React.Dispatch<React.SetStateAction<KundStatus>>;
+  resetKund: () => void;
+}
 
-export function FakturaProvider({ children }: { children: ReactNode }) {
-  const [formData, setFormData] = useState<FakturaFormData>(defaultFormData);
+const FakturaContext = createContext<FakturaContextType | undefined>(undefined);
+
+export function FakturaProvider({ children }: { children: React.ReactNode }) {
+  const [formData, setFormData] = useState<FakturaFormData>({
+    id: "",
+    fakturanummer: "",
+    fakturadatum: "",
+    forfallodatum: "",
+    betalningsmetod: "",
+    betalningsvillkor: "",
+    drojsmalsranta: "",
+    kundId: "",
+    nummer: "",
+    kundnamn: "",
+    kundnummer: "",
+    kundorganisationsnummer: "",
+    kundmomsnummer: "",
+    kundadress: "",
+    kundpostnummer: "",
+    kundstad: "",
+    kundemail: "",
+    företagsnamn: "",
+    email: "",
+    adress: "",
+    postnummer: "",
+    stad: "",
+    organisationsnummer: "",
+    momsregistreringsnummer: "",
+    telefonnummer: "",
+    bankinfo: "",
+    webbplats: "",
+    logo: "",
+    artiklar: [],
+  });
+  const [kundStatus, setKundStatus] = useState<KundStatus>("none");
+
+  const resetKund = () => {
+    setFormData((p) => ({
+      ...p,
+      kundId: "",
+      kundnamn: "",
+      kundnummer: "",
+      kundorganisationsnummer: "",
+      kundvatnummer: "",
+      kundadress: "",
+      kundpostnummer: "",
+      kundstad: "",
+      kundemail: "",
+    }));
+    setKundStatus("editing");
+  };
 
   return (
-    <FakturaContext.Provider value={{ formData, setFormData }}>{children}</FakturaContext.Provider>
+    <FakturaContext.Provider
+      value={{ formData, setFormData, kundStatus, setKundStatus, resetKund }}
+    >
+      {children}
+    </FakturaContext.Provider>
   );
 }
 
 export function useFakturaContext() {
-  return useContext(FakturaContext);
+  const ctx = useContext(FakturaContext);
+  if (!ctx) throw new Error("useFakturaContext måste användas inom FakturaProvider");
+  return ctx;
 }

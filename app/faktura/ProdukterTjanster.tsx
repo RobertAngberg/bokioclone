@@ -2,6 +2,7 @@
 
 import { useFakturaContext } from "./FakturaProvider";
 import { useState } from "react";
+import { saveInvoice } from "./actions";
 
 export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
@@ -15,7 +16,31 @@ export default function ProdukterTjanster() {
     typ: "vara",
   });
 
-  const handleAddArtikel = () => {
+  const sparaFaktura = async (artiklar: any[]) => {
+    const fd = new FormData();
+
+    try {
+      fd.append("artiklar", JSON.stringify(artiklar));
+    } catch (err) {
+      console.error("❌ JSON.stringify artiklar fail:", err);
+      return;
+    }
+
+    Object.entries(formData).forEach(([k, v]) => {
+      if (k !== "artiklar" && v !== undefined && v !== null) {
+        fd.append(k, String(v));
+      }
+    });
+
+    const res = await saveInvoice(fd);
+    if (!res.success) {
+      alert("❌ Kunde inte spara fakturan");
+    } else {
+      console.log("✅ Faktura sparad");
+    }
+  };
+
+  const handleAddArtikel = async () => {
     const artikel = {
       beskrivning: nyArtikel.beskrivning,
       antal: Number(nyArtikel.antal),
@@ -25,9 +50,11 @@ export default function ProdukterTjanster() {
       typ: nyArtikel.typ as "vara" | "tjänst",
     };
 
+    const updatedArtiklar = [...(formData.artiklar || []), artikel];
+
     setFormData((prev) => ({
       ...prev,
-      artiklar: [...(prev.artiklar || []), artikel],
+      artiklar: updatedArtiklar,
     }));
 
     setNyArtikel({
@@ -38,6 +65,8 @@ export default function ProdukterTjanster() {
       valuta: "SEK",
       typ: "vara",
     });
+
+    await sparaFaktura(updatedArtiklar);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -48,60 +77,85 @@ export default function ProdukterTjanster() {
     }));
   };
 
-  const handleDelete = (index: number) => {
+  const handleDelete = async (index: number) => {
+    const confirmed = confirm("Vill du verkligen ta bort artikeln?");
+    if (!confirmed) return;
+
     const updated = [...(formData.artiklar || [])];
     updated.splice(index, 1);
+
     setFormData((prev) => ({
       ...prev,
       artiklar: updated,
     }));
+
+    await sparaFaktura(updated);
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {formData.artiklar?.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-2 text-white">Tillagda artiklar</h3>
+          <ul className="space-y-2">
+            {formData.artiklar.map((a, idx) => (
+              <li key={idx} className="p-3 bg-slate-800 rounded flex items-center justify-between">
+                <div className="text-white">
+                  {a.typ === "tjänst" ? "🛠" : "📦"} {a.beskrivning} – {a.antal} x {a.prisPerEnhet}{" "}
+                  {a.valuta} ({a.moms}% moms)
+                </div>
+                <button onClick={() => handleDelete(idx)} className="hover:text-red-600 ml-4">
+                  🗑️
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block mb-1 text-sm">Beskrivning</label>
+          <label className="block mb-1 text-sm text-white">Beskrivning</label>
           <input
             name="beskrivning"
             placeholder="Beskrivning"
             value={nyArtikel.beskrivning}
             onChange={handleChange}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           />
         </div>
 
         <div>
-          <label className="block mb-1 text-sm">Antal</label>
+          <label className="block mb-1 text-sm text-white">Antal</label>
           <input
             name="antal"
             type="number"
             min={0}
             value={nyArtikel.antal}
             onChange={handleChange}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           />
         </div>
 
         <div>
-          <label className="block mb-1 text-sm">Pris per enhet</label>
+          <label className="block mb-1 text-sm text-white">Pris per enhet</label>
           <input
             name="prisPerEnhet"
             type="number"
             min={0}
             value={nyArtikel.prisPerEnhet}
             onChange={handleChange}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           />
         </div>
 
         <div>
-          <label className="block mb-1 text-sm">Valuta</label>
+          <label className="block mb-1 text-sm text-white">Valuta</label>
           <select
             name="valuta"
             value={nyArtikel.valuta}
             onChange={handleChange}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           >
             <option value="SEK">SEK</option>
             <option value="EUR">EUR</option>
@@ -109,12 +163,12 @@ export default function ProdukterTjanster() {
         </div>
 
         <div>
-          <label className="block mb-1 text-sm">Moms</label>
+          <label className="block mb-1 text-sm text-white">Moms</label>
           <select
             name="moms"
             value={nyArtikel.moms}
             onChange={handleChange}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700"
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           >
             <option value="25">25%</option>
             <option value="12">12%</option>
@@ -124,8 +178,8 @@ export default function ProdukterTjanster() {
         </div>
 
         <div>
-          <label className="block mb-1 text-sm">Typ</label>
-          <div className="flex gap-4 mt-1">
+          <label className="block mb-1 text-sm text-white">Typ</label>
+          <div className="flex gap-4 mt-1 text-white">
             <label className="flex items-center gap-2">
               <input
                 type="radio"
@@ -152,32 +206,10 @@ export default function ProdukterTjanster() {
 
       <button
         onClick={handleAddArtikel}
-        className="mt-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-800 rounded"
+        className="mt-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-800 rounded text-white"
       >
-        ➕ Lägg till artikel
+        ✔️ Lägg till och spara
       </button>
-
-      {formData.artiklar?.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-2">Tillagda artiklar</h3>
-          <ul className="space-y-2">
-            {formData.artiklar.map((a, idx) => (
-              <li key={idx} className="p-3 bg-slate-800 rounded flex items-center justify-between">
-                <div>
-                  {a.typ === "tjänst" ? "🛠" : "📦"} {a.beskrivning} – {a.antal} x {a.prisPerEnhet}{" "}
-                  {a.valuta} ({a.moms}% moms)
-                </div>
-                <button
-                  onClick={() => handleDelete(idx)}
-                  className="text-red-400 hover:text-red-600 ml-4"
-                >
-                  🗑
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

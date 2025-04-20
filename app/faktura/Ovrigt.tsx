@@ -42,42 +42,6 @@ export default function Ovrigt() {
           />
         </div>
       </div>
-
-      <div>
-        <label className="block text-sm font-medium text-white mb-2">Visa moms</label>
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="momsvisning"
-              value="Inklusive"
-              checked={formData.momsvisning === "Inklusive"}
-              onChange={handleChange}
-            />
-            Inklusive
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="momsvisning"
-              value="Exklusive"
-              checked={formData.momsvisning === "Exklusive"}
-              onChange={handleChange}
-            />
-            Exklusive
-          </label>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-white mb-1">Fakturanummer</label>
-        <input
-          name="fakturanummer"
-          value={formData.fakturanummer ?? ""}
-          onChange={handleChange}
-          className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
-        />
-      </div>
     </div>
   );
 }

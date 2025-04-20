@@ -2,28 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🔄 Skeleton shimmer animation */
 @layer utilities {
-    @keyframes shimmer {
-        0% {
-            background-position: -500px 0;
-        }
-
-        100% {
-            background-position: 500px 0;
-        }
-    }
-
-    .skeleton {
-        @apply bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800;
-        background-size: 1000px 100%;
-        animation: shimmer 1.5s infinite linear;
-    }
 
     html,
     body {
         @apply bg-slate-950 text-white;
         height: 100%;
+    }
+
+    /* ✨ Expand animation for <details> content */
+    .animate-expand {
+        @apply overflow-hidden transition-[max-height] duration-300 ease-in-out;
+        max-height: 0;
+    }
+
+    details[open] .animate-expand {
+        max-height: 1000px;
+    }
+
+    /* 🔁 Rotate arrow when <details> is open */
+    .rotate-arrow {
+        @apply transition-transform duration-300;
+    }
+
+    details[open] .rotate-arrow {
+        @apply rotate-180;
     }
 }
 
@@ -71,10 +74,8 @@
         padding: 0 !important;
         background: white !important;
         transform: translateX(-1mm);
-        /* 🛠 Kompenserar ev. utskriftsmarginaler */
     }
 
-    /* Tailwind overrides for print */
     .text-white {
         color: black !important;
     }
@@ -94,7 +95,7 @@
     }
 }
 
-/* 💾 Export PDF background cleanup */
+/* 💾 Export PDF cleanup */
 .no-bg .shadow,
 .no-bg .shadow-md,
 .no-bg .shadow-lg {
@@ -108,6 +109,7 @@
     padding-bottom: 0.5rem !important;
 }
 
+/* 📅 react-datepicker dark theme */
 .react-datepicker {
     background-color: #0f172a !important;
     border: 1px solid #334155 !important;

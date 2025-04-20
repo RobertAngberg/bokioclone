@@ -1,108 +1,168 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useFakturaContext } from "./FakturaProvider";
-import DatePicker from "react-datepicker";
+import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { sv } from "date-fns/locale";
+
+registerLocale("sv", sv);
+
+/* ──────────────────────────────────────────────── */
+/*  Hjälpfunktioner                                */
+/* ──────────────────────────────────────────────── */
+
+const parseISODate = (value: unknown): Date | null => {
+  if (value instanceof Date && !isNaN(value.getTime())) return value;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed === "") return null;
+    const d = new Date(trimmed);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  return null;
+};
+
+const addDays = (date: Date, days: number) => {
+  const out = new Date(date);
+  out.setDate(out.getDate() + days);
+  return out;
+};
+
+/* ──────────────────────────────────────────────── */
+/*  Komponent                                      */
+/* ──────────────────────────────────────────────── */
 
 export default function Villkor() {
   const { formData, setFormData } = useFakturaContext();
 
-  const addDays = (date: Date, days: number) => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  };
-
-  const fakturadatumDate = new Date(formData.fakturadatum);
-  const forfalloDate = new Date(formData.forfallodatum || addDays(fakturadatumDate, 30));
-
+  /* ───────────── Första mount: sätt standardvärden ───────────── */
   useEffect(() => {
-    const days = parseInt(formData.betalningsvillkor || "30");
-    const nyttDatum = addDays(new Date(formData.fakturadatum), days);
-    setFormData((prev) => ({
-      ...prev,
-      forfallodatum: nyttDatum.toISOString().slice(0, 10),
-    }));
-  }, [formData.fakturadatum, formData.betalningsvillkor, setFormData]);
+    const todayISO = new Date().toISOString().slice(0, 10);
 
-  const handleFakturadatumChange = (date: Date) => {
-    setFormData((prev) => ({
-      ...prev,
-      fakturadatum: date.toISOString().slice(0, 10),
-    }));
-  };
+    setFormData((prev) => {
+      let changed = false;
+      const updated = { ...prev };
 
-  const handleForfallodatumChange = (date: Date) => {
-    setFormData((prev) => ({
-      ...prev,
-      forfallodatum: date.toISOString().slice(0, 10),
-    }));
-  };
+      if (!prev.fakturadatum) {
+        updated.fakturadatum = todayISO;
+        changed = true;
+      }
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+      if (!prev.betalningsvillkor) {
+        updated.betalningsvillkor = "30";
+        changed = true;
+      }
 
+      if (!prev.drojsmalsranta) {
+        updated.drojsmalsranta = "12";
+        changed = true;
+      }
+
+      if (changed) {
+        const fd = parseISODate(updated.fakturadatum);
+        if (fd) {
+          updated.forfallodatum = addDays(fd, parseInt(updated.betalningsvillkor as string, 10))
+            .toISOString()
+            .slice(0, 10);
+        }
+        return updated;
+      }
+      return prev;
+    });
+  }, [setFormData]);
+
+  /* ─────────── Beräkna datumobjekt för DatePicker ─────────── */
+  const fakturadatumDate = parseISODate(formData.fakturadatum);
+
+  const fallbackForfallo = fakturadatumDate
+    ? addDays(fakturadatumDate, parseInt(formData.betalningsvillkor || "30", 10))
+    : null;
+
+  const forfalloDate = parseISODate(formData.forfallodatum) ?? fallbackForfallo;
+
+  /* ───────── Effekt: uppdatera förfallodatum dynamiskt ──────── */
+  useEffect(() => {
+    if (!fakturadatumDate) return;
+
+    const days = parseInt(formData.betalningsvillkor || "30", 10);
+    const calc = addDays(fakturadatumDate, isNaN(days) ? 30 : days)
+      .toISOString()
+      .slice(0, 10);
+
+    if (calc !== formData.forfallodatum) {
+      setFormData((prev) => ({ ...prev, forfallodatum: calc }));
+    }
+  }, [fakturadatumDate, formData.betalningsvillkor]);
+
+  /* ─────────── Handlers ─────────── */
+  const onDate = (field: "fakturadatum" | "forfallodatum") => (d: Date | null) =>
+    setFormData((p) => ({
+      ...p,
+      [field]: d ? d.toISOString().slice(0, 10) : "",
+    }));
+
+  const onText = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+  /* ─────────── UI ─────────── */
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Fakturadatum */}
         <div>
-          <label className="block text-sm font-medium text-white mb-1">Fakturadatum</label>
+          <label className="block text-sm font-medium text-white mb-2">Fakturadatum</label>
           <DatePicker
             selected={fakturadatumDate}
-            onChange={handleFakturadatumChange}
+            onChange={onDate("fakturadatum")}
             dateFormat="yyyy-MM-dd"
-            locale={sv}
+            placeholderText="yyyy-mm-dd"
+            locale="sv"
+            isClearable
             className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
           />
         </div>
 
+        {/* Förfallodatum */}
         <div>
-          <label className="block text-sm font-medium text-white mb-1">Förfallodatum</label>
+          <label className="block text-sm font-medium text-white mb-2">Förfallodatum</label>
           <DatePicker
             selected={forfalloDate}
-            onChange={handleForfallodatumChange}
+            onChange={onDate("forfallodatum")}
             dateFormat="yyyy-MM-dd"
-            locale={sv}
+            placeholderText="yyyy-mm-dd"
+            locale="sv"
+            isClearable
             className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
           />
         </div>
 
+        {/* Betalningsvillkor */}
         <div>
-          <label className="block text-sm font-medium text-white">Betalningsvillkor (dagar)</label>
+          <label className="block text-sm font-medium text-white mb-2">
+            Betalningsvillkor (dagar)
+          </label>
           <input
-            type="text"
+            type="number"
+            min="0"
             name="betalningsvillkor"
-            value={formData.betalningsvillkor}
-            onChange={handleTextChange}
+            value={formData.betalningsvillkor ?? ""}
+            onChange={onText}
             className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
           />
         </div>
 
+        {/* Dröjsmålsränta */}
         <div>
-          <label className="block text-sm font-medium text-white">Dröjsmålsränta</label>
+          <label className="block text-sm font-medium text-white mb-2">Dröjsmålsränta (%)</label>
           <input
-            type="text"
+            type="number"
+            step="0.01"
             name="drojsmalsranta"
-            value={formData.drojsmalsranta}
-            onChange={handleTextChange}
-            className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-white">Leverans</label>
-          <input
-            type="text"
-            name="leverans"
-            value={formData.leverans}
-            onChange={handleTextChange}
+            value={formData.drojsmalsranta ?? ""}
+            onChange={onText}
             className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
           />
         </div>

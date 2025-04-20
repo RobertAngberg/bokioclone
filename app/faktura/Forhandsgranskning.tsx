@@ -16,6 +16,15 @@ export default function Forhandsgranskning() {
     hämtaProfil();
   }, []);
 
+  const formatDatum = (d: any) => {
+    if (!d) return "";
+    try {
+      return new Date(d).toLocaleDateString("sv-SE");
+    } catch {
+      return d.toString();
+    }
+  };
+
   return (
     <div className="text-black p-10 font-serif w-full h-full bg-white text-sm leading-tight">
       {/* Företagsprofil */}
@@ -40,8 +49,8 @@ export default function Forhandsgranskning() {
       <div className="mb-8">
         <p className="text-lg font-bold mb-2">Faktura</p>
         <p>Fakturanummer: {formData.fakturanummer}</p>
-        <p>Datum: {formData.fakturadatum}</p>
-        <p>Förfallodatum: {formData.forfallodatum}</p>
+        <p>Datum: {formatDatum(formData.fakturadatum)}</p>
+        <p>Förfallodatum: {formatDatum(formData.forfallodatum)}</p>
         <p>Betalningsvillkor: {formData.betalningsvillkor}</p>
       </div>
 
@@ -74,7 +83,9 @@ export default function Forhandsgranskning() {
             <tr key={index} className="border-b border-gray-200">
               <td className="p-2">{rad.beskrivning}</td>
               <td className="p-2">{rad.antal}</td>
-              <td className="p-2">{parseFloat(rad.prisExMoms ?? 0).toLocaleString("sv-SE")} kr</td>
+              <td className="p-2">
+                {parseFloat(rad.prisPerEnhet ?? 0).toLocaleString("sv-SE")} kr
+              </td>
               <td className="p-2">{rad.moms ?? "0"}%</td>
               <td className="p-2 text-right">
                 {(
