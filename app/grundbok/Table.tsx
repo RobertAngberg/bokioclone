@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import TableRow from "./TableRow";
 
 export interface HistoryItem {
@@ -35,6 +35,14 @@ export default function Table({
   details,
   isLoading,
 }: TableProps) {
+  useEffect(() => {
+    console.log("🧾 Table props log:");
+    console.log("📦 historyData.length:", historyData.length);
+    console.log("📌 activeId:", activeId);
+    console.log("📃 details.length:", details.length);
+    console.log("📊 Exempel row:", historyData[0]);
+  }, [historyData, activeId, details]);
+
   return (
     <div className="max-w-5xl mx-auto overflow-x-auto border border-slate-700 rounded-lg shadow">
       <table className="w-full text-sm border-collapse">

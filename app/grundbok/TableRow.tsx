@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 
 interface TableRowProps {
   item: {
@@ -34,10 +34,20 @@ export default function TableRow({
   const isLoading = isExpanded && details.length === 0;
   const rowColorClass = rowIndex % 2 === 0 ? "bg-gray-950" : "bg-gray-900";
 
+  useEffect(() => {
+    console.log("🧩 TableRow render:");
+    console.log("➡️ transaktions_id:", item.transaktions_id);
+    console.log("🔍 Är expanderad:", isExpanded);
+    console.log("📦 Detaljer för raden:", details.length, "poster");
+  }, [activeId, details]);
+
   return (
     <>
       <tr
-        onClick={() => handleRowClick(item.transaktions_id)}
+        onClick={() => {
+          console.log("🖱️ Klickade på rad med ID:", item.transaktions_id);
+          handleRowClick(item.transaktions_id);
+        }}
         className={`cursor-pointer transition-colors duration-200 ${rowColorClass} hover:bg-gray-700`}
       >
         <td className="p-5 text-left">{item.transaktions_id}</td>
