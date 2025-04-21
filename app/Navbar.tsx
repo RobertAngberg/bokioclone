@@ -35,6 +35,7 @@ export default function Navbar() {
     { href: "/grundbok", label: "Grundbok" },
     { href: "/huvudbok", label: "Huvudbok" },
     { href: "/faktura", label: "Fakturor" },
+    { href: "/rapporter/resultatrapport", label: "Resultatrapport" },
     ...(session?.user ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
