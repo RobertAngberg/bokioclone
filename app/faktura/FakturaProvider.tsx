@@ -35,6 +35,7 @@ export type FakturaFormData = {
   bankinfo: string;
   webbplats: string;
   logo: string;
+  logoWidth?: number; // 🔧 Nytt fält för logotypstorlek
 
   artiklar: Array<{
     beskrivning: string;
@@ -88,18 +89,20 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
     bankinfo: "",
     webbplats: "",
     logo: "",
+    logoWidth: 200, // ✅ Defaultstorlek för logotypen
     artiklar: [],
   });
+
   const [kundStatus, setKundStatus] = useState<KundStatus>("none");
 
   const resetKund = () => {
-    setFormData((p) => ({
-      ...p,
+    setFormData((prev) => ({
+      ...prev,
       kundId: "",
       kundnamn: "",
       kundnummer: "",
       kundorganisationsnummer: "",
-      kundvatnummer: "",
+      kundmomsnummer: "",
       kundadress: "",
       kundpostnummer: "",
       kundstad: "",

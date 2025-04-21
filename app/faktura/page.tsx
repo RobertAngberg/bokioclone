@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FakturaProvider, useFakturaContext } from "./FakturaProvider";
-
 import Avsandare from "./Avsandare";
 import KundUppgifter from "./KundUppgifter";
 import ProdukterTjanster from "./ProdukterTjanster";
 import Villkor from "./Villkor";
 import Ovrigt from "./Ovrigt";
-import Forhandsgranskning from "./Forhandsgranskning";
-import ForhandsgranskaKnapp from "./ForhandsgranskaKnapp";
 import ExportPdfButton from "./ExportPdfButton";
-import Existerande from "./Existerande";
+import Forhandsgranskning from "./Forhandsgranskning";
 import { saveInvoice, hämtaFakturaMedRader } from "./actions";
+import Existerande from "./Existerande";
+import ForhandsgranskaKnapp from "./ForhandsgranskaKnapp";
+import { hamtaFöretagsprofil } from "../admin/actions";
 
 function AnimatedFlik({
   title,
@@ -25,30 +25,22 @@ function AnimatedFlik({
 }) {
   const [open, setOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [contentHeight, setContentHeight] = useState("0px");
+  const [height, setHeight] = useState("0px");
 
   const toggle = () => {
     if (!open && contentRef.current) {
-      const scrollHeight = contentRef.current.scrollHeight;
-      setContentHeight(scrollHeight + "px");
+      setHeight(contentRef.current.scrollHeight + "px");
       setOpen(true);
     } else {
-      if (contentRef.current) {
-        const scrollHeight = contentRef.current.scrollHeight;
-        setContentHeight(scrollHeight + "px");
-        requestAnimationFrame(() => {
-          setContentHeight("0px");
-        });
-      }
+      setHeight(contentRef.current?.scrollHeight + "px");
+      requestAnimationFrame(() => setHeight("0px"));
       setOpen(false);
     }
   };
 
   useEffect(() => {
-    if (open && contentRef.current) {
-      const timeout = setTimeout(() => {
-        setContentHeight("auto");
-      }, 300);
+    if (open) {
+      const timeout = setTimeout(() => setHeight("auto"), 300);
       return () => clearTimeout(timeout);
     }
   }, [open]);
@@ -57,27 +49,14 @@ function AnimatedFlik({
     <div className="border border-slate-700 rounded-lg overflow-hidden">
       <button
         onClick={toggle}
-        className="w-full px-4 py-3 text-lg font-semibold flex items-center justify-between bg-slate-900 hover:bg-slate-800 rounded-t-lg transition"
+        className="w-full px-4 py-3 text-lg font-semibold flex justify-between bg-slate-900 hover:bg-slate-800 transition"
       >
         <span>
           {icon} {title}
         </span>
-        <span
-          className={`ml-auto transition-transform duration-300 ${
-            open ? "rotate-90" : ""
-          } text-white`}
-        >
-          ▼
-        </span>
+        <span className={`transition-transform ${open ? "rotate-90" : ""}`}>▼</span>
       </button>
-      <div
-        ref={contentRef}
-        style={{
-          height: contentHeight,
-          transition: "height 300ms ease",
-          overflow: "hidden",
-        }}
-      >
+      <div ref={contentRef} style={{ height, transition: "height 300ms ease", overflow: "hidden" }}>
         <div className="p-4 bg-slate-900">{children}</div>
       </div>
     </div>
@@ -87,6 +66,11 @@ function AnimatedFlik({
 function Fakturasida() {
   const { formData, setFormData, kundStatus, setKundStatus } = useFakturaContext();
   const [showPreview, setShowPreview] = useState(false);
+  const [profil, setProfil] = useState<any>(null);
+
+  useEffect(() => {
+    hamtaFöretagsprofil().then(setProfil);
+  }, []);
 
   const hanteraValdKund = (kund: any) => {
     setFormData((prev) => ({
@@ -115,8 +99,8 @@ function Fakturasida() {
     setFormData({
       id: faktura.id,
       fakturanummer: faktura.fakturanummer ?? "",
-      fakturadatum: faktura.fakturadatum ?? "",
-      forfallodatum: faktura.forfallodatum ?? "",
+      fakturadatum: faktura.fakturadatum?.toISOString().slice(0, 10) ?? "",
+      forfallodatum: faktura.forfallodatum?.toISOString().slice(0, 10) ?? "",
       betalningsmetod: faktura.betalningsmetod ?? "",
       betalningsvillkor: faktura.betalningsvillkor ?? "",
       drojsmalsranta: faktura.drojsmalsranta ?? "",
@@ -130,7 +114,6 @@ function Fakturasida() {
       kundpostnummer: faktura.kundpostnummer ?? "",
       kundstad: faktura.kundstad ?? "",
       kundemail: faktura.kundemail ?? "",
-
       företagsnamn: "",
       email: "",
       adress: "",
@@ -142,7 +125,6 @@ function Fakturasida() {
       bankinfo: "",
       webbplats: "",
       logo: "",
-
       artiklar: artiklar.map((rad: any) => ({
         beskrivning: rad.beskrivning,
         antal: Number(rad.antal),
@@ -158,98 +140,103 @@ function Fakturasida() {
 
   const handleSave = async () => {
     const fd = new FormData();
-
     try {
-      const artiklarStr = JSON.stringify(formData.artiklar ?? []);
-      fd.append("artiklar", artiklarStr);
-    } catch (err) {
+      fd.append("artiklar", JSON.stringify(formData.artiklar ?? []));
+      Object.entries(formData).forEach(([k, v]) => {
+        if (k !== "artiklar" && v != null) fd.append(k, String(v));
+      });
+      const res = await saveInvoice(fd);
+      alert(res.success ? "✅ Faktura sparad!" : "❌ Kunde inte spara fakturan.");
+    } catch {
       alert("❌ Kunde inte konvertera artiklar");
-      return;
     }
-
-    Object.entries(formData).forEach(([k, v]) => {
-      if (k !== "artiklar" && v !== undefined && v !== null) {
-        fd.append(k, String(v));
-      }
-    });
-
-    const res = await saveInvoice(fd);
-    alert(res.success ? "✅ Faktura sparad!" : "❌ Kunde inte spara fakturan.");
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 print:hidden text-slate-100 overflow-x-hidden">
-      <div className="max-w-5xl mx-auto">
-        <div className="w-full space-y-6 p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
-          <h1 className="text-3xl text-center">Fakturor</h1>
+    <>
+      <main className="min-h-screen bg-slate-950 px-4 py-10 print:hidden text-slate-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="space-y-6 p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+            <h1 className="text-3xl text-center">Fakturor</h1>
 
-          <AnimatedFlik title="Ladda in existerande" icon="📂">
-            <Existerande onSelectCustomer={hanteraValdKund} onSelectInvoice={hanteraValdFaktura} />
-          </AnimatedFlik>
+            <AnimatedFlik title="Ladda in existerande" icon="📂">
+              <Existerande
+                onSelectCustomer={hanteraValdKund}
+                onSelectInvoice={hanteraValdFaktura}
+              />
+            </AnimatedFlik>
 
-          <AnimatedFlik title="Kunduppgifter" icon="🧑‍💻">
-            <KundUppgifter />
-          </AnimatedFlik>
+            <AnimatedFlik title="Kunduppgifter" icon="🧑‍💻">
+              <KundUppgifter />
+            </AnimatedFlik>
 
-          <AnimatedFlik title="Produkter & Tjänster" icon="📦">
-            <ProdukterTjanster />
-          </AnimatedFlik>
+            <AnimatedFlik title="Produkter & Tjänster" icon="📦">
+              <ProdukterTjanster />
+            </AnimatedFlik>
 
-          <AnimatedFlik title="Villkor" icon="⚖️">
-            <Villkor />
-          </AnimatedFlik>
+            <AnimatedFlik title="Villkor" icon="⚖️">
+              <Villkor />
+            </AnimatedFlik>
 
-          <AnimatedFlik title="Övrigt" icon="🗒️">
-            <Ovrigt />
-          </AnimatedFlik>
+            <AnimatedFlik title="Övrigt" icon="🗒️">
+              <Ovrigt />
+            </AnimatedFlik>
 
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleSave}
-                className="h-10 px-4 bg-cyan-700 rounded-lg hover:bg-cyan-800"
-              >
-                💾 Spara
-              </button>
-              <ExportPdfButton />
-              <button
-                onClick={() => window.print()}
-                className="h-10 px-4 bg-cyan-700 rounded-lg hover:bg-cyan-800"
-              >
-                🖨️ Skriv ut
-              </button>
+            <div className="flex flex-wrap justify-between items-center gap-4">
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  className="h-10 px-4 bg-cyan-700 rounded hover:bg-cyan-800"
+                >
+                  💾 Spara
+                </button>
+                <ExportPdfButton />
+                <button
+                  onClick={() => window.print()}
+                  className="h-10 px-4 bg-cyan-700 rounded hover:bg-cyan-800"
+                >
+                  🖨️ Skriv ut
+                </button>
+
+                <button
+                  onClick={() => window.location.reload()}
+                  className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
+                >
+                  🔁 Börja om
+                </button>
+              </div>
+              <ForhandsgranskaKnapp onClick={() => setShowPreview(true)} />
             </div>
-
-            <ForhandsgranskaKnapp
-              onClick={() => setShowPreview(true)}
-              className="h-10 px-4 bg-cyan-700 rounded-lg hover:bg-cyan-800"
-            />
           </div>
         </div>
-      </div>
+      </main>
 
-      <div style={{ position: "absolute", top: "-9999px", left: "-9999px" }}>
+      {/* 🖨️ Detta visas bara vid utskrift */}
+      <div id="print-area" className="hidden print:block">
         <Forhandsgranskning />
       </div>
 
+      {/* 💬 Modal för förhandsgranskning */}
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="relative bg-white shadow-xl rounded-2xl max-w-[95vw] max-h-[95vh] overflow-auto">
+          <div className="relative bg-white max-w-[95vw] max-h-[95vh] overflow-auto shadow-2xl border border-gray-300 rounded-none">
+            {/* ✅ Fixad knapp */}
             <button
               onClick={() => setShowPreview(false)}
-              className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 rounded px-3 py-1"
+              className="absolute top-4 right-4 h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800 z-50"
             >
-              Stäng
+              ❌ Stäng
             </button>
-            <div className="p-4 flex justify-center">
-              <div className="w-[210mm] h-[297mm] shadow border">
+
+            <div className="p-6 flex justify-center">
+              <div className="w-[210mm] h-[297mm] bg-white shadow border rounded">
                 <Forhandsgranskning />
               </div>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </>
   );
 }
 
