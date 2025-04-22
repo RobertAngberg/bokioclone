@@ -1,4 +1,4 @@
-import Startsida from "./Startsida";
+import Startsida from "./start/Startsida";
 import { fetchDataFromYear } from "./start/actions";
 
 export default async function Page() {

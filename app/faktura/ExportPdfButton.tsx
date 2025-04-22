@@ -2,6 +2,7 @@
 
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import Knapp from "../_components/Knapp";
 
 export default function ExportPdfButton() {
   const handleExport = async () => {
@@ -14,7 +15,7 @@ export default function ExportPdfButton() {
 
     try {
       const canvas = await html2canvas(element, {
-        scale: 2, // Skarpare bild
+        scale: 2,
         useCORS: false,
         logging: false,
         backgroundColor: "#ffffff",
@@ -37,12 +38,5 @@ export default function ExportPdfButton() {
     }
   };
 
-  return (
-    <button
-      onClick={handleExport}
-      className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800 print:hidden"
-    >
-      💾 Exportera PDF
-    </button>
-  );
+  return <Knapp onClick={handleExport} text="💾 Exportera PDF" />;
 }

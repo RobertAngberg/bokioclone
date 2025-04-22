@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useFakturaContext } from "./FakturaProvider";
-import Avsandare from "./Avsändare";
 import KundUppgifter from "./KundUppgifter";
 import ProdukterTjanster from "./ProdukterTjänster";
 import Villkor from "./Villkor";
@@ -11,9 +10,9 @@ import ExportPdfButton from "./ExportPdfButton";
 import Förhandsgranskning from "./Förhandsgranskning";
 import { saveInvoice, hämtaFakturaMedRader } from "./actions";
 import Existerande from "./Existerande";
-import FörhandsgranskaKnapp from "./FörhandsgranskaKnapp";
 import { hamtaFöretagsprofil } from "../admin/actions";
-import AnimeradFlik from "./AnimeradFlik";
+import AnimeradFlik from "../_components/AnimeradFlik";
+import Knapp from "../_components/Knapp";
 
 type Props = {
   kunder: any[];
@@ -138,27 +137,12 @@ export default function Fakturor({ kunder, fakturor }: Props) {
 
             <div className="flex flex-wrap justify-between items-center gap-4">
               <div className="flex gap-2">
-                <button
-                  onClick={handleSave}
-                  className="h-10 px-4 bg-cyan-700 rounded hover:bg-cyan-800"
-                >
-                  💾 Spara
-                </button>
+                <Knapp onClick={handleSave} text="💾 Spara" />
                 <ExportPdfButton />
-                <button
-                  onClick={() => window.print()}
-                  className="h-10 px-4 bg-cyan-700 rounded-lg hover:bg-cyan-800"
-                >
-                  🖨️ Skriv ut
-                </button>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800"
-                >
-                  🔁 Börja om
-                </button>
+                <Knapp onClick={() => window.print()} text="🖨️ Skriv ut" />
+                <Knapp onClick={() => window.location.reload()} text="🔁 Börja om" />
               </div>
-              <FörhandsgranskaKnapp onClick={() => setShowPreview(true)} />
+              <Knapp onClick={() => setShowPreview(true)} text="🔍 Förhandsgranska" />
             </div>
           </div>
         </div>
@@ -171,13 +155,9 @@ export default function Fakturor({ kunder, fakturor }: Props) {
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="relative bg-white max-w-[95vw] max-h-[95vh] overflow-auto shadow-2xl border border-gray-300 rounded-none">
-            <button
-              onClick={() => setShowPreview(false)}
-              className="absolute top-4 right-4 h-10 px-4 bg-cyan-700 text-white rounded hover:bg-cyan-800 z-50"
-            >
-              ❌ Stäng
-            </button>
-
+            <div className="absolute top-4 right-4 z-50">
+              <Knapp onClick={() => setShowPreview(false)} text="❌ Stäng" />
+            </div>
             <div className="p-6 flex justify-center">
               <div className="w-[210mm] h-[297mm] bg-white shadow border rounded">
                 <Förhandsgranskning />

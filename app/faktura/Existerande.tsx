@@ -104,7 +104,8 @@ export default function Existerande({
                   className="bg-slate-900 border border-slate-700 rounded px-4 py-2 flex justify-between items-center hover:bg-slate-800"
                 >
                   <span className="cursor-pointer" onClick={() => handleSelectInvoice(faktura.id)}>
-                    🧾 #{faktura.fakturanummer} – {datum} – {faktura.kundnamn ?? "Okänd kund"}
+                    #{faktura.fakturanummer} &nbsp; – &nbsp; {datum} &nbsp; – &nbsp;
+                    {faktura.kundnamn ?? "Okänd kund"}
                   </span>
                 </li>
               );

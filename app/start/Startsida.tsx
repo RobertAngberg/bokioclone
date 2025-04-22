@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchDataFromYear } from "./start/actions";
-import Kort from "./start/Kort";
-import Chart from "./start/Chart";
+import { fetchDataFromYear } from "./actions";
+import Kort from "./Kort";
+import Chart from "./Chart";
 
 type YearSummary = {
   totalInkomst: number;
