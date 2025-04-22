@@ -1,34 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { hämtaSparadeKunder, hämtaSparadeFakturor, deleteKund, deleteFaktura } from "./actions";
+import { useState } from "react";
 
 interface Props {
   onSelectCustomer: (kund: any) => void;
   onSelectInvoice: (id: number) => void;
+  kunder: any[]; // 👈 nu via props
+  fakturor: any[]; // 👈 nu via props
 }
 
-export default function Existerande({ onSelectCustomer, onSelectInvoice }: Props) {
-  const [kunder, setKunder] = useState<any[]>([]);
-  const [fakturor, setFakturor] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
+export default function Existerande({
+  onSelectCustomer,
+  onSelectInvoice,
+  kunder,
+  fakturor,
+}: Props) {
   const [showLoadedMsg, setShowLoadedMsg] = useState(false);
   const [fadeOutMsg, setFadeOutMsg] = useState(false);
 
   const [showFakturaMsg, setShowFakturaMsg] = useState(false);
   const [fadeOutFakturaMsg, setFadeOutFakturaMsg] = useState(false);
-
-  async function fetchData() {
-    const [kundRes, fakturaRes] = await Promise.all([hämtaSparadeKunder(), hämtaSparadeFakturor()]);
-    setKunder(kundRes ?? []);
-    setFakturor(fakturaRes ?? []);
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleSelectCustomer = (kund: any) => {
     onSelectCustomer(kund);
@@ -45,28 +36,6 @@ export default function Existerande({ onSelectCustomer, onSelectInvoice }: Props
     setTimeout(() => setFadeOutFakturaMsg(true), 700);
     setTimeout(() => setShowFakturaMsg(false), 1300);
   };
-
-  const handleDeleteKund = async (id: number) => {
-    if (!confirm("Ta bort denna kund?")) return;
-    const res = await deleteKund(id);
-    if (res.success) {
-      await fetchData();
-    } else {
-      alert("❌ Kunde inte ta bort kund.");
-    }
-  };
-
-  const handleDeleteFaktura = async (id: number) => {
-    if (!confirm("Ta bort denna faktura?")) return;
-    const res = await deleteFaktura(id);
-    if (res.success) {
-      await fetchData();
-    } else {
-      alert("❌ Kunde inte ta bort fakturan.");
-    }
-  };
-
-  if (loading) return <p className="text-white">Laddar...</p>;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white">
@@ -97,13 +66,6 @@ export default function Existerande({ onSelectCustomer, onSelectInvoice }: Props
                   {kund.kundnamn}
                   {kund.kundemail && <span className="text-gray-400"> – {kund.kundemail}</span>}
                 </span>
-                <button
-                  onClick={() => handleDeleteKund(kund.id)}
-                  className="text-red-400 hover:text-red-300 text-sm ml-4"
-                  title="Ta bort kund"
-                >
-                  🗑️
-                </button>
               </li>
             ))}
           </ul>
@@ -144,13 +106,6 @@ export default function Existerande({ onSelectCustomer, onSelectInvoice }: Props
                   <span className="cursor-pointer" onClick={() => handleSelectInvoice(faktura.id)}>
                     🧾 #{faktura.fakturanummer} – {datum} – {faktura.kundnamn ?? "Okänd kund"}
                   </span>
-                  <button
-                    onClick={() => handleDeleteFaktura(faktura.id)}
-                    className="text-red-400 hover:text-red-300 text-sm ml-4"
-                    title="Ta bort faktura"
-                  >
-                    🗑️
-                  </button>
                 </li>
               );
             })}

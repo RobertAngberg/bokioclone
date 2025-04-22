@@ -1,7 +1,11 @@
 "use client";
 
+// 💡 Använd initialFavoriter direkt i useState istället för useEffect
+//    så att favoriter visas direkt vid första render utan extra blink.
+//    useEffect hade gjort att de dök upp en render för sent.
+
 import { useState, useEffect, useRef } from "react";
-import { fetchAllaForval, fetchFavoritforval, loggaFavoritförval } from "./actions";
+import { fetchAllaForval, loggaFavoritförval } from "./actions";
 
 type KontoRad = {
   beskrivning: string;
@@ -30,6 +34,7 @@ type Forval = {
 };
 
 type Props = {
+  favoritFörvalen: Forval[];
   setCurrentStep: (val: number) => void;
   setvaltFörval: (val: Forval) => void;
   setKontonummer: (val: string) => void;
@@ -37,16 +42,16 @@ type Props = {
 };
 
 export default function SokForval({
+  favoritFörvalen,
   setCurrentStep,
   setvaltFörval,
   setKontonummer,
   setKontobeskrivning,
 }: Props) {
   const [searchText, setSearchText] = useState("");
-  const [results, setResults] = useState<Forval[]>([]);
+  const [results, setResults] = useState<Forval[]>(favoritFörvalen ?? []);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [favoriter, setFavoriter] = useState<Forval[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
@@ -56,19 +61,11 @@ export default function SokForval({
   }, []);
 
   useEffect(() => {
-    const hämtaFavoriter = async () => {
-      const favs = await fetchFavoritforval();
-      setFavoriter(favs.slice(0, 6));
-    };
-    hämtaFavoriter();
-  }, []);
-
-  useEffect(() => {
     const delay = setTimeout(async () => {
       const input = searchText.trim();
 
       if (input.length < 2) {
-        setResults(favoriter);
+        setResults(favoritFörvalen);
         setHighlightedIndex(0);
         setLoading(false);
         return;
@@ -114,7 +111,7 @@ export default function SokForval({
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [searchText, favoriter]);
+  }, [searchText, favoritFörvalen]);
 
   const väljFörval = (f: Forval) => {
     loggaFavoritförval(f.id);
@@ -149,7 +146,7 @@ export default function SokForval({
     }
     if (e.key === "Escape") {
       setSearchText("");
-      setResults(favoriter);
+      setResults(favoritFörvalen);
       setHighlightedIndex(0);
     }
   };

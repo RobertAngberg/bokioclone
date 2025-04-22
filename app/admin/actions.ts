@@ -299,35 +299,6 @@ export async function taBortTransaktion(id: number) {
   }
 }
 
-export async function fetchForvalMedFel() {
-  const client = await pool.connect();
-
-  try {
-    const kontonResult = await client.query("SELECT kontonummer FROM konton");
-    const giltigaKonton = kontonResult.rows.map((row) => row.kontonummer);
-
-    const forvalResult = await client.query("SELECT * FROM förval");
-    const felaktiga = forvalResult.rows.filter((f) => {
-      try {
-        const konton = Array.isArray(f.konton) ? f.konton : JSON.parse(f.konton);
-        return konton.some(
-          (konto: any) => konto.kontonummer && !giltigaKonton.includes(konto.kontonummer)
-        );
-      } catch (err) {
-        console.error("❌ JSON parse-fel i förval id:", f.id);
-        return true;
-      }
-    });
-
-    return felaktiga;
-  } catch (error) {
-    console.error("❌ fetchForvalMedFel error:", error);
-    return [];
-  } finally {
-    client.release();
-  }
-}
-
 export async function hämtaAllaKonton() {
   const client = await pool.connect();
 
