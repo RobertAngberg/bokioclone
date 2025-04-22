@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchDataFromYear } from "./start/actions";
-import Card from "./start/Card";
-import HomeChart from "./start/HomeChart";
+import Kort from "./start/Kort";
+import Chart from "./start/Chart";
 
 type YearSummary = {
   totalInkomst: number;
@@ -40,9 +40,9 @@ export default function Startsida({ initialData }: Props) {
       <div className="max-w-5xl mx-auto">
         <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
           <div className="flex flex-wrap justify-center gap-4 mb-8 text-center">
-            <Card title="Intäkter" data={data?.totalInkomst || 0} />
-            <Card title="Kostnader" data={data?.totalUtgift || 0} />
-            <Card title="Resultat" data={data?.totalResultat || 0} />
+            <Kort title="Intäkter" data={data?.totalInkomst || 0} />
+            <Kort title="Kostnader" data={data?.totalUtgift || 0} />
+            <Kort title="Resultat" data={data?.totalResultat || 0} />
           </div>
 
           {isLoading ? (
@@ -50,7 +50,7 @@ export default function Startsida({ initialData }: Props) {
               <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>
             </div>
           ) : (
-            <HomeChart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
+            <Chart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
           )}
         </div>
       </div>

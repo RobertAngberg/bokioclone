@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useFakturaContext } from "./FakturaProvider";
-import Avsandare from "./Avsandare";
+import Avsandare from "./Avsändare";
 import KundUppgifter from "./KundUppgifter";
-import ProdukterTjanster from "./ProdukterTjanster";
+import ProdukterTjanster from "./ProdukterTjänster";
 import Villkor from "./Villkor";
-import Ovrigt from "./Ovrigt";
+import Övrigt from "./Övrigt";
 import ExportPdfButton from "./ExportPdfButton";
-import Forhandsgranskning from "./Forhandsgranskning";
+import Förhandsgranskning from "./Förhandsgranskning";
 import { saveInvoice, hämtaFakturaMedRader } from "./actions";
 import Existerande from "./Existerande";
-import ForhandsgranskaKnapp from "./ForhandsgranskaKnapp";
+import FörhandsgranskaKnapp from "./FörhandsgranskaKnapp";
 import { hamtaFöretagsprofil } from "../admin/actions";
 import AnimeradFlik from "./AnimeradFlik";
 
@@ -133,7 +133,7 @@ export default function Fakturor({ kunder, fakturor }: Props) {
             </AnimeradFlik>
 
             <AnimeradFlik title="Övrigt" icon="🗒️">
-              <Ovrigt />
+              <Övrigt />
             </AnimeradFlik>
 
             <div className="flex flex-wrap justify-between items-center gap-4">
@@ -158,14 +158,14 @@ export default function Fakturor({ kunder, fakturor }: Props) {
                   🔁 Börja om
                 </button>
               </div>
-              <ForhandsgranskaKnapp onClick={() => setShowPreview(true)} />
+              <FörhandsgranskaKnapp onClick={() => setShowPreview(true)} />
             </div>
           </div>
         </div>
       </main>
 
       <div id="print-area" className="hidden print:block">
-        <Forhandsgranskning />
+        <Förhandsgranskning />
       </div>
 
       {showPreview && (
@@ -180,7 +180,7 @@ export default function Fakturor({ kunder, fakturor }: Props) {
 
             <div className="p-6 flex justify-center">
               <div className="w-[210mm] h-[297mm] bg-white shadow border rounded">
-                <Forhandsgranskning />
+                <Förhandsgranskning />
               </div>
             </div>
           </div>

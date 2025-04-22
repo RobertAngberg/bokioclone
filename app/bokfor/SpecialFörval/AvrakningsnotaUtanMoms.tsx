@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
-import Forhandsgranskning from "../Forhandsgranskning";
+import Forhandsgranskning from "../Förhandsgranskning";
 import Falt from "./Falt";
 import SubmitButton from "./SubmitButton";
 

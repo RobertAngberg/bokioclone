@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Falt from "./Falt";
 import SubmitButton from "./SubmitButton";
-import Forhandsgranskning from "../Forhandsgranskning";
+import Forhandsgranskning from "../Förhandsgranskning";
 import LaddaUppFil from "../LaddaUppFil";
 
 interface Props {

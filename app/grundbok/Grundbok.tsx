@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Table from "./Table";
+import Tabell from "./Tabell";
 import { fetchTransactionDetails } from "./actions";
 
 interface HistoryItem {
@@ -61,7 +61,7 @@ export default function Grundbok({ initialData }: Props) {
             </select>
           </div>
 
-          <Table
+          <Tabell
             historyData={historyData}
             handleRowClick={handleRowClick}
             activeId={activeId}

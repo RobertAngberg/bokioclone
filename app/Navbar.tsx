@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { LogoutButton } from "./start/LogoutButton";
+import { LogoutButton } from "./start/LogoutKnapp";
 import { usePathname } from "next/navigation";
 
 export default function Navbar() {
@@ -61,17 +61,17 @@ export default function Navbar() {
               linksRef.current[href] = el;
             }}
             onClick={() => handleClick(href)}
-            className={`relative z-10 px-6 py-2 text-white font-semibold md:text-lg transition-colors duration-150 hover:text-cyan-300`}
+            className={`relative z-10 px-4 py-2 text-white font-semibold md:text-lg transition-colors duration-150 hover:text-cyan-300`}
           >
             {label}
           </Link>
         ))}
 
-        {session?.user && (
+        {/* {session?.user && (
           <div className="ml-4 hidden md:block">
             <LogoutButton />
           </div>
-        )}
+        )} */}
       </nav>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import SokForval from "./SokForval";
+import SökFörval from "./SökFörval";
 import Steg2 from "./Steg2";
 import Steg3 from "./Steg3";
 import Steg4 from "./Steg4";
@@ -55,7 +55,7 @@ export default function Bokför({ favoritFörvalen }: Props) {
       <div className="max-w-5xl mx-auto">
         <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
           {currentStep === 1 && (
-            <SokForval
+            <SökFörval
               favoritFörvalen={favoritFörvalen}
               setCurrentStep={setCurrentStep}
               setvaltFörval={setValtFörval}

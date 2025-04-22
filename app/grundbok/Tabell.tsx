@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import TableRow from "./TableRow";
+import TabellRad from "./TabellRad";
 
 export interface HistoryItem {
   transaktions_id: number;
@@ -58,7 +58,7 @@ export default function Table({
         </thead>
         <tbody>
           {historyData.map((item, index) => (
-            <TableRow
+            <TabellRad
               key={item.transaktions_id}
               item={item}
               handleRowClick={handleRowClick}

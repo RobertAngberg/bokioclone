@@ -3,7 +3,7 @@
 import LaddaUppFil from "./LaddaUppFil";
 import Information from "./Information";
 import Kommentar from "./Kommentar";
-import Forhandsgranskning from "./Forhandsgranskning";
+import Forhandsgranskning from "./Förhandsgranskning";
 
 type KontoRad = {
   beskrivning: string;
