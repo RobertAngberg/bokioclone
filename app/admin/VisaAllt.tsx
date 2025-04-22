@@ -60,18 +60,8 @@ export default function VisaAllt() {
 
   return (
     <div className="space-y-6 text-white">
-      <div>
-        <input
-          type="text"
-          placeholder="🔍 Sök tabell..."
-          value={sökterm}
-          onChange={(e) => setSökterm(e.target.value)}
-          className="w-full px-4 py-2 rounded bg-slate-800 border border-slate-600 placeholder:text-slate-400"
-        />
-      </div>
-
       {filtreradeTabeller.map((tabell) => (
-        <details key={tabell.namn} className="border border-slate-600 rounded">
+        <details key={tabell.namn} className="border border-slate-600 rounded-lg">
           <summary className="bg-slate-900 px-4 py-3 font-semibold flex justify-between items-center cursor-pointer hover:bg-slate-800">
             📄 {tabell.namn} <span className="text-white">▼</span>
           </summary>

@@ -46,10 +46,10 @@ export default function Foretagsprofil() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-slate-900 text-white rounded-lg mt-10">
+    <div className="max-w-4xl mx-auto p-6 bg-slate-900 text-white rounded-lg">
       <h1 className="text-2xl font-semibold mb-6">🧑‍💼 Företagsprofil</h1>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {[
           ["företagsnamn", "Företagsnamn"],
           ["adress", "Adress"],
@@ -61,14 +61,14 @@ export default function Foretagsprofil() {
           ["bankinfo", "Bankinfo"],
           ["webbplats", "Webbplats"],
         ].map(([name, label]) => (
-          <div key={name}>
-            <label className="block text-sm mb-1">{label}</label>
+          <div key={name} className="flex flex-col">
+            <label className="text-sm mb-1">{label}</label>
             <input
               type="text"
               name={name}
               value={form[name as keyof typeof form]}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded"
+              className="px-3 py-2 bg-slate-800 border border-slate-600 rounded"
             />
           </div>
         ))}
@@ -76,7 +76,7 @@ export default function Foretagsprofil() {
 
       <button
         onClick={handleSubmit}
-        className="mt-6 bg-cyan-700 hover:bg-cyan-800 px-5 py-2 rounded"
+        className="mt-8 bg-cyan-700 hover:bg-cyan-800 px-5 py-2 rounded"
       >
         💾 Spara uppgifter
       </button>

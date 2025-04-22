@@ -67,11 +67,11 @@ export default function Navbar() {
           </Link>
         ))}
 
-        {/* {session?.user && (
+        {session?.user && (
           <div className="ml-4 hidden md:block">
             <LogoutButton />
           </div>
-        )} */}
+        )}
       </nav>
     </div>
   );
