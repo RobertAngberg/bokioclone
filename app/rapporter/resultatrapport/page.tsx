@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { hamtaResultatrapport } from "./actions";
-import Loading from "./Loading";
 
 type Konto = {
   kontonummer: string;
@@ -25,19 +24,15 @@ type ResultatData = {
 export default function Resultatrapport() {
   const [data, setData] = useState<ResultatData | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      const res = await hamtaResultatrapport();
+    hamtaResultatrapport().then((res) => {
       if (!res || !res.intakter || !res.kostnader) {
         console.error("❌ Ogiltigt resultatrapport-data", res);
-        setData(null);
       } else {
         setData(res);
       }
-      setLoading(false);
-    })();
+    });
   }, []);
 
   const summering = (rader: KontoRad[]) => {
@@ -54,88 +49,74 @@ export default function Resultatrapport() {
   const kostnadsSum = data ? summering(data.kostnader) : {};
   const resultat = data ? data.ar.map((year) => intaktsSum[year] - kostnadsSum[year]) : [];
 
+  const renderGrupper = (rader: KontoRad[], isCost = false) => {
+    return data
+      ? rader.map((grupp) => (
+          <Accordion
+            key={grupp.namn}
+            title={grupp.namn}
+            items={grupp.konton}
+            years={data.ar}
+            isCost={isCost}
+            expanded={expanded === grupp.namn}
+            onToggle={() => setExpanded(expanded === grupp.namn ? null : grupp.namn)}
+            summering={grupp.summering}
+          />
+        ))
+      : null;
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
       <div className="max-w-5xl mx-auto">
-        <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
+        <div className="p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
           <h1 className="text-3xl text-center mb-8">Resultatrapport</h1>
+          {data && renderGrupper(data.intakter)}
+          {data && <Totalrad label="Summa rörelsens intäkter" values={intaktsSum} />}
 
-          <Loading isLoading={loading} minHeight="20rem">
-            {!data ? (
-              <div className="text-red-500 text-center">❌ Kunde inte ladda resultatrapport</div>
-            ) : (
-              <div className="space-y-10">
-                <section>
-                  <h2 className="text-xl font-semibold mb-4">Rörelsens intäkter</h2>
-                  {data.intakter.map((grupp) => (
-                    <Accordion
-                      key={grupp.namn}
-                      title={grupp.namn}
-                      items={grupp.konton}
-                      years={data.ar}
-                      expanded={expanded === grupp.namn}
-                      onToggle={() => setExpanded(expanded === grupp.namn ? null : grupp.namn)}
-                      summering={grupp.summering}
-                    />
-                  ))}
-                  <Totalrad label="Summa rörelsens intäkter" values={intaktsSum} />
-                </section>
+          <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens kostnader</h2>
+          {data && renderGrupper(data.kostnader, true)}
+          {data && <Totalrad label="Summa rörelsens kostnader" values={kostnadsSum} isCost />}
 
-                <section>
-                  <h2 className="text-xl font-semibold mb-4">Rörelsens kostnader</h2>
-                  {data.kostnader.map((grupp) => (
-                    <Accordion
-                      key={grupp.namn}
-                      title={grupp.namn}
-                      items={grupp.konton}
-                      years={data.ar}
-                      isCost
-                      expanded={expanded === grupp.namn}
-                      onToggle={() => setExpanded(expanded === grupp.namn ? null : grupp.namn)}
-                      summering={grupp.summering}
-                    />
-                  ))}
-                  <Totalrad label="Summa rörelsens kostnader" values={kostnadsSum} isCost />
-                </section>
+          <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>
+          {data && (
+            <Totalrad
+              label="Summa rörelsens resultat"
+              values={resultat.reduce(
+                (acc, val, i) => {
+                  acc[data.ar[i]] = val;
+                  return acc;
+                },
+                {} as Record<string, number>
+              )}
+            />
+          )}
 
-                <section>
-                  <h2 className="text-xl font-semibold mb-4">Resultat</h2>
-                  <Totalrad
-                    label="Summa rörelsens resultat"
-                    values={data.ar.reduce(
-                      (acc, year, i) => {
-                        acc[year] = resultat[i];
-                        return acc;
-                      },
-                      {} as Record<string, number>
-                    )}
-                  />
+          {data && (
+            <Totalrad
+              label="Resultat efter finansiella poster"
+              values={resultat.reduce(
+                (acc, val, i) => {
+                  acc[data.ar[i]] = val;
+                  return acc;
+                },
+                {} as Record<string, number>
+              )}
+            />
+          )}
 
-                  <Totalrad
-                    label="Resultat efter finansiella poster"
-                    values={data.ar.reduce(
-                      (acc, year, i) => {
-                        acc[year] = resultat[i];
-                        return acc;
-                      },
-                      {} as Record<string, number>
-                    )}
-                  />
-
-                  <Totalrad
-                    label="Beräknat resultat"
-                    values={data.ar.reduce(
-                      (acc, year, i) => {
-                        acc[year] = resultat[i];
-                        return acc;
-                      },
-                      {} as Record<string, number>
-                    )}
-                  />
-                </section>
-              </div>
-            )}
-          </Loading>
+          {data && (
+            <Totalrad
+              label="Beräknat resultat"
+              values={resultat.reduce(
+                (acc, val, i) => {
+                  acc[data.ar[i]] = val;
+                  return acc;
+                },
+                {} as Record<string, number>
+              )}
+            />
+          )}
         </div>
       </div>
     </main>

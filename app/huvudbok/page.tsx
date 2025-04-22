@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { fetchHuvudbok } from "./actions";
-import Loading from "./Loading";
 
 /* ---------- typer ---------- */
 type TransactionItem = {
@@ -53,11 +52,20 @@ export default function Huvudbok() {
         <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
           <h1 className="mb-8 text-3xl text-center">Huvudbok</h1>
 
-          <Loading isLoading={isLoading} minHeight="20rem">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="w-16 h-16 border-t-4 border-cyan-400 rounded-full animate-spin" />
+            </div>
+          ) : (
             <div className="space-y-6">
-              {Object.entries(groupedData)
-                .sort(([a], [b]) => a.localeCompare(b, "sv-SE"))
-                .reduce<React.ReactNode[]>((acc, [konto, items], idx, sorted) => {
+              {(() => {
+                const sorted = Object.entries(groupedData).sort(([a], [b]) =>
+                  a.localeCompare(b, "sv-SE")
+                );
+
+                let lastSection: string | null = null;
+
+                return sorted.map(([konto, items]) => {
                   const kontoNum = konto.split(" – ")[0];
                   let section =
                     kontoNum === "1930"
@@ -66,21 +74,15 @@ export default function Huvudbok() {
                         ? "Momskonton"
                         : `Kontoklass ${kontoNum.charAt(0)}XXX`;
 
-                  const prev = sorted[idx - 1];
-                  const prevSection =
-                    prev?.[0]?.split(" – ")[0] === "1930"
-                      ? "Företagskonto"
-                      : /^26(1|2|3|4)/.test(prev?.[0]?.split(" – ")[0] ?? "")
-                        ? "Momskonton"
-                        : `Kontoklass ${prev?.[0]?.split(" – ")[0]?.charAt(0)}XXX`;
+                  const showHeading = section !== lastSection;
+                  lastSection = section;
 
-                  const showHeading = idx === 0 || section !== prevSection;
-
-                  acc.push(
+                  return (
                     <React.Fragment key={konto}>
                       {showHeading && (
                         <h2 className="text-xl text-white font-semibold mb-2">{section}</h2>
                       )}
+
                       <Accordion
                         title={konto}
                         items={items}
@@ -89,11 +91,10 @@ export default function Huvudbok() {
                       />
                     </React.Fragment>
                   );
-
-                  return acc;
-                }, [])}
+                });
+              })()}
             </div>
-          </Loading>
+          )}
         </div>
       </div>
     </main>
