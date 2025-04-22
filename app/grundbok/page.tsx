@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Table from "./Table";
+import Loading from "./Loading";
 import { fetchTransaktioner, fetchTransactionDetails } from "./actions";
 
 interface HistoryItem {
@@ -81,7 +82,6 @@ export default function Grundbok() {
     }
   };
 
-  /* ---------- UI ---------- */
   return (
     <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10 text-slate-100">
       <div className="max-w-5xl mx-auto">
@@ -104,19 +104,15 @@ export default function Grundbok() {
             </select>
           </div>
 
-          {/* tabell / spinner */}
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="w-16 h-16 border-t-4 border-cyan-400 rounded-full animate-spin" />
-            </div>
-          ) : (
+          {/* tabell med fade-in + spinner */}
+          <Loading isLoading={isLoading}>
             <Table
               historyData={historyData}
               handleRowClick={handleRowClick}
               activeId={activeId}
               details={activeId ? (detailsMap[activeId] ?? []) : []}
             />
-          )}
+          </Loading>
         </div>
       </div>
     </main>
