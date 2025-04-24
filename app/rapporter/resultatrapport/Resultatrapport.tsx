@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Accordion from "./Accordion";
 import Totalrad from "./Totalrad";
+import MainLayout from "../../_components/MainLayout";
 
 type Konto = {
   kontonummer: string;
@@ -59,35 +60,29 @@ export default function Resultatrapport({ initialData }: Props) {
     ));
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
-      <div className="max-w-5xl mx-auto">
-        <div className="p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
-          <h1 className="text-3xl text-center mb-8">Resultatrapport</h1>
+    <MainLayout>
+      <h1 className="text-3xl text-center mb-8">Resultatrapport</h1>
 
-          {renderGrupper(data.intakter)}
-          <Totalrad label="Summa rörelsens intäkter" values={intaktsSum} />
+      {renderGrupper(data.intakter)}
+      <Totalrad label="Summa rörelsens intäkter" values={intaktsSum} />
 
-          <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens kostnader</h2>
-          {renderGrupper(data.kostnader, true)}
-          <Totalrad label="Summa rörelsens kostnader" values={kostnadsSum} isCost />
+      <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens kostnader</h2>
+      {renderGrupper(data.kostnader, true)}
+      <Totalrad label="Summa rörelsens kostnader" values={kostnadsSum} isCost />
 
-          <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>
-          {[
-            "Summa rörelsens resultat",
-            "Resultat efter finansiella poster",
-            "Beräknat resultat",
-          ].map((label) => (
-            <Totalrad
-              key={label}
-              label={label}
-              values={data.ar.reduce(
-                (acc, year, i) => ({ ...acc, [year]: resultat[i] }),
-                {} as Record<string, number>
-              )}
-            />
-          ))}
-        </div>
-      </div>
-    </main>
+      <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>
+      {["Summa rörelsens resultat", "Resultat efter finansiella poster", "Beräknat resultat"].map(
+        (label) => (
+          <Totalrad
+            key={label}
+            label={label}
+            values={data.ar.reduce(
+              (acc, year, i) => ({ ...acc, [year]: resultat[i] }),
+              {} as Record<string, number>
+            )}
+          />
+        )
+      )}
+    </MainLayout>
   );
 }

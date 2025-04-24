@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import MainLayout from "../_components/MainLayout";
 
 type TransactionItem = {
   kontonummer: string;
@@ -24,18 +25,14 @@ export default function Huvudbok({ initialData }: Props) {
   const [expandedAcc, setExpandedAcc] = useState<string | null>(null);
 
   useEffect(() => {
-    const grouped: GroupedTransactions = initialData.reduce(
-      (acc: GroupedTransactions, item: TransactionItem) => {
-        const key = `${item.kontonummer} – ${item.beskrivning}`;
-        (acc[key] ??= []).push({
-          ...item,
-          transaktionsdatum: item.transaktionsdatum.slice(0, 10),
-        });
-        return acc;
-      },
-      {}
-    );
-
+    const grouped = initialData.reduce<GroupedTransactions>((acc, item) => {
+      const key = `${item.kontonummer} – ${item.beskrivning}`;
+      (acc[key] ??= []).push({
+        ...item,
+        transaktionsdatum: item.transaktionsdatum.slice(0, 10),
+      });
+      return acc;
+    }, {});
     setGroupedData(grouped);
   }, [initialData]);
 
@@ -44,50 +41,46 @@ export default function Huvudbok({ initialData }: Props) {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 overflow-x-hidden text-slate-100">
-      <div className="max-w-5xl mx-auto">
-        <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
-          <h1 className="mb-8 text-3xl text-center">Huvudbok</h1>
+    <MainLayout>
+      <h1 className="mb-8 text-3xl text-center">Huvudbok</h1>
 
-          <div className="space-y-6">
-            {(() => {
-              const sorted = Object.entries(groupedData).sort(([a], [b]) =>
-                a.localeCompare(b, "sv-SE")
-              );
+      <div className="space-y-6">
+        {(() => {
+          const sorted = Object.entries(groupedData).sort(([a], [b]) =>
+            a.localeCompare(b, "sv-SE")
+          );
 
-              let lastSection: string | null = null;
+          let lastSection: string | null = null;
 
-              return sorted.map(([konto, items]) => {
-                const kontoNum = konto.split(" – ")[0];
-                let section =
-                  kontoNum === "1930"
-                    ? "Företagskonto"
-                    : /^26(1|2|3|4)/.test(kontoNum)
-                      ? "Momskonton"
-                      : `Kontoklass ${kontoNum.charAt(0)}XXX`;
+          return sorted.map(([konto, items]) => {
+            const kontoNum = konto.split(" – ")[0];
+            let section =
+              kontoNum === "1930"
+                ? "Företagskonto"
+                : /^26(1|2|3|4)/.test(kontoNum)
+                  ? "Momskonton"
+                  : `Kontoklass ${kontoNum.charAt(0)}XXX`;
 
-                const showHeading = section !== lastSection;
-                lastSection = section;
+            const showHeading = section !== lastSection;
+            lastSection = section;
 
-                return (
-                  <React.Fragment key={konto}>
-                    {showHeading && (
-                      <h2 className="text-xl text-white font-semibold mb-2">{section}</h2>
-                    )}
-                    <Accordion
-                      title={konto}
-                      items={items}
-                      expanded={expandedAcc === konto}
-                      onToggle={() => toggleAcc(konto)}
-                    />
-                  </React.Fragment>
-                );
-              });
-            })()}
-          </div>
-        </div>
+            return (
+              <React.Fragment key={konto}>
+                {showHeading && (
+                  <h2 className="text-xl text-white font-semibold mb-2">{section}</h2>
+                )}
+                <Accordion
+                  title={konto}
+                  items={items}
+                  expanded={expandedAcc === konto}
+                  onToggle={() => toggleAcc(konto)}
+                />
+              </React.Fragment>
+            );
+          });
+        })()}
       </div>
-    </main>
+    </MainLayout>
   );
 }
 

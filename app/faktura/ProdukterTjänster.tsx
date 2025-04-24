@@ -2,7 +2,7 @@
 
 import { useFakturaContext } from "./FakturaProvider";
 import { useState } from "react";
-import { saveInvoice } from "./actions";
+import { saveInvoice, sparaFavoritArtikel } from "./actions";
 
 export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
@@ -16,9 +16,10 @@ export default function ProdukterTjanster() {
     typ: "vara",
   });
 
+  const [läggTillSomFavorit, setLäggTillSomFavorit] = useState(false);
+
   const sparaFaktura = async (artiklar: any[]) => {
     const fd = new FormData();
-
     try {
       fd.append("artiklar", JSON.stringify(artiklar));
     } catch (err) {
@@ -66,7 +67,13 @@ export default function ProdukterTjanster() {
       typ: "vara",
     });
 
+    setLäggTillSomFavorit(false);
+
     await sparaFaktura(updatedArtiklar);
+
+    if (läggTillSomFavorit) {
+      await sparaFavoritArtikel(artikel);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -203,6 +210,15 @@ export default function ProdukterTjanster() {
           </div>
         </div>
       </div>
+
+      <label className="flex items-center gap-2 text-white">
+        <input
+          type="checkbox"
+          checked={läggTillSomFavorit}
+          onChange={(e) => setLäggTillSomFavorit(e.target.checked)}
+        />
+        📌 Lägg till som favorit
+      </label>
 
       <button
         onClick={handleAddArtikel}

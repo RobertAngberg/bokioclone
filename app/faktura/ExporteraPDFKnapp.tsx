@@ -4,7 +4,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import Knapp from "../_components/Knapp";
 
-export default function ExportPdfButton() {
+export default function ExporteraPDFKnapp() {
   const handleExport = async () => {
     const element = document.getElementById("print-area");
 

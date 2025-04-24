@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Tabell from "./Tabell";
 import { fetchTransactionDetails } from "./actions";
+import MainLayout from "../_components/MainLayout";
 
 interface HistoryItem {
   transaktions_id: number;
@@ -44,31 +45,27 @@ export default function Grundbok({ initialData }: Props) {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10 text-slate-100">
-      <div className="max-w-5xl mx-auto">
-        <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
-          <div className="text-center mb-8 space-y-4">
-            <h1 className="text-3xl">Grundbok</h1>
+    <MainLayout>
+      <div className="text-center mb-8 space-y-4">
+        <h1 className="text-3xl">Grundbok</h1>
 
-            <select
-              className="px-4 py-2 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-              id="year"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              disabled // 👈 för nu visar vi bara 2025-data
-            >
-              <option value="2025">2025</option>
-            </select>
-          </div>
-
-          <Tabell
-            historyData={historyData}
-            handleRowClick={handleRowClick}
-            activeId={activeId}
-            details={activeId ? (detailsMap[activeId] ?? []) : []}
-          />
-        </div>
+        <select
+          className="px-4 py-2 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
+          id="year"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          disabled // 👈 vi visar bara 2025-data
+        >
+          <option value="2025">2025</option>
+        </select>
       </div>
-    </main>
+
+      <Tabell
+        historyData={historyData}
+        handleRowClick={handleRowClick}
+        activeId={activeId}
+        details={activeId ? (detailsMap[activeId] ?? []) : []}
+      />
+    </MainLayout>
   );
 }

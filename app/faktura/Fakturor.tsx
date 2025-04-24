@@ -1,27 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import KundUppgifter from "./KundUppgifter";
 import ProdukterTjanster from "./ProdukterTjänster";
 import Villkor from "./Villkor";
 import Övrigt from "./Övrigt";
-import ExportPdfButton from "./ExportPdfButton";
+import ExportPdfButton from "./ExporteraPDFKnapp";
 import Förhandsgranskning from "./Förhandsgranskning";
-import { saveInvoice, hämtaFakturaMedRader } from "./actions";
+import {
+  saveInvoice,
+  hämtaFakturaMedRader,
+  deleteFaktura,
+  deleteKund,
+  hämtaSparadeArtiklar,
+  deleteFavoritArtikel,
+} from "./actions";
 import Existerande from "./Existerande";
-import { hamtaFöretagsprofil } from "../admin/actions";
 import AnimeradFlik from "../_components/AnimeradFlik";
 import Knapp from "../_components/Knapp";
+import MainLayout from "../_components/MainLayout";
+import type { Artikel } from "./actions";
 
 type Props = {
   kunder: any[];
   fakturor: any[];
+  artiklar?: Artikel[];
 };
 
-export default function Fakturor({ kunder, fakturor }: Props) {
+export default function Fakturor({ kunder: initialKunder, fakturor: initialFakturor }: Props) {
   const { formData, setFormData, setKundStatus } = useFakturaContext();
   const [showPreview, setShowPreview] = useState(false);
+  const [kunder, setKunder] = useState(initialKunder);
+  const [fakturor, setFakturor] = useState(initialFakturor);
+  const [artiklar, setArtiklar] = useState<Artikel[]>([]);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    hämtaSparadeArtiklar().then(setArtiklar);
+  }, []);
 
   const hanteraValdKund = (kund: any) => {
     setFormData((prev) => ({
@@ -45,8 +62,8 @@ export default function Fakturor({ kunder, fakturor }: Props) {
       alert("❌ Kunde inte hämta faktura");
       return;
     }
-    const { faktura, artiklar } = data;
 
+    const { faktura, artiklar } = data;
     setFormData({
       id: faktura.id,
       fakturanummer: faktura.fakturanummer ?? "",
@@ -76,7 +93,7 @@ export default function Fakturor({ kunder, fakturor }: Props) {
       bankinfo: "",
       webbplats: "",
       logo: "",
-      artiklar: artiklar.map((rad: any) => ({
+      artiklar: artiklar.map((rad) => ({
         beskrivning: rad.beskrivning,
         antal: Number(rad.antal),
         prisPerEnhet: Number(rad.prisPerEnhet),
@@ -87,6 +104,28 @@ export default function Fakturor({ kunder, fakturor }: Props) {
     });
 
     setKundStatus("loaded");
+  };
+
+  const handleDeleteFaktura = (id: number) => {
+    if (!confirm("❌ Vill du ta bort fakturan?")) return;
+    startTransition(() => {
+      setFakturor((prev) => prev.filter((f) => f.id !== id));
+      deleteFaktura(id);
+    });
+  };
+
+  const handleDeleteKund = (id: number) => {
+    if (!confirm("❌ Vill du ta bort kunden?")) return;
+    startTransition(() => {
+      setKunder((prev) => prev.filter((k) => k.id !== id));
+      deleteKund(id);
+    });
+  };
+
+  const handleDeleteArtikel = async (id: number) => {
+    if (!confirm("❌ Vill du ta bort artikeln?")) return;
+    await deleteFavoritArtikel(id);
+    setArtiklar((prev) => prev.filter((a) => a.id !== id));
   };
 
   const handleSave = async () => {
@@ -105,48 +144,56 @@ export default function Fakturor({ kunder, fakturor }: Props) {
 
   return (
     <>
-      <main className="min-h-screen bg-slate-950 px-4 py-10 print:hidden text-slate-100">
-        <div className="max-w-5xl mx-auto">
-          <div className="space-y-6 p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
-            <h1 className="text-3xl text-center">Fakturor</h1>
+      <MainLayout>
+        <div className="space-y-6">
+          <h1 className="text-3xl text-center">Fakturor</h1>
 
-            <AnimeradFlik title="Ladda in existerande" icon="📂">
-              <Existerande
-                onSelectCustomer={hanteraValdKund}
-                onSelectInvoice={hanteraValdFaktura}
-                kunder={kunder}
-                fakturor={fakturor}
-              />
-            </AnimeradFlik>
+          <AnimeradFlik title="Ladda in existerande" icon="📂">
+            <Existerande
+              onSelectCustomer={hanteraValdKund}
+              onSelectInvoice={hanteraValdFaktura}
+              onDeleteCustomer={handleDeleteKund}
+              onDeleteInvoice={handleDeleteFaktura}
+              onDeleteArtikel={handleDeleteArtikel}
+              onSelectArtiklar={(a) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  artiklar: [...(prev.artiklar ?? []), ...a],
+                }))
+              }
+              kunder={kunder}
+              fakturor={fakturor}
+              artiklar={artiklar}
+            />
+          </AnimeradFlik>
 
-            <AnimeradFlik title="Kunduppgifter" icon="🧑‍💻">
-              <KundUppgifter />
-            </AnimeradFlik>
+          <AnimeradFlik title="Kunduppgifter" icon="🧑‍💻">
+            <KundUppgifter />
+          </AnimeradFlik>
 
-            <AnimeradFlik title="Produkter & Tjänster" icon="📦">
-              <ProdukterTjanster />
-            </AnimeradFlik>
+          <AnimeradFlik title="Produkter & Tjänster" icon="📦">
+            <ProdukterTjanster />
+          </AnimeradFlik>
 
-            <AnimeradFlik title="Villkor" icon="⚖️">
-              <Villkor />
-            </AnimeradFlik>
+          <AnimeradFlik title="Villkor" icon="⚖️">
+            <Villkor />
+          </AnimeradFlik>
 
-            <AnimeradFlik title="Övrigt" icon="🗒️">
-              <Övrigt />
-            </AnimeradFlik>
+          <AnimeradFlik title="Övrigt" icon="🗒️">
+            <Övrigt />
+          </AnimeradFlik>
 
-            <div className="flex flex-wrap justify-between items-center gap-4">
-              <div className="flex gap-2">
-                <Knapp onClick={handleSave} text="💾 Spara" />
-                <ExportPdfButton />
-                <Knapp onClick={() => window.print()} text="🖨️ Skriv ut" />
-                <Knapp onClick={() => window.location.reload()} text="🔁 Börja om" />
-              </div>
-              <Knapp onClick={() => setShowPreview(true)} text="🔍 Förhandsgranska" />
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="flex gap-2">
+              <Knapp onClick={handleSave} text="💾 Spara" />
+              <ExportPdfButton />
+              <Knapp onClick={() => window.print()} text="🖨️ Skriv ut" />
+              <Knapp onClick={() => window.location.reload()} text="🔁 Börja om" />
             </div>
+            <Knapp onClick={() => setShowPreview(true)} text="🔍 Förhandsgranska" />
           </div>
         </div>
-      </main>
+      </MainLayout>
 
       <div id="print-area" className="hidden print:block">
         <Förhandsgranskning />
