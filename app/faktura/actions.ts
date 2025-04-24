@@ -12,7 +12,7 @@ export type Artikel = {
   prisPerEnhet: number;
   moms: number;
   valuta: string;
-  typ: "vara" | "tjanst";
+  typ: "vara" | "tjänst"; // ✅ RÄTT stavning för "tjänst"
 };
 
 export async function saveInvoice(formData: FormData) {

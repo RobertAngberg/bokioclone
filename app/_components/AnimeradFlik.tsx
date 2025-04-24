@@ -34,7 +34,7 @@ export default function AnimeradFlik({
   }, [open]);
 
   return (
-    <div className="border border-slate-700 rounded-lg overflow-hidden">
+    <div className="border border-slate-700 rounded-lg overflow-hidden mb-6">
       <button
         onClick={toggle}
         className="w-full px-4 py-3 text-lg font-semibold flex justify-between bg-slate-900 hover:bg-slate-800 transition"

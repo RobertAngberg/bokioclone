@@ -3,6 +3,7 @@
 import { useFakturaContext } from "./FakturaProvider";
 import { useState } from "react";
 import { saveInvoice, sparaFavoritArtikel } from "./actions";
+import type { Artikel } from "./actions";
 
 export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
@@ -13,12 +14,12 @@ export default function ProdukterTjanster() {
     prisPerEnhet: "0",
     moms: "25",
     valuta: "SEK",
-    typ: "vara",
+    typ: "vara", // "vara" eller "tjänst"
   });
 
   const [läggTillSomFavorit, setLäggTillSomFavorit] = useState(false);
 
-  const sparaFaktura = async (artiklar: any[]) => {
+  const sparaFaktura = async (artiklar: Artikel[]) => {
     const fd = new FormData();
     try {
       fd.append("artiklar", JSON.stringify(artiklar));
@@ -42,7 +43,7 @@ export default function ProdukterTjanster() {
   };
 
   const handleAddArtikel = async () => {
-    const artikel = {
+    const artikel: Artikel = {
       beskrivning: nyArtikel.beskrivning,
       antal: Number(nyArtikel.antal),
       prisPerEnhet: Number(nyArtikel.prisPerEnhet),
@@ -202,7 +203,7 @@ export default function ProdukterTjanster() {
                 type="radio"
                 name="typ"
                 value="tjänst"
-                checked={nyArtikel.typ === "tjänst"}
+                checked={nyArtikel.typ === "tjanst"}
                 onChange={handleChange}
               />
               Tjänster

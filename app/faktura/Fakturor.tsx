@@ -145,53 +145,51 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
   return (
     <>
       <MainLayout>
-        <div className="space-y-6">
-          <h1 className="text-3xl text-center">Fakturor</h1>
+        <h1 className="text-3xl text-center">Fakturor</h1>
 
-          <AnimeradFlik title="Ladda in existerande" icon="📂">
-            <Existerande
-              onSelectCustomer={hanteraValdKund}
-              onSelectInvoice={hanteraValdFaktura}
-              onDeleteCustomer={handleDeleteKund}
-              onDeleteInvoice={handleDeleteFaktura}
-              onDeleteArtikel={handleDeleteArtikel}
-              onSelectArtiklar={(a) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  artiklar: [...(prev.artiklar ?? []), ...a],
-                }))
-              }
-              kunder={kunder}
-              fakturor={fakturor}
-              artiklar={artiklar}
-            />
-          </AnimeradFlik>
+        <AnimeradFlik title="Ladda in existerande" icon="📂">
+          <Existerande
+            onSelectCustomer={hanteraValdKund}
+            onSelectInvoice={hanteraValdFaktura}
+            onDeleteCustomer={handleDeleteKund}
+            onDeleteInvoice={handleDeleteFaktura}
+            onDeleteArtikel={handleDeleteArtikel}
+            onSelectArtiklar={(a) =>
+              setFormData((prev) => ({
+                ...prev,
+                artiklar: [...(prev.artiklar ?? []), ...a],
+              }))
+            }
+            kunder={kunder}
+            fakturor={fakturor}
+            artiklar={artiklar}
+          />
+        </AnimeradFlik>
 
-          <AnimeradFlik title="Kunduppgifter" icon="🧑‍💻">
-            <KundUppgifter />
-          </AnimeradFlik>
+        <AnimeradFlik title="Kunduppgifter" icon="🧑‍💻">
+          <KundUppgifter />
+        </AnimeradFlik>
 
-          <AnimeradFlik title="Produkter & Tjänster" icon="📦">
-            <ProdukterTjanster />
-          </AnimeradFlik>
+        <AnimeradFlik title="Produkter & Tjänster" icon="📦">
+          <ProdukterTjanster />
+        </AnimeradFlik>
 
-          <AnimeradFlik title="Villkor" icon="⚖️">
-            <Villkor />
-          </AnimeradFlik>
+        <AnimeradFlik title="Villkor" icon="⚖️">
+          <Villkor />
+        </AnimeradFlik>
 
-          <AnimeradFlik title="Övrigt" icon="🗒️">
-            <Övrigt />
-          </AnimeradFlik>
+        <AnimeradFlik title="Övrigt" icon="🗒️">
+          <Övrigt />
+        </AnimeradFlik>
 
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <div className="flex gap-2">
-              <Knapp onClick={handleSave} text="💾 Spara" />
-              <ExportPdfButton />
-              <Knapp onClick={() => window.print()} text="🖨️ Skriv ut" />
-              <Knapp onClick={() => window.location.reload()} text="🔁 Börja om" />
-            </div>
-            <Knapp onClick={() => setShowPreview(true)} text="🔍 Förhandsgranska" />
+        <div className="flex flex-wrap justify-between items-center gap-4">
+          <div className="flex gap-2">
+            <Knapp onClick={handleSave} text="💾 Spara" />
+            <ExportPdfButton />
+            <Knapp onClick={() => window.print()} text="🖨️ Skriv ut" />
+            <Knapp onClick={() => window.location.reload()} text="🔁 Börja om" />
           </div>
+          <Knapp onClick={() => setShowPreview(true)} text="🔍 Förhandsgranska" />
         </div>
       </MainLayout>
 
