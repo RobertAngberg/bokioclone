@@ -3,7 +3,7 @@
 import React from "react";
 
 export interface ColumnDefinition<T> {
-  key: keyof T;
+  key: keyof T | string; // ✅ Fix: tillåt dynamiska keys (t.ex. "2025")
   label?: string;
   render?: (value: any, row: T) => React.ReactNode;
   hiddenOnMobile?: boolean;
@@ -34,7 +34,7 @@ export default function TabellRad<T>({
       }`}
     >
       {columns.map((col, colIndex) => {
-        const rawValue = item[col.key];
+        const rawValue = (item as any)[col.key];
         const renderedValue = col.render
           ? col.render(rawValue, item)
           : (rawValue as React.ReactNode);
@@ -44,9 +44,7 @@ export default function TabellRad<T>({
         return (
           <td
             key={String(col.key)}
-            className={`${paddingClass} text-left ${
-              col.hiddenOnMobile ? "hidden md:table-cell" : ""
-            }`}
+            className={`${paddingClass} text-left ${col.hiddenOnMobile ? "hidden md:table-cell" : ""}`}
           >
             {renderedValue}
           </td>

@@ -2,13 +2,14 @@
 
 import React from "react";
 import TabellRad, { ColumnDefinition } from "./TabellRad";
+export type { ColumnDefinition } from "./TabellRad";
 
 export interface TableProps<T> {
   data: T[];
   columns: ColumnDefinition<T>[];
-  getRowId: (item: T) => number;
-  activeId: number | null;
-  handleRowClick: (id: number) => void;
+  getRowId: (item: T) => string | number;
+  activeId: string | number | null;
+  handleRowClick: (id: string | number) => void;
   renderExpandedRow?: (item: T) => React.ReactNode;
 }
 

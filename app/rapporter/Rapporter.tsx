@@ -20,13 +20,13 @@ const rapporter = [
     emoji: "🏦",
     title: "Balansräkning",
     description: "Tillgångar/skulder vid ett visst datum.",
-    href: "/rapporter/balans",
+    href: "/rapporter/balansrakning",
   },
   {
     emoji: "📈",
-    title: "Resultaträkning",
+    title: "Resultatrapport",
     description: "Intäkter minus kostnader för en period.",
-    href: "/rapporter/resultat",
+    href: "/rapporter/resultatrapport",
   },
   {
     emoji: "📑",
