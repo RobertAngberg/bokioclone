@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { fetchDataFromYear } from "./actions";
 import Kort from "./Kort";
 import Chart from "./Chart";
+import MainLayout from "../_components/MainLayout";
 
 type YearSummary = {
   totalInkomst: number;

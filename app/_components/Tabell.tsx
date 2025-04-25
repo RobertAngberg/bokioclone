@@ -1,44 +1,63 @@
-// Tabell.tsx
+"use client";
 
-type TabellProps = {
-  kolumntitlar: string[];
-  rader: (string | number)[][];
-  summering?: (string | number)[];
-};
+import React from "react";
+import TabellRad, { ColumnDefinition } from "./TabellRad";
 
-export default function Tabell({ kolumntitlar, rader, summering }: TabellProps) {
+export interface TableProps<T> {
+  data: T[];
+  columns: ColumnDefinition<T>[];
+  getRowId: (item: T) => number;
+  activeId: number | null;
+  handleRowClick: (id: number) => void;
+  renderExpandedRow?: (item: T) => React.ReactNode;
+}
+
+export default function Tabell<T>({
+  data,
+  columns,
+  getRowId,
+  activeId,
+  handleRowClick,
+  renderExpandedRow,
+}: TableProps<T>) {
   return (
-    <div className="overflow-x-auto text-sm">
-      <div className="grid grid-cols-[1fr_repeat(auto-fit,minmax(4rem,1fr))] gap-x-4 font-semibold text-slate-300 border-b border-slate-700 pb-1 mb-2">
-        {kolumntitlar.map((titel, i) => (
-          <div key={i} className={i === 0 ? "" : "text-right"}>
-            {titel}
-          </div>
-        ))}
-      </div>
+    <div className="max-w-5xl mx-auto overflow-x-auto border border-slate-700 rounded-lg shadow">
+      <table className="w-full text-sm border-collapse">
+        <thead className="bg-slate-800 text-left">
+          <tr>
+            {columns.map((col, colIndex) => {
+              const paddingClass = colIndex === 0 ? "pl-6 pr-4 py-3" : "px-4 py-3";
+              return (
+                <th
+                  key={String(col.key)}
+                  className={`${paddingClass} ${col.hiddenOnMobile ? "hidden md:table-cell" : ""}`}
+                >
+                  {col.label}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item, index) => {
+            const id = getRowId(item);
+            const isExpanded = activeId === id;
 
-      {rader.map((rad, i) => (
-        <div
-          key={i}
-          className="grid grid-cols-[1fr_repeat(auto-fit,minmax(4rem,1fr))] gap-x-4 py-1 border-b border-slate-800"
-        >
-          {rad.map((cell, j) => (
-            <div key={j} className={j === 0 ? "text-slate-200" : "text-right tabular-nums"}>
-              {typeof cell === "number" ? cell.toLocaleString("sv-SE") : cell}
-            </div>
-          ))}
-        </div>
-      ))}
-
-      {summering && (
-        <div className="grid grid-cols-[1fr_repeat(auto-fit,minmax(4rem,1fr))] gap-x-4 mt-2 pt-2 border-t border-slate-700 font-semibold text-slate-100">
-          {summering.map((cell, i) => (
-            <div key={i} className={i === 0 ? "" : "text-right tabular-nums"}>
-              {typeof cell === "number" ? cell.toLocaleString("sv-SE") : cell}
-            </div>
-          ))}
-        </div>
-      )}
+            return (
+              <React.Fragment key={id}>
+                <TabellRad
+                  item={item}
+                  columns={columns}
+                  onClick={() => handleRowClick(id)}
+                  isActive={isExpanded}
+                  rowIndex={index}
+                />
+                {isExpanded && renderExpandedRow?.(item)}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
