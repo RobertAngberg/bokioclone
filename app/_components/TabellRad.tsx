@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 export interface ColumnDefinition<T> {
   key: keyof T | string; // ✅ Fix: tillåt dynamiska keys (t.ex. "2025")
   label?: string;

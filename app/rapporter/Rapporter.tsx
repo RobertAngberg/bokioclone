@@ -32,7 +32,7 @@ const rapporter = [
     emoji: "📑",
     title: "Momsrapport",
     description: "Summering av ingående/utgående moms.",
-    href: "/rapporter/moms",
+    href: "/rapporter/momsrapport",
   },
   {
     emoji: "🧾",
