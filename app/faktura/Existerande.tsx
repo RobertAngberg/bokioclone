@@ -29,6 +29,7 @@ export default function Existerande({
   const [fadeOutMsg, setFadeOutMsg] = useState(false);
   const [showFakturaMsg, setShowFakturaMsg] = useState(false);
   const [fadeOutFakturaMsg, setFadeOutFakturaMsg] = useState(false);
+  const [blinkArtikelId, setBlinkArtikelId] = useState<number | null>(null);
 
   const handleSelectCustomer = (kund: any) => {
     onSelectCustomer(kund);
@@ -46,6 +47,13 @@ export default function Existerande({
     setTimeout(() => setShowFakturaMsg(false), 1300);
   };
 
+  const handleSelectArtikel = (artikel: any) => {
+    if (!onSelectArtiklar) return;
+    onSelectArtiklar([artikel]);
+    setBlinkArtikelId(artikel.id);
+    setTimeout(() => setBlinkArtikelId(null), 200); // Blinkar i 200ms
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-white">
       {/* Kunder */}
@@ -54,7 +62,9 @@ export default function Existerande({
 
         {showLoadedMsg && (
           <div
-            className={`mb-2 text-sm transition-opacity duration-500 ${fadeOutMsg ? "opacity-0" : "opacity-100"}`}
+            className={`mb-2 text-sm transition-opacity duration-500 ${
+              fadeOutMsg ? "opacity-0" : "opacity-100"
+            }`}
           >
             ✔️ Kunduppgifter laddade
           </div>
@@ -96,7 +106,9 @@ export default function Existerande({
 
         {showFakturaMsg && (
           <div
-            className={`mb-2 text-sm transition-opacity duration-500 ${fadeOutFakturaMsg ? "opacity-0" : "opacity-100"}`}
+            className={`mb-2 text-sm transition-opacity duration-500 ${
+              fadeOutFakturaMsg ? "opacity-0" : "opacity-100"
+            }`}
           >
             ✔️ Faktura laddad
           </div>
@@ -146,6 +158,7 @@ export default function Existerande({
       {artiklar && onSelectArtiklar && (
         <div>
           <h3 className="text-xl font-semibold mb-2">📦 Favoritartiklar</h3>
+
           {artiklar.length === 0 ? (
             <p className="text-gray-400 italic">Inga sparade artiklar.</p>
           ) : (
@@ -153,9 +166,11 @@ export default function Existerande({
               {artiklar.map((a) => (
                 <li
                   key={a.id}
-                  className="bg-slate-900 border border-slate-700 rounded px-4 py-2 hover:bg-slate-800 flex justify-between items-center"
+                  className={`border border-slate-700 rounded px-4 py-2 flex justify-between items-center transition-colors duration-200 ${
+                    blinkArtikelId === a.id ? "bg-green-800" : "bg-slate-900 hover:bg-slate-800"
+                  }`}
                 >
-                  <div className="cursor-pointer" onClick={() => onSelectArtiklar([a])}>
+                  <div className="cursor-pointer" onClick={() => handleSelectArtikel(a)}>
                     <div>{a.beskrivning}</div>
                     <div className="text-gray-400 text-sm">
                       {a.antal} x {a.prisPerEnhet} {a.valuta} ({a.moms}%)

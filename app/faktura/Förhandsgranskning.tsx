@@ -5,7 +5,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useSession } from "next-auth/react";
 import { useRef, useState, useEffect } from "react";
-import { hamtaFöretagsprofil } from "../admin/actions";
+import { hämtaFöretagsprofilFörInloggadAnvändare } from "./actions";
 
 export default function Forhandsgranskning() {
   const { formData, setFormData } = useFakturaContext();
@@ -16,7 +16,7 @@ export default function Forhandsgranskning() {
 
   useEffect(() => {
     const hämtaProfil = async () => {
-      const data = await hamtaFöretagsprofil();
+      const data = await hämtaFöretagsprofilFörInloggadAnvändare();
       setProfil(data);
     };
     hämtaProfil();

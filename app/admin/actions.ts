@@ -400,19 +400,19 @@ export async function sparaForetagsprofil(formData: FormData) {
   }
 }
 
-export async function hamtaFöretagsprofil() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-  const userId = parseInt(session.user.id);
+// export async function hamtaFöretagsprofil() {
+//   const session = await auth();
+//   if (!session?.user?.id) return null;
+//   const userId = parseInt(session.user.id);
 
-  const client = await pool.connect();
-  try {
-    const res = await client.query(`SELECT * FROM företagsprofil WHERE "userId" = $1`, [userId]);
-    return res.rows[0] ?? null;
-  } catch (err) {
-    console.error("❌ Kunde inte hämta företagsprofil:", err);
-    return null;
-  } finally {
-    client.release();
-  }
-}
+//   const client = await pool.connect();
+//   try {
+//     const res = await client.query(`SELECT * FROM företagsprofil WHERE "userId" = $1`, [userId]);
+//     return res.rows[0] ?? null;
+//   } catch (err) {
+//     console.error("❌ Kunde inte hämta företagsprofil:", err);
+//     return null;
+//   } finally {
+//     client.release();
+//   }
+// }

@@ -37,24 +37,20 @@ export default function Startsida({ initialData }: Props) {
   }, [year]);
 
   return (
-    <main className="min-h-screen bg-slate-950 overflow-x-hidden px-4 py-10 text-slate-100">
-      <div className="max-w-5xl mx-auto">
-        <div className="w-full p-8 bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg">
-          <div className="flex flex-wrap justify-center gap-4 mb-8 text-center">
-            <Kort title="Intäkter" data={data?.totalInkomst || 0} />
-            <Kort title="Kostnader" data={data?.totalUtgift || 0} />
-            <Kort title="Resultat" data={data?.totalResultat || 0} />
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>
-            </div>
-          ) : (
-            <Chart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
-          )}
-        </div>
+    <MainLayout>
+      <div className="flex flex-wrap justify-center gap-4 mb-8 text-center">
+        <Kort title="Intäkter" data={data?.totalInkomst || 0} />
+        <Kort title="Kostnader" data={data?.totalUtgift || 0} />
+        <Kort title="Resultat" data={data?.totalResultat || 0} />
       </div>
-    </main>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="border-t-4 border-cyan-600 border-solid rounded-full w-16 h-16 animate-spin"></div>
+        </div>
+      ) : (
+        <Chart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
+      )}
+    </MainLayout>
   );
 }

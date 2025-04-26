@@ -366,3 +366,42 @@ export async function hämtaSparadeArtiklar(): Promise<Artikel[]> {
     return [];
   }
 }
+
+export async function hämtaFöretagsprofilFörInloggadAnvändare() {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const userId = parseInt(session.user.id, 10);
+
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `
+      SELECT
+        företagsnamn,
+        adress,
+        postnummer,
+        stad,
+        organisationsnummer,
+        momsregistreringsnummer,
+        telefonnummer,
+        bankinfo,
+        webbplats
+      FROM företagsprofil
+      WHERE id = $1
+    `,
+      [userId]
+    );
+
+    if (res.rows.length === 0) {
+      console.error("❌ Ingen företagsprofil hittades för användare", userId);
+      return null;
+    }
+
+    return res.rows[0];
+  } catch (err) {
+    console.error("❌ hämtaFöretagsprofilFörInloggadAnvändare error:", err);
+    return null;
+  } finally {
+    client.release();
+  }
+}

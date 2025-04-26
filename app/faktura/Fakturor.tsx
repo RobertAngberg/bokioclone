@@ -8,6 +8,11 @@ import Villkor from "./Villkor";
 import Övrigt from "./Övrigt";
 import ExportPdfButton from "./ExporteraPDFKnapp";
 import Förhandsgranskning from "./Förhandsgranskning";
+import Existerande from "./Existerande";
+import AnimeradFlik from "../_components/AnimeradFlik";
+import Knapp from "../_components/Knapp";
+import MainLayout from "../_components/MainLayout";
+import type { Artikel } from "./actions";
 import {
   saveInvoice,
   hämtaFakturaMedRader,
@@ -15,12 +20,8 @@ import {
   deleteKund,
   hämtaSparadeArtiklar,
   deleteFavoritArtikel,
+  hämtaSparadeFakturor,
 } from "./actions";
-import Existerande from "./Existerande";
-import AnimeradFlik from "../_components/AnimeradFlik";
-import Knapp from "../_components/Knapp";
-import MainLayout from "../_components/MainLayout";
-import type { Artikel } from "./actions";
 
 type Props = {
   kunder: any[];
@@ -136,7 +137,15 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
         if (k !== "artiklar" && v != null) fd.append(k, String(v));
       });
       const res = await saveInvoice(fd);
-      alert(res.success ? "✅ Faktura sparad!" : "❌ Kunde inte spara fakturan.");
+
+      if (res.success) {
+        alert("✅ Faktura sparad!");
+        // 🔥 Hämta om fakturor direkt efter sparande:
+        const nyaFakturor = await hämtaSparadeFakturor();
+        setFakturor(nyaFakturor);
+      } else {
+        alert("❌ Kunde inte spara fakturan.");
+      }
     } catch {
       alert("❌ Kunde inte konvertera artiklar");
     }
@@ -145,7 +154,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
   return (
     <>
       <MainLayout>
-        <h1 className="text-3xl text-center">Fakturor</h1>
+        <h1 className="text-3xl text-center mb-8">Fakturor</h1>
 
         <AnimeradFlik title="Ladda in existerande" icon="📂">
           <Existerande
