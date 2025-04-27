@@ -42,6 +42,7 @@ export async function saveInvoice(formData: FormData) {
 
     if (isUpdate && fakturaId) {
       await client.query(`DELETE FROM fakturarader WHERE faktura_id = $1`, [fakturaId]);
+      await client.query(`DELETE FROM rot_rut WHERE faktura_id = $1`, [fakturaId]); // Viktigt: ta bort gammal ROT/RUT
 
       await client.query(
         `UPDATE fakturor SET
@@ -73,6 +74,32 @@ export async function saveInvoice(formData: FormData) {
           `INSERT INTO fakturarader (faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [fakturaId, rad.beskrivning, rad.antal, rad.prisPerEnhet, rad.moms, rad.valuta, rad.typ]
+        );
+      }
+
+      // ➡️ Lägg in ROT/RUT om aktiverat
+      if (formData.get("rotRutAktiverat") === "true") {
+        await client.query(
+          `INSERT INTO rot_rut (faktura_id, typ, arbetskostnad_ex_moms, materialkostnad_ex_moms, avdrag_procent, avdrag_belopp, personnummer, fastighetsbeteckning)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            fakturaId,
+            formData.get("rotRutTyp"),
+            formData.get("arbetskostnadExMoms")
+              ? parseFloat(formData.get("arbetskostnadExMoms")!.toString())
+              : null,
+            formData.get("materialkostnadExMoms")
+              ? parseFloat(formData.get("materialkostnadExMoms")!.toString())
+              : null,
+            formData.get("avdragProcent")
+              ? parseFloat(formData.get("avdragProcent")!.toString())
+              : null,
+            formData.get("avdragBelopp")
+              ? parseFloat(formData.get("avdragBelopp")!.toString())
+              : null,
+            formData.get("personnummer"),
+            formData.get("fastighetsbeteckning"),
+          ]
         );
       }
 
@@ -114,6 +141,32 @@ export async function saveInvoice(formData: FormData) {
           `INSERT INTO fakturarader (faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [newId, rad.beskrivning, rad.antal, rad.prisPerEnhet, rad.moms, rad.valuta, rad.typ]
+        );
+      }
+
+      // ➡️ Lägg in ROT/RUT om aktiverat
+      if (formData.get("rotRutAktiverat") === "true") {
+        await client.query(
+          `INSERT INTO rot_rut (faktura_id, typ, arbetskostnad_ex_moms, materialkostnad_ex_moms, avdrag_procent, avdrag_belopp, personnummer, fastighetsbeteckning)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            newId,
+            formData.get("rotRutTyp"),
+            formData.get("arbetskostnadExMoms")
+              ? parseFloat(formData.get("arbetskostnadExMoms")!.toString())
+              : null,
+            formData.get("materialkostnadExMoms")
+              ? parseFloat(formData.get("materialkostnadExMoms")!.toString())
+              : null,
+            formData.get("avdragProcent")
+              ? parseFloat(formData.get("avdragProcent")!.toString())
+              : null,
+            formData.get("avdragBelopp")
+              ? parseFloat(formData.get("avdragBelopp")!.toString())
+              : null,
+            formData.get("personnummer"),
+            formData.get("fastighetsbeteckning"),
+          ]
         );
       }
 
@@ -401,6 +454,83 @@ export async function hämtaFöretagsprofilFörInloggadAnvändare() {
   } catch (err) {
     console.error("❌ hämtaFöretagsprofilFörInloggadAnvändare error:", err);
     return null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function sparaNyKund(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false };
+  const userId = parseInt(session.user.id, 10);
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `INSERT INTO kunder (
+        "userId", kundnamn, kundorgnummer, kundnummer,
+        kundmomsnummer, kundadress1, kundpostnummer, kundstad, kundemail
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id`,
+      [
+        userId,
+        formData.get("kundnamn"),
+        formData.get("kundorgnummer"),
+        formData.get("kundnummer"),
+        formData.get("kundmomsnummer"),
+        formData.get("kundadress1"),
+        formData.get("kundpostnummer"),
+        formData.get("kundstad"),
+        formData.get("kundemail"),
+      ]
+    );
+    return { success: true, id: res.rows[0].id };
+  } catch (err) {
+    console.error("❌ Kunde inte spara kund:", err);
+    return { success: false };
+  } finally {
+    client.release();
+  }
+}
+
+export async function uppdateraKund(id: number, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false };
+  const userId = parseInt(session.user.id, 10);
+
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `
+      UPDATE kunder SET
+        kundnamn = $1,
+        kundnummer = $2,
+        kundorgnummer = $3,
+        kundmomsnummer = $4,
+        kundadress1 = $5,
+        kundpostnummer = $6,
+        kundstad = $7,
+        kundemail = $8
+      WHERE id = $9 AND "userId" = $10
+      `,
+      [
+        formData.get("kundnamn"),
+        formData.get("kundnummer"),
+        formData.get("kundorgnummer"),
+        formData.get("kundmomsnummer"),
+        formData.get("kundadress1"),
+        formData.get("kundpostnummer"),
+        formData.get("kundstad"),
+        formData.get("kundemail"),
+        id,
+        userId,
+      ]
+    );
+
+    return { success: true };
+  } catch (err) {
+    console.error("❌ uppdateraKund error:", err);
+    return { success: false };
   } finally {
     client.release();
   }

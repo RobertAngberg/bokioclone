@@ -1,232 +1,245 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFakturaContext } from "./FakturaProvider";
-import { useState } from "react";
-import { saveInvoice, sparaFavoritArtikel } from "./actions";
-import type { Artikel } from "./actions";
+import { saveInvoice, sparaFavoritArtikel, hämtaSparadeArtiklar } from "./actions";
+import Knapp from "../_components/Knapp";
 
 export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
+  const [beskrivning, setBeskrivning] = useState("");
+  const [antal, setAntal] = useState(1);
+  const [prisPerEnhet, setPrisPerEnhet] = useState(0);
+  const [moms, setMoms] = useState(25);
+  const [valuta, setValuta] = useState("SEK");
+  const [typ, setTyp] = useState<"vara" | "tjänst">("vara");
+  const [loading, setLoading] = useState(false);
+  const [saveAsFavorite, setSaveAsFavorite] = useState(false);
+  const [favoritArtiklar, setFavoritArtiklar] = useState<any[]>([]);
+  const [showFavoritArtiklar, setShowFavoritArtiklar] = useState(false);
+  const [blinkIndex, setBlinkIndex] = useState<number | null>(null);
 
-  const [nyArtikel, setNyArtikel] = useState({
-    beskrivning: "",
-    antal: "1",
-    prisPerEnhet: "0",
-    moms: "25",
-    valuta: "SEK",
-    typ: "vara", // "vara" eller "tjänst"
-  });
+  useEffect(() => {
+    const laddaFavoriter = async () => {
+      const artiklar = await hämtaSparadeArtiklar();
+      setFavoritArtiklar(artiklar);
+    };
+    laddaFavoriter();
+  }, []);
 
-  const [läggTillSomFavorit, setLäggTillSomFavorit] = useState(false);
-
-  const sparaFaktura = async (artiklar: Artikel[]) => {
-    const fd = new FormData();
-    try {
-      fd.append("artiklar", JSON.stringify(artiklar));
-    } catch (err) {
-      console.error("❌ JSON.stringify artiklar fail:", err);
+  const handleAdd = async () => {
+    if (!beskrivning.trim()) {
+      alert("❌ Beskrivning krävs");
       return;
     }
 
-    Object.entries(formData).forEach(([k, v]) => {
-      if (k !== "artiklar" && v !== undefined && v !== null) {
-        fd.append(k, String(v));
+    const newArtikel = { beskrivning, antal, prisPerEnhet, moms, valuta, typ };
+
+    setFormData((prev) => ({
+      ...prev,
+      artiklar: [...(prev.artiklar ?? []), newArtikel],
+    }));
+
+    try {
+      setLoading(true);
+      const fd = new FormData();
+      fd.append("artiklar", JSON.stringify([...(formData.artiklar ?? []), newArtikel]));
+      Object.entries(formData).forEach(([k, v]) => {
+        if (k !== "artiklar" && v != null) fd.append(k, String(v));
+      });
+      const res = await saveInvoice(fd);
+      if (!res.success) {
+        alert("❌ Kunde inte spara faktura efter tillägg");
       }
-    });
-
-    const res = await saveInvoice(fd);
-    if (!res.success) {
-      alert("❌ Kunde inte spara fakturan");
-    } else {
-      console.log("✅ Faktura sparad");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Fel vid sparande");
+    } finally {
+      setLoading(false);
     }
+
+    if (saveAsFavorite) {
+      const res = await sparaFavoritArtikel(newArtikel);
+      if (!res.success) {
+        alert("❌ Kunde inte spara favoritartikel");
+      }
+    }
+
+    setBeskrivning("");
+    setAntal(1);
+    setPrisPerEnhet(0);
+    setMoms(25);
+    setValuta("SEK");
+    setTyp("vara");
+    setSaveAsFavorite(false);
+
+    // 🔥 Blinka på nya raden
+    setTimeout(() => {
+      setBlinkIndex(formData.artiklar?.length ?? 0);
+      setTimeout(() => setBlinkIndex(null), 500);
+    }, 50);
   };
 
-  const handleAddArtikel = async () => {
-    const artikel: Artikel = {
-      beskrivning: nyArtikel.beskrivning,
-      antal: Number(nyArtikel.antal),
-      prisPerEnhet: Number(nyArtikel.prisPerEnhet),
-      moms: Number(nyArtikel.moms),
-      valuta: nyArtikel.valuta,
-      typ: nyArtikel.typ as "vara" | "tjänst",
-    };
-
-    const updatedArtiklar = [...(formData.artiklar || []), artikel];
-
+  const handleRemove = (index: number) => {
+    const nyaArtiklar = (formData.artiklar ?? []).filter((_, i) => i !== index);
     setFormData((prev) => ({
       ...prev,
-      artiklar: updatedArtiklar,
-    }));
-
-    setNyArtikel({
-      beskrivning: "",
-      antal: "1",
-      prisPerEnhet: "0",
-      moms: "25",
-      valuta: "SEK",
-      typ: "vara",
-    });
-
-    setLäggTillSomFavorit(false);
-
-    await sparaFaktura(updatedArtiklar);
-
-    if (läggTillSomFavorit) {
-      await sparaFavoritArtikel(artikel);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNyArtikel((prev) => ({
-      ...prev,
-      [name]: value,
+      artiklar: nyaArtiklar,
     }));
   };
 
-  const handleDelete = async (index: number) => {
-    const confirmed = confirm("Vill du verkligen ta bort artikeln?");
-    if (!confirmed) return;
-
-    const updated = [...(formData.artiklar || [])];
-    updated.splice(index, 1);
-
+  const handleSelectFavorit = (artikel: any) => {
     setFormData((prev) => ({
       ...prev,
-      artiklar: updated,
+      artiklar: [...(prev.artiklar ?? []), artikel],
     }));
 
-    await sparaFaktura(updated);
+    // 🔥 Blinka på nya raden
+    setTimeout(() => {
+      setBlinkIndex(formData.artiklar?.length ?? 0);
+      setTimeout(() => setBlinkIndex(null), 500);
+    }, 50);
   };
 
   return (
     <div className="space-y-6">
-      {formData.artiklar?.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-2 text-white">Tillagda artiklar</h3>
-          <ul className="space-y-2">
-            {formData.artiklar.map((a, idx) => (
-              <li key={idx} className="p-3 bg-slate-800 rounded flex items-center justify-between">
-                <div className="text-white">
-                  {a.typ === "tjänst" ? "🛠" : "📦"} {a.beskrivning} – {a.antal} x {a.prisPerEnhet}{" "}
-                  {a.valuta} ({a.moms}% moms)
+      {/* 📂 Favoritartiklar och tillagda artiklar */}
+      {favoritArtiklar.length > 0 && (
+        <div className="space-y-4">
+          <Knapp
+            onClick={() => setShowFavoritArtiklar(!showFavoritArtiklar)}
+            text={showFavoritArtiklar ? "🔼 Dölj sparade artiklar" : "📂 Ladda in sparade artiklar"}
+          />
+
+          {showFavoritArtiklar && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+              {favoritArtiklar.map((a) => (
+                <div
+                  key={a.id}
+                  onClick={() => handleSelectFavorit(a)}
+                  className="bg-slate-800 hover:bg-slate-700 cursor-pointer p-3 rounded border border-slate-600 flex flex-col justify-between"
+                >
+                  <div className="text-white font-semibold">📌 {a.beskrivning}</div>
+                  <div className="text-gray-400 text-sm mt-1">
+                    {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
+                  </div>
                 </div>
-                <button onClick={() => handleDelete(idx)} className="hover:text-red-600 ml-4">
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ➕ Visa tillagda artiklar direkt under favoriter */}
+      <div className="pt-6">
+        {formData.artiklar?.length ? (
+          <ul className="space-y-3">
+            {formData.artiklar.map((a, idx) => (
+              <li
+                key={idx}
+                className={`flex justify-between items-center p-3 bg-slate-900 border border-slate-700 rounded ${
+                  blinkIndex === idx ? "background-pulse" : ""
+                }`}
+              >
+                <div>
+                  <div className="text-white font-semibold">{a.beskrivning}</div>
+                  <div className="text-gray-400 text-sm">
+                    {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRemove(idx)}
+                  className="text-red-400 hover:text-red-600"
+                >
                   🗑️
                 </button>
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        ) : (
+          <div className="text-gray-400 italic">Inga produkter eller tjänster tillagda ännu.</div>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 📝 Lägg till ny artikel manuellt */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-10">
         <div>
-          <label className="block mb-1 text-sm text-white">Beskrivning</label>
+          <label className="block mb-1 text-white">Beskrivning</label>
           <input
-            name="beskrivning"
-            placeholder="Beskrivning"
-            value={nyArtikel.beskrivning}
-            onChange={handleChange}
+            value={beskrivning}
+            onChange={(e) => setBeskrivning(e.target.value)}
             className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           />
         </div>
-
         <div>
-          <label className="block mb-1 text-sm text-white">Antal</label>
+          <label className="block mb-1 text-white">Antal</label>
           <input
-            name="antal"
             type="number"
-            min={0}
-            value={nyArtikel.antal}
-            onChange={handleChange}
+            value={antal}
+            onChange={(e) => setAntal(parseFloat(e.target.value))}
             className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           />
         </div>
-
         <div>
-          <label className="block mb-1 text-sm text-white">Pris per enhet</label>
+          <label className="block mb-1 text-white">Pris per enhet</label>
           <input
-            name="prisPerEnhet"
             type="number"
-            min={0}
-            value={nyArtikel.prisPerEnhet}
-            onChange={handleChange}
+            value={prisPerEnhet}
+            onChange={(e) => setPrisPerEnhet(parseFloat(e.target.value))}
             className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           />
         </div>
-
         <div>
-          <label className="block mb-1 text-sm text-white">Valuta</label>
+          <label className="block mb-1 text-white">Moms (%)</label>
+          <input
+            type="number"
+            value={moms}
+            onChange={(e) => setMoms(parseFloat(e.target.value))}
+            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
+          />
+        </div>
+        <div>
+          <label className="block mb-1 text-white">Valuta</label>
           <select
-            name="valuta"
-            value={nyArtikel.valuta}
-            onChange={handleChange}
+            value={valuta}
+            onChange={(e) => setValuta(e.target.value)}
             className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           >
             <option value="SEK">SEK</option>
             <option value="EUR">EUR</option>
           </select>
         </div>
-
         <div>
-          <label className="block mb-1 text-sm text-white">Moms</label>
+          <label className="block mb-1 text-white">Typ</label>
           <select
-            name="moms"
-            value={nyArtikel.moms}
-            onChange={handleChange}
+            value={typ}
+            onChange={(e) => setTyp(e.target.value as "vara" | "tjänst")}
             className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
           >
-            <option value="25">25%</option>
-            <option value="12">12%</option>
-            <option value="6">6%</option>
-            <option value="0">0%</option>
+            <option value="vara">Vara</option>
+            <option value="tjänst">Tjänst</option>
           </select>
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm text-white">Typ</label>
-          <div className="flex gap-4 mt-1 text-white">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="typ"
-                value="vara"
-                checked={nyArtikel.typ === "vara"}
-                onChange={handleChange}
-              />
-              Varor
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="typ"
-                value="tjänst"
-                checked={nyArtikel.typ === "tjanst"}
-                onChange={handleChange}
-              />
-              Tjänster
-            </label>
-          </div>
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-white">
+      {/* 📌 Checkbox Lägg till som favorit */}
+      <div className="flex items-center gap-2 pt-4">
         <input
           type="checkbox"
-          checked={läggTillSomFavorit}
-          onChange={(e) => setLäggTillSomFavorit(e.target.checked)}
+          id="saveAsFavorite"
+          checked={saveAsFavorite}
+          onChange={() => setSaveAsFavorite(!saveAsFavorite)}
+          className="w-5 h-5"
         />
-        📌 Lägg till som favorit
-      </label>
+        <label htmlFor="saveAsFavorite" className="text-white text-sm cursor-pointer">
+          📌 Lägg till som favoritartikel
+        </label>
+      </div>
 
-      <button
-        onClick={handleAddArtikel}
-        className="mt-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-800 rounded text-white"
-      >
-        ✔️ Lägg till och spara
-      </button>
+      {/* ➕ Lägg till och spara */}
+      <div className="pt-4">
+        <Knapp onClick={handleAdd} text={loading ? "✚ Sparar…" : "✚ Lägg till och spara"} />
+      </div>
     </div>
   );
 }

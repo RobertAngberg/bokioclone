@@ -44,14 +44,18 @@ export default function Forhandsgranskning() {
     return acc + antal * pris * (moms / 100);
   }, 0);
 
-  const totalSum = sumExkl + totalMoms;
+  const totalSum = sumExkl + totalMoms - (formData.avdragBelopp ?? 0);
+
+  const rotRutAvdrag = formData.avdragBelopp ?? 0;
+
+  const summaAttBetala = Math.max(totalSum - rotRutAvdrag, 0);
 
   const exportToPDF = async () => {
     const element = document.getElementById("print-area");
     if (!element) return;
 
     const originalDisplay = element.style.display;
-    element.style.display = "block"; // Temporärt synlig
+    element.style.display = "block";
 
     try {
       const canvas = await html2canvas(element, {
@@ -75,7 +79,7 @@ export default function Forhandsgranskning() {
     } catch (error) {
       console.error("❌ Error exporting PDF:", error);
     } finally {
-      element.style.display = originalDisplay; // Återställ display
+      element.style.display = originalDisplay;
     }
   };
 
@@ -180,6 +184,31 @@ export default function Forhandsgranskning() {
           </tbody>
         </table>
 
+        {/* ROT/RUT Preview */}
+        {formData.rotRutAktiverat && formData.rotRutTyp && (
+          <div
+            className="border p-4 mb-6 text-[10pt]"
+            style={{ borderColor: "#ccc", backgroundColor: "#f9f9f9" }}
+          >
+            <h2 className="font-bold mb-2">
+              {formData.rotRutTyp === "ROT" ? "ROT-avdrag" : "RUT-avdrag"}
+            </h2>
+            <p>
+              <strong>Arbetskostnad exkl. moms:</strong> {formData.arbetskostnadExMoms ?? "—"} SEK
+            </p>
+            <p>
+              <strong>Kategori:</strong> {formData.rotRutKategori ?? "—"}
+            </p>
+            <p>
+              <strong>Beräknat avdrag:</strong>{" "}
+              {formData.avdragBelopp?.toLocaleString("sv-SE", {
+                style: "currency",
+                currency: "SEK",
+              }) ?? "—"}
+            </p>
+          </div>
+        )}
+
         <div className="text-right space-y-1 text-[10pt]">
           <p>
             <strong>Summa exkl. moms:</strong> {sumExkl.toFixed(2)} {rows[0]?.valuta ?? "SEK"}
@@ -187,8 +216,17 @@ export default function Forhandsgranskning() {
           <p>
             <strong>Moms totalt:</strong> {totalMoms.toFixed(2)} {rows[0]?.valuta ?? "SEK"}
           </p>
-          <p className="text-lg font-bold">
-            Summa att betala: {totalSum.toFixed(2)} {rows[0]?.valuta ?? "SEK"}
+
+          {formData.rotRutAktiverat && rotRutAvdrag > 0 && (
+            <p className="text-green-700 font-semibold">
+              ROT/RUT-avdrag: -
+              {rotRutAvdrag.toLocaleString("sv-SE", { style: "currency", currency: "SEK" })}
+            </p>
+          )}
+
+          <p className="text-lg font-bold mt-2">
+            Summa att betala:{" "}
+            {summaAttBetala.toLocaleString("sv-SE", { style: "currency", currency: "SEK" })}
           </p>
         </div>
       </div>

@@ -35,7 +35,15 @@ export type FakturaFormData = {
   bankinfo: string;
   webbplats: string;
   logo: string;
-  logoWidth?: number; // 🔧 Nytt fält för logotypstorlek
+  logoWidth?: number;
+
+  rotRutAktiverat?: boolean;
+  rotRutTyp?: "ROT" | "RUT";
+  rotRutKategori?: string;
+  avdragProcent?: number;
+  avdragBelopp?: number;
+  arbetskostnadExMoms?: number | string;
+  materialkostnadExMoms?: number | string;
 
   artiklar: Array<{
     beskrivning: string;
@@ -47,6 +55,15 @@ export type FakturaFormData = {
   }>;
 };
 
+export type ArtikelInput = {
+  beskrivning: string;
+  antal: string;
+  prisPerEnhet: string;
+  moms: string;
+  valuta: string;
+  typ: "vara" | "tjänst";
+};
+
 type KundStatus = "none" | "loaded" | "editing";
 
 interface FakturaContextType {
@@ -55,6 +72,8 @@ interface FakturaContextType {
   kundStatus: KundStatus;
   setKundStatus: React.Dispatch<React.SetStateAction<KundStatus>>;
   resetKund: () => void;
+  nyArtikel: ArtikelInput;
+  setNyArtikel: React.Dispatch<React.SetStateAction<ArtikelInput>>;
 }
 
 const FakturaContext = createContext<FakturaContextType | undefined>(undefined);
@@ -89,8 +108,17 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
     bankinfo: "",
     webbplats: "",
     logo: "",
-    logoWidth: 200, // ✅ Defaultstorlek för logotypen
+    logoWidth: 200,
     artiklar: [],
+  });
+
+  const [nyArtikel, setNyArtikel] = useState<ArtikelInput>({
+    beskrivning: "",
+    antal: "1",
+    prisPerEnhet: "0",
+    moms: "25",
+    valuta: "SEK",
+    typ: "vara",
   });
 
   const [kundStatus, setKundStatus] = useState<KundStatus>("none");
@@ -113,7 +141,15 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <FakturaContext.Provider
-      value={{ formData, setFormData, kundStatus, setKundStatus, resetKund }}
+      value={{
+        formData,
+        setFormData,
+        kundStatus,
+        setKundStatus,
+        resetKund,
+        nyArtikel,
+        setNyArtikel,
+      }}
     >
       {children}
     </FakturaContext.Provider>

@@ -41,6 +41,21 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
     hämtaSparadeArtiklar().then(setArtiklar);
   }, []);
 
+  useEffect(() => {
+    const reload = async () => {
+      const nyaFakturor = await hämtaSparadeFakturor();
+      setFakturor(nyaFakturor);
+    };
+
+    const handler = () => {
+      reload();
+    };
+
+    window.addEventListener("reloadFakturor", handler);
+
+    return () => window.removeEventListener("reloadFakturor", handler);
+  }, []);
+
   const hanteraValdKund = (kund: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -140,7 +155,6 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
 
       if (res.success) {
         alert("✅ Faktura sparad!");
-        // 🔥 Hämta om fakturor direkt efter sparande:
         const nyaFakturor = await hämtaSparadeFakturor();
         setFakturor(nyaFakturor);
       } else {
@@ -156,7 +170,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
       <MainLayout>
         <h1 className="text-3xl text-center mb-8">Fakturor</h1>
 
-        <AnimeradFlik title="Ladda in existerande" icon="📂">
+        <AnimeradFlik title="Sparade fakturor" icon="📂">
           <Existerande
             onSelectCustomer={hanteraValdKund}
             onSelectInvoice={hanteraValdFaktura}
