@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import { saveInvoice, sparaFavoritArtikel, hämtaSparadeArtiklar } from "./actions";
 import Knapp from "../_components/Knapp";
+import TextFält from "../_components/TextFält";
+import RotRutForm from "./RotRutForm";
 
 export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
@@ -73,7 +75,6 @@ export default function ProdukterTjanster() {
     setTyp("vara");
     setSaveAsFavorite(false);
 
-    // 🔥 Blinka på nya raden
     setTimeout(() => {
       setBlinkIndex(formData.artiklar?.length ?? 0);
       setTimeout(() => setBlinkIndex(null), 500);
@@ -94,7 +95,6 @@ export default function ProdukterTjanster() {
       artiklar: [...(prev.artiklar ?? []), artikel],
     }));
 
-    // 🔥 Blinka på nya raden
     setTimeout(() => {
       setBlinkIndex(formData.artiklar?.length ?? 0);
       setTimeout(() => setBlinkIndex(null), 500);
@@ -103,7 +103,7 @@ export default function ProdukterTjanster() {
 
   return (
     <div className="space-y-6">
-      {/* 📂 Favoritartiklar och tillagda artiklar */}
+      {/* 📂 Favoritartiklar */}
       {favoritArtiklar.length > 0 && (
         <div className="space-y-4">
           <Knapp
@@ -130,91 +130,79 @@ export default function ProdukterTjanster() {
         </div>
       )}
 
-      {/* ➕ Visa tillagda artiklar direkt under favoriter */}
-      <div className="pt-6">
-        {formData.artiklar?.length ? (
-          <ul className="space-y-3">
-            {formData.artiklar.map((a, idx) => (
-              <li
-                key={idx}
-                className={`flex justify-between items-center p-3 bg-slate-900 border border-slate-700 rounded ${
-                  blinkIndex === idx ? "background-pulse" : ""
-                }`}
-              >
-                <div>
-                  <div className="text-white font-semibold">{a.beskrivning}</div>
-                  <div className="text-gray-400 text-sm">
-                    {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
-                  </div>
+      {/* ➕ Visa tillagda artiklar */}
+      <div>
+        <ul className="space-y-3">
+          {formData.artiklar.map((a, idx) => (
+            <li
+              key={idx}
+              className={`flex justify-between items-center p-3 bg-slate-900 border border-slate-700 rounded ${
+                blinkIndex === idx ? "background-pulse" : ""
+              }`}
+            >
+              <div>
+                <div className="text-white font-semibold">{a.beskrivning}</div>
+                <div className="text-gray-400 text-sm">
+                  {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
                 </div>
-                <button
-                  onClick={() => handleRemove(idx)}
-                  className="text-red-400 hover:text-red-600"
-                >
-                  🗑️
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-gray-400 italic">Inga produkter eller tjänster tillagda ännu.</div>
-        )}
+              </div>
+              <button onClick={() => handleRemove(idx)} className="text-red-400 hover:text-red-600">
+                🗑️
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* 📝 Lägg till ny artikel manuellt */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <TextFält
+          label="Beskrivning"
+          name="beskrivning"
+          value={beskrivning}
+          onChange={(e) => setBeskrivning(e.target.value)}
+        />
+        <TextFält
+          label="Antal"
+          name="antal"
+          value={antal.toString()}
+          onChange={(e) => setAntal(parseFloat(e.target.value))}
+        />
+        <TextFält
+          label="Pris per enhet"
+          name="prisPerEnhet"
+          value={prisPerEnhet.toString()}
+          onChange={(e) => setPrisPerEnhet(parseFloat(e.target.value))}
+        />
+        <TextFält
+          label="Moms (%)"
+          name="moms"
+          value={moms.toString()}
+          onChange={(e) => setMoms(parseFloat(e.target.value))}
+        />
         <div>
-          <label className="block mb-1 text-white">Beskrivning</label>
-          <input
-            value={beskrivning}
-            onChange={(e) => setBeskrivning(e.target.value)}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
-          />
-        </div>
-        <div>
-          <label className="block mb-1 text-white">Antal</label>
-          <input
-            type="number"
-            value={antal}
-            onChange={(e) => setAntal(parseFloat(e.target.value))}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
-          />
-        </div>
-        <div>
-          <label className="block mb-1 text-white">Pris per enhet</label>
-          <input
-            type="number"
-            value={prisPerEnhet}
-            onChange={(e) => setPrisPerEnhet(parseFloat(e.target.value))}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
-          />
-        </div>
-        <div>
-          <label className="block mb-1 text-white">Moms (%)</label>
-          <input
-            type="number"
-            value={moms}
-            onChange={(e) => setMoms(parseFloat(e.target.value))}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
-          />
-        </div>
-        <div>
-          <label className="block mb-1 text-white">Valuta</label>
+          <label htmlFor="valuta" className="block text-sm font-medium text-white mb-2">
+            Valuta
+          </label>
           <select
+            id="valuta"
             value={valuta}
             onChange={(e) => setValuta(e.target.value)}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
           >
             <option value="SEK">SEK</option>
             <option value="EUR">EUR</option>
           </select>
         </div>
         <div>
-          <label className="block mb-1 text-white">Typ</label>
+          <label htmlFor="typ" className="block text-sm font-medium text-white mb-2">
+            Typ
+          </label>
           <select
+            id="typ"
             value={typ}
             onChange={(e) => setTyp(e.target.value as "vara" | "tjänst")}
-            className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
           >
             <option value="vara">Vara</option>
             <option value="tjänst">Tjänst</option>
@@ -222,22 +210,22 @@ export default function ProdukterTjanster() {
         </div>
       </div>
 
-      {/* 📌 Checkbox Lägg till som favorit */}
-      <div className="flex items-center gap-2 pt-4">
-        <input
-          type="checkbox"
-          id="saveAsFavorite"
-          checked={saveAsFavorite}
-          onChange={() => setSaveAsFavorite(!saveAsFavorite)}
-          className="w-5 h-5"
-        />
-        <label htmlFor="saveAsFavorite" className="text-white text-sm cursor-pointer">
-          📌 Lägg till som favoritartikel
-        </label>
-      </div>
+      <RotRutForm />
 
-      {/* ➕ Lägg till och spara */}
-      <div className="pt-4">
+      {/* 📌 Lägg till som favorit */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="saveAsFavorite"
+            checked={saveAsFavorite}
+            onChange={() => setSaveAsFavorite(!saveAsFavorite)}
+            className="w-5 h-5"
+          />
+          <label htmlFor="saveAsFavorite" className="text-white text-sm cursor-pointer">
+            📌 Lägg till som favoritartikel
+          </label>
+        </div>
         <Knapp onClick={handleAdd} text={loading ? "✚ Sparar…" : "✚ Lägg till och spara"} />
       </div>
     </div>

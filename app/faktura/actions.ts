@@ -535,3 +535,96 @@ export async function uppdateraKund(id: number, formData: FormData) {
     client.release();
   }
 }
+
+export async function hämtaFöretagsprofil(userId: string): Promise<any | null> {
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT
+        företagsnamn,
+        adress,
+        postnummer,
+        stad,
+        organisationsnummer,
+        momsregistreringsnummer,
+        telefonnummer,
+        bankinfo,
+        webbplats
+      FROM företagsprofil
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    return rows[0] || null;
+  } catch (error) {
+    console.error("Fel vid hämtning av företagsprofil:", error);
+    return null;
+  }
+}
+
+export async function sparaFöretagsprofil(
+  userId: string,
+  data: {
+    företagsnamn: string;
+    adress: string;
+    postnummer: string;
+    stad: string;
+    organisationsnummer: string;
+    momsregistreringsnummer: string;
+    telefonnummer: string;
+    bankinfo: string;
+    webbplats: string;
+  }
+): Promise<{ success: boolean }> {
+  try {
+    await pool.query(
+      `
+      INSERT INTO företagsprofil (
+        id,
+        företagsnamn,
+        adress,
+        postnummer,
+        stad,
+        organisationsnummer,
+        momsregistreringsnummer,
+        telefonnummer,
+        bankinfo,
+        webbplats
+      )
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+      )
+      ON CONFLICT (id)
+      DO UPDATE SET
+        företagsnamn = EXCLUDED.företagsnamn,
+        adress = EXCLUDED.adress,
+        postnummer = EXCLUDED.postnummer,
+        stad = EXCLUDED.stad,
+        organisationsnummer = EXCLUDED.organisationsnummer,
+        momsregistreringsnummer = EXCLUDED.momsregistreringsnummer,
+        telefonnummer = EXCLUDED.telefonnummer,
+        bankinfo = EXCLUDED.bankinfo,
+        webbplats = EXCLUDED.webbplats
+      `,
+      [
+        userId,
+        data.företagsnamn,
+        data.adress,
+        data.postnummer,
+        data.stad,
+        data.organisationsnummer,
+        data.momsregistreringsnummer,
+        data.telefonnummer,
+        data.bankinfo,
+        data.webbplats,
+      ]
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Fel vid sparande av företagsprofil:", error);
+    return { success: false };
+  }
+}

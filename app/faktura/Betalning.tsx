@@ -6,39 +6,30 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { sv } from "date-fns/locale";
 
-registerLocale("sv", sv);
-
-/* ──────────────────────────────────────────────── */
-/*  Hjälpfunktioner                                */
-/* ──────────────────────────────────────────────── */
-
-const parseISODate = (value: unknown): Date | null => {
-  if (value instanceof Date && !isNaN(value.getTime())) return value;
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed === "") return null;
-    const d = new Date(trimmed);
-    return isNaN(d.getTime()) ? null : d;
-  }
-
-  return null;
-};
-
-const addDays = (date: Date, days: number) => {
-  const out = new Date(date);
-  out.setDate(out.getDate() + days);
-  return out;
-};
-
-/* ──────────────────────────────────────────────── */
-/*  Komponent                                      */
-/* ──────────────────────────────────────────────── */
-
-export default function Villkor() {
+export default function Betalning() {
   const { formData, setFormData } = useFakturaContext();
 
-  /* ───────────── Första mount: sätt standardvärden ───────────── */
+  registerLocale("sv", sv);
+
+  const parseISODate = (value: unknown): Date | null => {
+    if (value instanceof Date && !isNaN(value.getTime())) return value;
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed === "") return null;
+      const d = new Date(trimmed);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    return null;
+  };
+
+  const addDays = (date: Date, days: number) => {
+    const out = new Date(date);
+    out.setDate(out.getDate() + days);
+    return out;
+  };
+
   useEffect(() => {
     const todayISO = new Date().toISOString().slice(0, 10);
 
@@ -74,7 +65,6 @@ export default function Villkor() {
     });
   }, [setFormData]);
 
-  /* ─────────── Beräkna datumobjekt för DatePicker ─────────── */
   const fakturadatumDate = parseISODate(formData.fakturadatum);
 
   const fallbackForfallo = fakturadatumDate
@@ -83,7 +73,6 @@ export default function Villkor() {
 
   const forfalloDate = parseISODate(formData.forfallodatum) ?? fallbackForfallo;
 
-  /* ───────── Effekt: uppdatera förfallodatum dynamiskt ──────── */
   useEffect(() => {
     if (!fakturadatumDate) return;
 
@@ -97,7 +86,6 @@ export default function Villkor() {
     }
   }, [fakturadatumDate, formData.betalningsvillkor]);
 
-  /* ─────────── Handlers ─────────── */
   const onDate = (field: "fakturadatum" | "forfallodatum") => (d: Date | null) =>
     setFormData((p) => ({
       ...p,
@@ -107,9 +95,12 @@ export default function Villkor() {
   const onText = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  /* ─────────── UI ─────────── */
+  const onSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+
   return (
     <div className="space-y-6">
+      {/* Villkor: Datum och betalningsvillkor */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Fakturadatum */}
         <div>
@@ -165,6 +156,40 @@ export default function Villkor() {
             onChange={onText}
             className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
           />
+        </div>
+      </div>
+
+      {/* Övrigt: Betalningsmetod */}
+      <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              Välj betalningsmetod
+            </label>
+            <select
+              name="betalningsmetod"
+              value={formData.betalningsmetod ?? ""}
+              onChange={onSelectChange}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
+            >
+              <option value="Bankgiro">Bankgiro</option>
+              <option value="Plusgiro">Plusgiro</option>
+              <option value="Bankkonto">Bankkonto</option>
+              <option value="Swish">Swish</option>
+              <option value="PayPal">PayPal</option>
+              <option value="IBAN">IBAN</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Nummer</label>
+            <input
+              name="nummer"
+              value={formData.nummer ?? ""}
+              onChange={onText}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
+            />
+          </div>
         </div>
       </div>
     </div>

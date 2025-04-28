@@ -6,7 +6,6 @@ import VisaTransaktioner from "./VisaTransaktioner";
 import ForvalDatabas from "./ForvalDatabas";
 import VisaKonton from "./VisaKonton";
 import SQLEditor from "./SQLEditor";
-import Foretagsprofil from "./Foretagsprofil";
 import MainLayout from "../_components/MainLayout";
 
 export default function Admin() {
@@ -25,10 +24,6 @@ export default function Admin() {
         "
       >
         <h1 className="text-3xl text-center text-white mb-6">Adminpanel</h1>
-
-        <AdminFlik title="Företagsprofil" icon="🧑‍💼">
-          <Foretagsprofil />
-        </AdminFlik>
 
         <AdminFlik title="Visa alla tabeller" icon="📑">
           <VisaAllt />

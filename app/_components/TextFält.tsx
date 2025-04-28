@@ -7,7 +7,7 @@ type TextFältProps = {
 
 export default function TextFält({ label, name, value, onChange }: TextFältProps) {
   return (
-    <div className="mb-4">
+    <div>
       <label htmlFor={name} className="block text-sm font-medium text-white mb-2">
         {label}
       </label>

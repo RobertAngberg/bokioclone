@@ -4,14 +4,14 @@ import { useEffect, useState, useTransition } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import KundUppgifter from "./KundUppgifter";
 import ProdukterTjanster from "./ProdukterTjänster";
-import Villkor from "./Villkor";
-import Övrigt from "./Övrigt";
-import ExportPdfButton from "./ExporteraPDFKnapp";
 import Förhandsgranskning from "./Förhandsgranskning";
-import Existerande from "./Existerande";
+import SparadeFakturor from "./SparadeFakturor";
 import AnimeradFlik from "../_components/AnimeradFlik";
 import Knapp from "../_components/Knapp";
 import MainLayout from "../_components/MainLayout";
+import Alternativ from "./Alternativ";
+import Betalning from "./Betalning";
+import Avsandare from "./Avsandare";
 import type { Artikel } from "./actions";
 import {
   saveInvoice,
@@ -171,7 +171,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
         <h1 className="text-3xl text-center mb-8">Fakturor</h1>
 
         <AnimeradFlik title="Sparade fakturor" icon="📂">
-          <Existerande
+          <SparadeFakturor
             onSelectCustomer={hanteraValdKund}
             onSelectInvoice={hanteraValdFaktura}
             onDeleteCustomer={handleDeleteKund}
@@ -189,7 +189,11 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
           />
         </AnimeradFlik>
 
-        <AnimeradFlik title="Kunduppgifter" icon="🧑‍💻">
+        <AnimeradFlik title="Avsändare" icon="🧑‍💻">
+          <Avsandare />
+        </AnimeradFlik>
+
+        <AnimeradFlik title="Kunduppgifter" icon="🧑‍💼">
           <KundUppgifter />
         </AnimeradFlik>
 
@@ -197,23 +201,18 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
           <ProdukterTjanster />
         </AnimeradFlik>
 
-        <AnimeradFlik title="Villkor" icon="⚖️">
-          <Villkor />
+        <AnimeradFlik title="Betalning" icon="💰">
+          <Betalning />
         </AnimeradFlik>
 
-        <AnimeradFlik title="Övrigt" icon="🗒️">
-          <Övrigt />
+        <AnimeradFlik title="Alternativ" icon="⚙️">
+          <Alternativ
+            onSave={handleSave}
+            onReload={() => window.location.reload()}
+            onPrint={() => window.print()}
+            onPreview={() => setShowPreview(true)}
+          />
         </AnimeradFlik>
-
-        <div className="flex flex-wrap justify-between items-center gap-4">
-          <div className="flex gap-2">
-            <Knapp onClick={handleSave} text="💾 Spara" />
-            <ExportPdfButton />
-            <Knapp onClick={() => window.print()} text="🖨️ Skriv ut" />
-            <Knapp onClick={() => window.location.reload()} text="🔁 Börja om" />
-          </div>
-          <Knapp onClick={() => setShowPreview(true)} text="🔍 Förhandsgranska" />
-        </div>
       </MainLayout>
 
       <div id="print-area" className="hidden print:block">
