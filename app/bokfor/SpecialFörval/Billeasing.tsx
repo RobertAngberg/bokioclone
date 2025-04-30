@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Falt from "./Falt";
 import SubmitButton from "./SubmitButton";
 import Forhandsgranskning from "../Förhandsgranskning";
@@ -48,10 +48,17 @@ export default function Billeasing(props: Props) {
     handleSubmit,
   } = props;
 
-  const [leasing, setLeasing] = useState("4000");
-  const [forsakring, setForsakring] = useState("100");
-  const [admin, setAdmin] = useState("80");
-  const [forhojd, setForhojd] = useState("50000");
+  const [leasing, setLeasing] = useState("");
+  const [forsakring, setForsakring] = useState("");
+  const [admin, setAdmin] = useState("");
+  const [forhojd, setForhojd] = useState("0");
+
+  useEffect(() => {
+    if (!transaktionsdatum) {
+      const idag = new Date().toISOString().substring(0, 10);
+      setTransaktionsdatum?.(idag);
+    }
+  }, [transaktionsdatum, setTransaktionsdatum]);
 
   if (mode === "steg2") {
     const handleLocalSubmit = () => {
@@ -60,9 +67,9 @@ export default function Billeasing(props: Props) {
       const forsakringVal = round(parseFloat(forsakring || "0"));
       const forhojdInkl = round(parseFloat(forhojd || "0"));
 
-      const momsLeasing = round(leasingEx * 0.25 * 0.5);
-      const momsAdmin = round(adminEx * 0.25 * 0.5);
-      const momsForhojd = round(forhojdInkl * 0.25 * 0.5);
+      const momsLeasing = round(leasingEx * 0.25);
+      const momsAdmin = round(adminEx * 0.25);
+      const momsForhojd = round(forhojdInkl * 0.25);
       const nettoForhojd = round(forhojdInkl - momsForhojd);
 
       const total = leasingEx + adminEx + forsakringVal + forhojdInkl + momsLeasing + momsAdmin;
@@ -125,26 +132,18 @@ export default function Billeasing(props: Props) {
               value={leasing}
               onChange={setLeasing}
             />
-            <p className="text-sm text-gray-400 mb-4">
-              Moms (25% x 50%): {formatSEK(parseFloat(leasing || "0") * 0.25 * 0.5)} kr
-            </p>
-
             <Falt
               label="Försäkring + skatt"
               type="number"
               value={forsakring}
               onChange={setForsakring}
             />
-
             <Falt
               label="Adminavgifter (exkl. moms)"
               type="number"
               value={admin}
               onChange={setAdmin}
             />
-            <p className="text-sm text-gray-400 mb-4">
-              Moms (25% x 50%): {formatSEK(parseFloat(admin || "0") * 0.25 * 0.5)} kr
-            </p>
 
             <details className="mt-6 group transition-all">
               <summary className="cursor-pointer text-white font-semibold hover:underline flex items-center">
@@ -158,9 +157,6 @@ export default function Billeasing(props: Props) {
                   value={forhojd}
                   onChange={setForhojd}
                 />
-                <p className="text-sm text-gray-400 mt-1">
-                  Moms (25% x 50%): {formatSEK(parseFloat(forhojd || "0") * 0.25 * 0.5)} kr
-                </p>
               </div>
             </details>
 
@@ -173,7 +169,7 @@ export default function Billeasing(props: Props) {
             <Falt
               label="Betaldatum"
               type="date"
-              value={transaktionsdatum ?? ""}
+              value={transaktionsdatum ?? new Date().toISOString().substring(0, 10)}
               onChange={setTransaktionsdatum ?? (() => {})}
             />
 

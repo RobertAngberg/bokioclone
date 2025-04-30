@@ -97,6 +97,7 @@ export async function saveTransaction(formData: FormData) {
   try {
     const kontobeskrivning = valtFörval.namn || "";
 
+    // 1. Skapa huvudtransaktion
     const insertTransactionQuery = `
       INSERT INTO transaktioner (
         transaktionsdatum, kontobeskrivning, belopp, fil, kommentar, "userId"
@@ -116,85 +117,87 @@ export async function saveTransaction(formData: FormData) {
     const transaktionsId = res.rows[0].id;
     console.log("🆔 transaktions_id:", transaktionsId);
 
-    // === Extrafält ===
-    for (const [kontonummer, data] of Object.entries(extrafält)) {
-      const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
-        kontonummer,
-      ]);
+    // 2. Om extrafält finns: bokför endast extrafält
+    if (Object.keys(extrafält).length > 0) {
+      for (const [kontonummer, data] of Object.entries(extrafält)) {
+        const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
+          kontonummer,
+        ]);
 
-      if (kontoRes.rows.length === 0) {
-        console.warn(`⛔ Konto ${kontonummer} hittades inte (extrafält)`);
-        continue;
+        if (kontoRes.rows.length === 0) {
+          console.warn(`⛔ Konto ${kontonummer} hittades inte (extrafält)`);
+          continue;
+        }
+
+        const kontoId = kontoRes.rows[0].id;
+        const debet = Number(data.debet ?? 0);
+        const kredit = Number(data.kredit ?? 0);
+
+        if (debet === 0 && kredit === 0) continue;
+
+        console.log(`➕ Extrafält ${kontonummer}: Debet ${debet}, Kredit ${kredit}`);
+
+        await client.query(
+          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
+           VALUES ($1, $2, $3, $4)`,
+          [transaktionsId, kontoId, debet, kredit]
+        );
       }
+    } else {
+      // 3. Annars: använd valtFörval.konton
+      const getBelopp = (konto: any, typ: "debet" | "kredit") => {
+        const nr = konto.kontonummer?.toString() ?? "";
+        const andel = konto.andelAv;
 
-      const kontoId = kontoRes.rows[0].id;
-      const debet = Number(data.debet ?? 0);
-      const kredit = Number(data.kredit ?? 0);
+        if (andel === "moms") return moms;
+        if (andel === "utanMoms") return beloppUtanMoms;
+        if (andel === "hela") return belopp;
 
-      if (debet === 0 && kredit === 0) continue;
+        const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
+        if (alwaysFull.includes(nr)) return belopp;
 
-      console.log(`➕ Extrafält ${kontonummer}: Debet ${debet}, Kredit ${kredit}`);
+        const prefix = nr[0];
+        if (typ === "debet") {
+          if (prefix === "1") return belopp;
+          if (prefix === "2") return moms;
+          return beloppUtanMoms;
+        }
+        if (typ === "kredit") {
+          if (prefix === "1") return belopp;
+          if (prefix === "2") return moms;
+          if (prefix === "3") return beloppUtanMoms;
+        }
 
-      await client.query(
-        `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
-         VALUES ($1, $2, $3, $4)`,
-        [transaktionsId, kontoId, debet, kredit]
-      );
-    }
+        return 0;
+      };
 
-    // === Vanliga konton ===
-    const getBelopp = (konto: any, typ: "debet" | "kredit") => {
-      const nr = konto.kontonummer?.toString() ?? "";
-      const andel = konto.andelAv;
+      for (const konto of valtFörval.konton) {
+        const kontonummer = konto.kontonummer?.toString().trim();
+        if (!kontonummer) continue;
 
-      if (andel === "moms") return moms;
-      if (andel === "utanMoms") return beloppUtanMoms;
-      if (andel === "hela") return belopp;
+        const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
+          kontonummer,
+        ]);
 
-      const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
-      if (alwaysFull.includes(nr)) return belopp;
+        if (kontoRes.rows.length === 0) {
+          console.warn(`⛔ Konto ${kontonummer} hittades inte`);
+          continue;
+        }
 
-      const prefix = nr[0];
-      if (typ === "debet") {
-        if (prefix === "1") return belopp;
-        if (prefix === "2") return moms;
-        return beloppUtanMoms;
+        const kontoId = kontoRes.rows[0].id;
+        const debet = konto.debet ? getBelopp(konto, "debet") : 0;
+        const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
+
+        if (debet === 0 && kredit === 0) continue;
+
+        console.log(`📘 Konto ${kontonummer} – Debet: ${debet}, Kredit: ${kredit}`);
+
+        await client.query(
+          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
+           VALUES ($1, $2, $3, $4)`,
+          [transaktionsId, kontoId, debet, kredit]
+        );
       }
-      if (typ === "kredit") {
-        if (prefix === "1") return belopp;
-        if (prefix === "2") return moms;
-        if (prefix === "3") return beloppUtanMoms;
-      }
-
-      return 0;
-    };
-
-    for (const konto of valtFörval.konton) {
-      const kontonummer = konto.kontonummer?.toString().trim();
-      if (!kontonummer) continue;
-
-      const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
-        kontonummer,
-      ]);
-
-      if (kontoRes.rows.length === 0) {
-        console.warn(`⛔ Konto ${kontonummer} hittades inte`);
-        continue;
-      }
-
-      const kontoId = kontoRes.rows[0].id;
-      const debet = konto.debet ? getBelopp(konto, "debet") : 0;
-      const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
-
-      if (debet === 0 && kredit === 0) continue;
-
-      console.log(`📘 Konto ${kontonummer} – Debet: ${debet}, Kredit: ${kredit}`);
-
-      await client.query(
-        `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
-         VALUES ($1, $2, $3, $4)`,
-        [transaktionsId, kontoId, debet, kredit]
-      );
     }
 
     client.release();

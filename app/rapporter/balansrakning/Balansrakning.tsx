@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Tabell, { ColumnDefinition } from "@/app/_components/Tabell";
+import Tabell, { ColumnDefinition } from "../../_components/Tabell";
 import MainLayout from "../../_components/MainLayout";
 
 type Konto = {

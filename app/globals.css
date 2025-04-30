@@ -28,20 +28,22 @@
     }
 }
 
-/* 🖨 Print styles */
+/* 🖨 Print + Export styles */
 @media print {
     @page {
         size: A4;
-        margin: 12mm 4mm 15mm 4mm;
+        margin: 0;
     }
 
     html,
     body {
         background: white !important;
         color: black !important;
+        width: 210mm;
+        height: 297mm;
         margin: 0 !important;
         padding: 0 !important;
-        overflow: visible !important;
+        overflow: hidden !important;
     }
 
     body>* {
@@ -53,17 +55,16 @@
         visibility: visible;
     }
 
-    #print-area {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        margin: auto;
-        width: 200mm;
-        padding: 0;
-        background: white;
-        box-sizing: border-box;
-        page-break-after: auto;
+    #print-area,
+    #print-area-clone,
+    #print-area-clone * {
+        background: white !important;
+        color: black !important;
+        visibility: visible !important;
+        box-sizing: border-box !important;
+        width: 210mm;
+        height: 297mm;
+        overflow: hidden;
     }
 
     .text-white {
@@ -85,10 +86,7 @@
     }
 }
 
-
-
-
-/* 💾 Export PDF cleanup */
+/* 💾 Exportera PDF cleanup även på klon */
 .no-bg .shadow,
 .no-bg .shadow-md,
 .no-bg .shadow-lg {
@@ -102,7 +100,7 @@
     padding-bottom: 0.5rem !important;
 }
 
-/* 📅 react-datepicker dark theme */
+/* 📅 react-datepicker dark mode */
 .react-datepicker {
     background-color: #0f172a !important;
     border: 1px solid #334155 !important;

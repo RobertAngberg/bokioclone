@@ -6,9 +6,8 @@
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
     "**/CVS": true,
-    "globals.css": true,
     ".vscode": true,
     "tsconfig.json": true
   },
-  "hide-files.files": [".vscode", "globals.css", "tsconfig.json"]
+  "hide-files.files": [".vscode", "tsconfig.json"]
 }

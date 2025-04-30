@@ -29,7 +29,9 @@ type Props = {
 
 export default function Grundbok({ initialData }: Props) {
   const [year, setYear] = useState("2025");
-  const [historyData] = useState<HistoryItem[]>(initialData);
+  const [historyData] = useState<HistoryItem[]>(
+    [...initialData].sort((a, b) => b.transaktions_id - a.transaktions_id)
+  );
   const [detailsMap, setDetailsMap] = useState<Record<number, TransactionDetail[]>>({});
   const [activeId, setActiveId] = useState<number | null>(null);
 

@@ -5,10 +5,12 @@ import ExportPdfButton from "./ExporteraPDFKnapp";
 
 type AlternativProps = {
   onSave: () => void;
+  onReload: () => void;
+  onPrint: () => void;
   onPreview: () => void;
 };
 
-export default function Alternativ({ onSave, onPreview }: AlternativProps) {
+export default function Alternativ({ onSave, onReload, onPrint, onPreview }: AlternativProps) {
   return (
     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 p-4">
       {/* Vänster sida: Spara, Exportera, Skriv ut, Börja om */}

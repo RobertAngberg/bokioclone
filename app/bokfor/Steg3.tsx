@@ -56,13 +56,6 @@ export default function Steg3({
     null
   );
 
-  const momsSats = valtFörval?.momssats ?? 0;
-  const moms = +(belopp * momsSats).toFixed(2);
-  const beloppUtanMoms = +(belopp - moms).toFixed(2);
-
-  const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-  const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
-
   useEffect(() => {
     if (!valtFörval || valtFörval.specialtyp) return;
 
@@ -75,6 +68,13 @@ export default function Steg3({
       else console.warn("🤷‍♂️ Okänd kontoklass:", res);
     });
   }, [valtFörval, kontonummer]);
+
+  const momsSats = valtFörval?.momssats ?? 0;
+  const moms = +(belopp * (momsSats / (1 + momsSats))).toFixed(2);
+  const beloppUtanMoms = +(belopp - moms).toFixed(2);
+
+  const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
+  const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
   const handleSubmit = async (formData: FormData) => {
     if (!valtFörval) return;
@@ -105,34 +105,32 @@ export default function Steg3({
     );
   }
 
-  const rows = Object.entries(extrafält)
-    .filter(([_, rad]) => (rad.debet ?? 0) !== 0 || (rad.kredit ?? 0) !== 0)
-    .map(([konto, rad], i) => ({
-      key: i,
-      konto: `${konto} ${rad.label ?? ""}`,
-      debet: round(rad.debet),
-      kredit: round(rad.kredit),
-    }));
-
   const fallbackRows =
-    rows.length > 0
-      ? rows
+    valtFörval.specialtyp && Object.keys(extrafält).length > 0
+      ? Object.entries(extrafält).map(([konto, val], i) => ({
+          key: i,
+          konto: konto + " " + (val.label ?? ""),
+          debet: round(val.debet),
+          kredit: round(val.kredit),
+        }))
       : valtFörval.konton.map((rad, i) => {
-          const namn = `${rad.kontonummer} ${rad.beskrivning ?? ""}`;
-          const isMomsKonto = rad.kontonummer?.startsWith("26");
+          const kontoNr = rad.kontonummer?.toString().trim();
+          const namn = `${kontoNr} ${rad.beskrivning ?? ""}`;
+          let beloppAttVisa = 0;
 
-          let beloppAttVisa = belopp;
-          if (momsSats > 0 && isMomsKonto) {
+          if (kontoNr?.startsWith("26")) {
             beloppAttVisa = moms;
-          } else if (momsSats > 0 && !isMomsKonto && !rad.kontonummer?.startsWith("1930")) {
+          } else if (kontoNr === "1930") {
+            beloppAttVisa = belopp;
+          } else {
             beloppAttVisa = beloppUtanMoms;
           }
 
           return {
             key: i,
             konto: namn,
-            debet: rad.debet ? beloppAttVisa : 0,
-            kredit: rad.kredit ? beloppAttVisa : 0,
+            debet: rad.debet ? round(beloppAttVisa) : 0,
+            kredit: rad.kredit ? round(beloppAttVisa) : 0,
           };
         });
 
