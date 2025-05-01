@@ -1,7 +1,10 @@
+//#region Huvud
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainLayout from "../_components/MainLayout";
+import AnimeradFlik from "../_components/AnimeradFlik";
+import Tabell, { ColumnDefinition } from "../_components/Tabell";
 
 type TransactionItem = {
   kontonummer: string;
@@ -19,25 +22,83 @@ type GroupedTransactions = {
 type Props = {
   initialData: TransactionItem[];
 };
+//#endregion
 
 export default function Huvudbok({ initialData }: Props) {
   const [groupedData, setGroupedData] = useState<GroupedTransactions>({});
-  const [expandedAcc, setExpandedAcc] = useState<string | null>(null);
 
+  // Grupperar transaktioner på kontonummer och beskrivning ex "1930 – Företagskonto"
   useEffect(() => {
     const grouped = initialData.reduce<GroupedTransactions>((acc, item) => {
       const key = `${item.kontonummer} – ${item.beskrivning}`;
+      // Om nyckeln inte finns i ackumulatorn än, skapa en tom array och lägg till transaktionen
       (acc[key] ??= []).push({
         ...item,
-        transaktionsdatum: item.transaktionsdatum.slice(0, 10),
+        transaktionsdatum: item.transaktionsdatum.slice(0, 10), // Tar bort tid från datumet
       });
       return acc;
     }, {});
+
+    // Sparar den grupperade datan i state för vidare användning (t.ex. rendering i UI)
     setGroupedData(grouped);
   }, [initialData]);
 
-  const toggleAcc = (key: string) => {
-    setExpandedAcc((prev) => (prev === key ? null : key));
+  const renderTable = (items: TransactionItem[]) => {
+    let saldo = 0;
+
+    const columns: ColumnDefinition<TransactionItem>[] = [
+      {
+        key: "transaktionsdatum",
+        label: "Datum",
+      },
+      {
+        key: "fil",
+        label: "Fil",
+        render: (value) =>
+          value ? (
+            <span className="text-cyan-300 underline">{value}</span>
+          ) : (
+            <span className="text-gray-400 italic">—</span>
+          ),
+      },
+      {
+        key: "debet",
+        label: "Debet",
+        render: (value) =>
+          value
+            ? value.toLocaleString("sv-SE", {
+                style: "currency",
+                currency: "SEK",
+              })
+            : "—",
+      },
+      {
+        key: "kredit",
+        label: "Kredit",
+        render: (value) =>
+          value
+            ? value.toLocaleString("sv-SE", {
+                style: "currency",
+                currency: "SEK",
+              })
+            : "—",
+      },
+      {
+        key: "saldo",
+        label: "Saldo",
+        render: (_, row) => {
+          saldo += (row.debet ?? 0) - (row.kredit ?? 0);
+          return saldo.toLocaleString("sv-SE", {
+            style: "currency",
+            currency: "SEK",
+          });
+        },
+      },
+    ];
+
+    const getRowId = (item: TransactionItem) => `${item.transaktionsdatum}-${item.fil || "nofile"}`;
+
+    return <Tabell data={items} columns={columns} getRowId={getRowId} activeId={null} />;
   };
 
   return (
@@ -65,139 +126,18 @@ export default function Huvudbok({ initialData }: Props) {
             lastSection = section;
 
             return (
-              <React.Fragment key={konto}>
+              <div key={konto}>
                 {showHeading && (
                   <h2 className="text-xl text-white font-semibold mb-2">{section}</h2>
                 )}
-                <Accordion
-                  title={konto}
-                  items={items}
-                  expanded={expandedAcc === konto}
-                  onToggle={() => toggleAcc(konto)}
-                />
-              </React.Fragment>
+                <AnimeradFlik title={konto} icon="📂">
+                  {renderTable(items)}
+                </AnimeradFlik>
+              </div>
             );
           });
         })()}
       </div>
     </MainLayout>
-  );
-}
-
-function Accordion({
-  title,
-  items,
-  expanded,
-  onToggle,
-}: {
-  title: string;
-  items: TransactionItem[];
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState("0px");
-
-  useEffect(() => {
-    if (expanded && contentRef.current) {
-      setHeight(`${contentRef.current.scrollHeight}px`);
-    } else {
-      setHeight("0px");
-    }
-  }, [expanded]);
-
-  let saldo = 0;
-
-  return (
-    <div className="border border-slate-700 rounded-lg shadow overflow-hidden mb-2">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-6 py-3 bg-slate-900 hover:bg-slate-800 cursor-pointer transition"
-      >
-        <span className="text-lg font-bold">{title}</span>
-        <span
-          className={`text-xl transition-transform duration-[150ms] ${
-            expanded ? "rotate-180" : ""
-          }`}
-        >
-          ▼
-        </span>
-      </button>
-
-      <div
-        style={{
-          maxHeight: height,
-          transition: "max-height 0.4s ease-in-out",
-          overflow: "hidden",
-        }}
-      >
-        <div ref={contentRef}>
-          <table className="w-full text-sm">
-            <thead className="bg-slate-800 text-white">
-              <tr>
-                <th className="p-3 pl-6 text-left">Datum</th>
-                <th className="p-3 text-left">Fil</th>
-                <th className="p-3 text-right">Debet</th>
-                <th className="p-3 text-right">Kredit</th>
-                <th className="p-3 text-right">Saldo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((rad, i) => {
-                saldo += (rad.debet ?? 0) - (rad.kredit ?? 0);
-                return (
-                  <tr key={i} className={i % 2 ? "bg-slate-950" : "bg-slate-900"}>
-                    <td className="p-3 pl-6">{rad.transaktionsdatum}</td>
-                    <td className="p-3">
-                      {rad.fil ? (
-                        <span className="text-cyan-300 underline">{rad.fil}</span>
-                      ) : (
-                        <span className="text-gray-400 italic">—</span>
-                      )}
-                    </td>
-                    <td className="p-3 text-right">
-                      {rad.debet
-                        ? rad.debet.toLocaleString("sv-SE", {
-                            style: "currency",
-                            currency: "SEK",
-                          })
-                        : "—"}
-                    </td>
-                    <td className="p-3 text-right">
-                      {rad.kredit
-                        ? rad.kredit.toLocaleString("sv-SE", {
-                            style: "currency",
-                            currency: "SEK",
-                          })
-                        : "—"}
-                    </td>
-                    <td className="p-3 text-right">
-                      {saldo.toLocaleString("sv-SE", {
-                        style: "currency",
-                        currency: "SEK",
-                      })}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {saldo !== 0 && (
-                <tr className="bg-cyan-950 font-semibold">
-                  <td className="p-3 pl-6" colSpan={4}>
-                    {saldo > 0 ? "Utgående balans" : "Ingående balans"}
-                  </td>
-                  <td className="p-3 text-right">
-                    {Math.abs(saldo).toLocaleString("sv-SE", {
-                      style: "currency",
-                      currency: "SEK",
-                    })}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
   );
 }

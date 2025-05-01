@@ -1,8 +1,10 @@
+//#region Huvud
 "use client";
 
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import Knapp from "../_components/Knapp";
+//#endregion
 
 export default function ExporteraPDFKnapp() {
   const handleExport = async () => {

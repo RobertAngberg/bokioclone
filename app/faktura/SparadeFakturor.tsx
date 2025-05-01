@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import { useState } from "react";
@@ -13,31 +14,11 @@ interface Props {
   artiklar?: any[];
   onSelectArtiklar?: (artiklar: any[]) => void;
 }
+//#endregion
 
-export default function Existerande({
-  onSelectCustomer,
-  onSelectInvoice,
-  onDeleteCustomer,
-  onDeleteInvoice,
-  onDeleteArtikel,
-  kunder,
-  fakturor,
-  artiklar = [],
-  onSelectArtiklar,
-}: Props) {
-  const [showLoadedMsg, setShowLoadedMsg] = useState(false);
-  const [fadeOutMsg, setFadeOutMsg] = useState(false);
+export default function Existerande({ onSelectInvoice, onDeleteInvoice, fakturor }: Props) {
   const [showFakturaMsg, setShowFakturaMsg] = useState(false);
   const [fadeOutFakturaMsg, setFadeOutFakturaMsg] = useState(false);
-  const [blinkArtikelId, setBlinkArtikelId] = useState<number | null>(null);
-
-  const handleSelectCustomer = (kund: any) => {
-    onSelectCustomer(kund);
-    setShowLoadedMsg(true);
-    setFadeOutMsg(false);
-    setTimeout(() => setFadeOutMsg(true), 700);
-    setTimeout(() => setShowLoadedMsg(false), 1300);
-  };
 
   const handleSelectInvoice = (id: number) => {
     onSelectInvoice(id);
@@ -45,13 +26,6 @@ export default function Existerande({
     setFadeOutFakturaMsg(false);
     setTimeout(() => setFadeOutFakturaMsg(true), 700);
     setTimeout(() => setShowFakturaMsg(false), 1300);
-  };
-
-  const handleSelectArtikel = (artikel: any) => {
-    if (!onSelectArtiklar) return;
-    onSelectArtiklar([artikel]);
-    setBlinkArtikelId(artikel.id);
-    setTimeout(() => setBlinkArtikelId(null), 200); // Blinkar i 200ms
   };
 
   return (

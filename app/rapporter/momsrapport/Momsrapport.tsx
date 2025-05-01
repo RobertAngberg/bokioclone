@@ -1,35 +1,34 @@
+//#region: Huvud
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import Tabell, { ColumnDefinition } from "../../_components/Tabell";
 import { getMomsrapport } from "./actions";
+import Dropdown from "@/_components/Dropdown";
 
-// --- typer ---
 type MomsRad = {
   fält: string;
   beskrivning: string;
   belopp: number;
 };
+//#endregion
 
 const årLista = ["2023", "2024", "2025"];
 const kvartalLista = ["Hela året", "Q1", "Q2", "Q3", "Q4"];
 
 export default function Momsrapport() {
-  const [data, setData] = useState<MomsRad[]>([]);
+  // Hämtar momsrapportdata baserat på valt år och kvartal, med tillhörande state
+  const { år, setÅr, kvartal, setKvartal, data } = useMomsrapportData();
   const [activeId, setActiveId] = useState<string | number | null>(null);
-  const [år, setÅr] = useState("2025");
-  const [kvartal, setKvartal] = useState("Hela året");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const momsData = await getMomsrapport(år, kvartal === "Hela året" ? undefined : kvartal);
-      setData(momsData);
-    };
-    fetchData();
-  }, [år, kvartal]);
 
   const get = (fält: string) => data.find((r) => r.fält === fält)?.belopp ?? 0;
   const ruta49 = get("49");
+  const sum = (...fält: string[]) => fält.reduce((acc, f) => acc + get(f), 0);
+  const utgåendeMoms = sum("10", "11", "12", "30", "31", "32", "60", "61", "62");
+  const ingåendeMoms = get("48");
+  const momsAttBetalaEllerFaTillbaka = utgåendeMoms - ingåendeMoms;
+  const diff = Math.abs(momsAttBetalaEllerFaTillbaka - ruta49);
+  const ärKorrekt = diff < 1;
 
   const fullData: MomsRad[] = [
     { fält: "05", beskrivning: "Momspliktig försäljning", belopp: get("05") },
@@ -63,16 +62,9 @@ export default function Momsrapport() {
     { fält: "49", beskrivning: "Moms att betala eller få tillbaka", belopp: ruta49 },
   ];
 
-  const sum = (...fält: string[]) => fält.reduce((acc, f) => acc + get(f), 0);
-  const utgåendeMoms = sum("10", "11", "12", "30", "31", "32", "60", "61", "62");
-  const ingåendeMoms = get("48");
-  const momsAttBetalaEllerFaTillbaka = utgåendeMoms - ingåendeMoms;
-  const diff = Math.abs(momsAttBetalaEllerFaTillbaka - ruta49);
-  const ärKorrekt = diff < 1;
-
   const columns: ColumnDefinition<MomsRad>[] = [
-    { key: "fält", label: "Fält", hiddenOnMobile: false },
-    { key: "beskrivning", label: "Beskrivning", hiddenOnMobile: false },
+    { key: "fält", label: "Fält" },
+    { key: "beskrivning", label: "Beskrivning" },
     {
       key: "belopp",
       label: "Belopp",
@@ -135,24 +127,17 @@ export default function Momsrapport() {
       </h1>
 
       <div className="flex justify-center gap-4 mb-8">
-        <select
-          className="bg-white text-gray-800 border border-gray-300 rounded px-3 py-1 text-sm shadow-sm"
-          value={år}
-          onChange={(e) => setÅr(e.target.value)}
-        >
-          {årLista.map((y) => (
-            <option key={y}>{y}</option>
-          ))}
-        </select>
-        <select
-          className="bg-white text-gray-800 border border-gray-300 rounded px-3 py-1 text-sm shadow-sm"
-          value={kvartal}
-          onChange={(e) => setKvartal(e.target.value)}
-        >
-          {kvartalLista.map((k) => (
-            <option key={k}>{k}</option>
-          ))}
-        </select>
+        <Dropdown
+          onChange={setÅr}
+          placeholder="Välj år"
+          options={årLista.map((y) => ({ label: y, value: y }))}
+        />
+
+        <Dropdown
+          onChange={setKvartal}
+          placeholder="Kvartal"
+          options={kvartalLista.map((k) => ({ label: k, value: k }))}
+        />
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 mb-10">
@@ -185,4 +170,20 @@ export default function Momsrapport() {
       </div>
     </div>
   );
+}
+
+function useMomsrapportData() {
+  const [år, setÅr] = useState("2025");
+  const [kvartal, setKvartal] = useState("Hela året");
+  const [data, setData] = useState<MomsRad[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const momsData = await getMomsrapport(år, kvartal === "Hela året" ? undefined : kvartal);
+      setData(momsData);
+    };
+    fetchData();
+  }, [år, kvartal]);
+
+  return { år, setÅr, kvartal, setKvartal, data };
 }

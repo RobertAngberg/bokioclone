@@ -21,6 +21,7 @@ export default function Information({
   transaktionsdatum,
   setTransaktionsdatum,
 }: InformationProps) {
+  // Datepicker
   useEffect(() => {
     const datePickerEl = document.querySelector(".react-datepicker-wrapper");
     if (datePickerEl) {
@@ -34,13 +35,10 @@ export default function Information({
     }
 
     if (!transaktionsdatum) {
+      // Default dagens datum
       setTransaktionsdatum(new Date().toISOString());
     }
-
-    if (!belopp || belopp === 0) {
-      setBelopp(1000);
-    }
-  }, [transaktionsdatum, belopp, setTransaktionsdatum, setBelopp]);
+  }, [transaktionsdatum, setTransaktionsdatum]);
 
   return (
     <div className="padder">

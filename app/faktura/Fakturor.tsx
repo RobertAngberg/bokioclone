@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
@@ -28,6 +29,7 @@ type Props = {
   fakturor: any[];
   artiklar?: Artikel[];
 };
+//#endregion
 
 export default function Fakturor({ kunder: initialKunder, fakturor: initialFakturor }: Props) {
   const { formData, setFormData, setKundStatus } = useFakturaContext();
@@ -37,24 +39,8 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
   const [artiklar, setArtiklar] = useState<Artikel[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    hämtaSparadeArtiklar().then(setArtiklar);
-  }, []);
-
-  useEffect(() => {
-    const reload = async () => {
-      const nyaFakturor = await hämtaSparadeFakturor();
-      setFakturor(nyaFakturor);
-    };
-
-    const handler = () => {
-      reload();
-    };
-
-    window.addEventListener("reloadFakturor", handler);
-
-    return () => window.removeEventListener("reloadFakturor", handler);
-  }, []);
+  // Hämta artiklar vid första render och uppdatera fakturor vid custom-event
+  useInitFakturaData(setArtiklar, setFakturor);
 
   const hanteraValdKund = (kund: any) => {
     setFormData((prev) => ({
@@ -115,7 +101,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
         prisPerEnhet: Number(rad.prisPerEnhet),
         moms: Number(rad.moms),
         valuta: rad.valuta ?? "SEK",
-        typ: (rad.typ === "tjänst" ? "tjänst" : "vara") as "tjänst" | "vara",
+        typ: rad.typ === "tjänst" ? "tjänst" : "vara",
       })),
     });
 
@@ -164,6 +150,26 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
       alert("❌ Kunde inte konvertera artiklar");
     }
   };
+
+  function useInitFakturaData(
+    setArtiklar: React.Dispatch<React.SetStateAction<Artikel[]>>,
+    setFakturor: React.Dispatch<React.SetStateAction<any[]>>
+  ) {
+    useEffect(() => {
+      hämtaSparadeArtiklar().then(setArtiklar);
+    }, [setArtiklar]);
+
+    useEffect(() => {
+      const reload = async () => {
+        const nyaFakturor = await hämtaSparadeFakturor();
+        setFakturor(nyaFakturor);
+      };
+
+      const handler = () => reload();
+      window.addEventListener("reloadFakturor", handler);
+      return () => window.removeEventListener("reloadFakturor", handler);
+    }, [setFakturor]);
+  }
 
   return (
     <>

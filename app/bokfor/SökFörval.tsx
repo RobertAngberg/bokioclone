@@ -1,11 +1,8 @@
 "use client";
 
-// 💡 Använd initialFavoriter direkt i useState istället för useEffect
-//    så att favoriter visas direkt vid första render utan extra blink.
-//    useEffect hade gjort att de dök upp en render för sent.
-
 import { useState, useEffect, useRef } from "react";
 import { fetchAllaForval, loggaFavoritförval } from "./actions";
+import FörvalKort from "./FörvalKort";
 
 type KontoRad = {
   beskrivning: string;
@@ -120,6 +117,7 @@ export default function SokForval({
     const huvudkonto = f.konton.find(
       (k) => k.kontonummer !== "1930" && (k.kredit || k.debet) && !!k.kontonummer
     );
+
     if (huvudkonto) {
       setKontonummer(huvudkonto.kontonummer ?? "");
       setKontobeskrivning(huvudkonto.beskrivning ?? "");
@@ -175,60 +173,12 @@ export default function SokForval({
       {!loading && results.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 animate-fade-in">
           {results.map((f, index) => (
-            <div
+            <FörvalKort
               key={f.id}
-              className={`relative rounded-xl p-4 transition-all duration-200 shadow-md cursor-pointer ${
-                index === highlightedIndex
-                  ? "border-2 border-dashed border-gray-500 bg-slate-800"
-                  : "border border-gray-700 bg-slate-900"
-              }`}
+              förval={f}
+              isHighlighted={index === highlightedIndex}
               onClick={() => väljFörval(f)}
-            >
-              <div className="text-xl font-semibold text-white mb-2">✓ {f.namn}</div>
-              <pre className="whitespace-pre-wrap text-sm italic text-gray-300 mb-2 font-sans">
-                {f.beskrivning}
-              </pre>
-
-              <p className="text-sm text-gray-400">
-                <strong>Typ:</strong> {f.typ} &nbsp; | &nbsp;
-                <strong>Kategori:</strong> {f.kategori}
-              </p>
-
-              <p className="text-sm text-gray-500 mt-2 mb-4">
-                <strong>Sökord:</strong> {f.sökord.join(", ")}
-              </p>
-
-              <table className="w-full border border-gray-700 text-sm text-gray-300">
-                <thead className="bg-slate-800 text-white">
-                  <tr>
-                    <th className="border border-gray-700 px-2 py-1 text-left">Konto</th>
-                    <th className="border border-gray-700 px-2 py-1 text-center">Debet</th>
-                    <th className="border border-gray-700 px-2 py-1 text-center">Kredit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {f.konton.map((konto, i) => (
-                    <tr key={i}>
-                      <td className="border border-gray-700 px-2 py-1">
-                        {konto.kontonummer} {konto.beskrivning}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-center">
-                        {konto.debet === true ? "✓" : (konto.debet ?? "")}
-                      </td>
-                      <td className="border border-gray-700 px-2 py-1 text-center">
-                        {konto.kredit === true ? "✓" : (konto.kredit ?? "")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {index === highlightedIndex && (
-                <div className="mt-3 text-xs text-right text-gray-400">
-                  ⏎ Tryck Enter för att välja
-                </div>
-              )}
-            </div>
+            />
           ))}
         </div>
       )}

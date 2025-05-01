@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import React from "react";
@@ -8,10 +9,12 @@ export interface TableProps<T> {
   data: T[];
   columns: ColumnDefinition<T>[];
   getRowId: (item: T) => string | number;
-  activeId: string | number | null;
-  handleRowClick: (id: string | number) => void;
+  activeId?: string | number | null;
+  handleRowClick?: (id: string | number) => void;
   renderExpandedRow?: (item: T) => React.ReactNode;
+  isRowClickable?: (item: T) => boolean; // 🆕 Valfritt per rad
 }
+//#endregion
 
 export default function Tabell<T>({
   data,
@@ -20,6 +23,7 @@ export default function Tabell<T>({
   activeId,
   handleRowClick,
   renderExpandedRow,
+  isRowClickable,
 }: TableProps<T>) {
   return (
     <div className="max-w-5xl mx-auto overflow-x-auto border border-slate-700 rounded-lg shadow">
@@ -33,7 +37,7 @@ export default function Tabell<T>({
                   key={String(col.key)}
                   className={`${paddingClass} ${col.hiddenOnMobile ? "hidden md:table-cell" : ""}`}
                 >
-                  {col.label}
+                  {col.label ?? String(col.key)}
                 </th>
               );
             })}
@@ -44,12 +48,16 @@ export default function Tabell<T>({
             const id = getRowId(item);
             const isExpanded = activeId === id;
 
+            // 💡 Är raden klickbar? Endast om både prop och funktion finns
+            const isClickable = handleRowClick && (isRowClickable?.(item) ?? true);
+            const onClick = isClickable ? () => handleRowClick(id) : undefined;
+
             return (
               <React.Fragment key={id}>
                 <TabellRad
                   item={item}
                   columns={columns}
-                  onClick={() => handleRowClick(id)}
+                  onClick={onClick}
                   isActive={isExpanded}
                   rowIndex={index}
                 />

@@ -1,6 +1,7 @@
+//#region Huvud
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Tabell, { ColumnDefinition } from "../../_components/Tabell";
 import MainLayout from "../../_components/MainLayout";
 
@@ -19,37 +20,62 @@ type BalansData = {
 type Props = {
   initialData: BalansData;
 };
+//#endregion
 
 export default function Balansrakning({ initialData }: Props) {
-  const { year, tillgangar, skulderOchEgetKapital } = initialData;
+  // Plockar ut beräknad balansdata, kolumner och formatering från incoming data
+  const {
+    year,
+    kolumner,
+    tillgangar,
+    skulderOchEgetKapital,
+    sumTillgangar,
+    sumSkulderEK,
+    differens,
+    formatSEK,
+  } = skapaBalansSammanställning(initialData);
 
-  const [activeTillgangId, setActiveTillgangId] = useState<string | number | null>(null);
-  const [activeSkuldId, setActiveSkuldId] = useState<string | number | null>(null);
+  // Beräknar summeringar och kolumner
+  function skapaBalansSammanställning(data: BalansData) {
+    const { year, tillgangar, skulderOchEgetKapital } = data;
 
-  const total = (konton: Konto[]) => konton.reduce((sum, k) => sum + (k.saldo ?? 0), 0);
+    const sumKonton = (konton: Konto[]) =>
+      konton.reduce((sum, konto) => sum + (konto.saldo ?? 0), 0);
 
-  const sumTillgangar = total(tillgangar);
-  const sumSkulderEK = total(skulderOchEgetKapital);
-  const differens = sumTillgangar - sumSkulderEK;
+    const sumTillgangar = sumKonton(tillgangar);
+    const sumSkulderEK = sumKonton(skulderOchEgetKapital);
+    const differens = sumTillgangar - sumSkulderEK;
 
-  const format = (v: number) =>
-    `${v.toLocaleString("sv-SE", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} kr`;
+    const formatSEK = (v: number) =>
+      `${v.toLocaleString("sv-SE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} kr`;
 
-  const kolumner: ColumnDefinition<Konto>[] = [
-    {
-      key: "kontonummer",
-      label: "Konto",
-      render: (_, row) => `${row.kontonummer} – ${row.beskrivning}`,
-    },
-    {
-      key: "saldo",
-      label: year,
-      render: (v) => format(v),
-    },
-  ];
+    const kolumner: ColumnDefinition<Konto>[] = [
+      {
+        key: "kontonummer",
+        label: "Konto",
+        render: (_, row) => `${row.kontonummer} – ${row.beskrivning}`,
+      },
+      {
+        key: "saldo",
+        label: year,
+        render: (v) => formatSEK(v),
+      },
+    ];
+
+    return {
+      year,
+      kolumner,
+      tillgangar,
+      skulderOchEgetKapital,
+      sumTillgangar,
+      sumSkulderEK,
+      differens,
+      formatSEK,
+    };
+  }
 
   return (
     <MainLayout>
@@ -58,14 +84,8 @@ export default function Balansrakning({ initialData }: Props) {
 
         <section className="mb-12">
           <h2 className="text-xl mb-3">Tillgångar</h2>
-          <Tabell
-            data={tillgangar}
-            columns={kolumner}
-            getRowId={(row) => row.kontonummer}
-            activeId={activeTillgangId}
-            handleRowClick={(id) => setActiveTillgangId(id)}
-          />
-          <p className="mt-4 font-semibold">Summa: {format(sumTillgangar)}</p>
+          <Tabell data={tillgangar} columns={kolumner} getRowId={(row) => row.kontonummer} />
+          <p className="mt-4 font-semibold">Summa: {formatSEK(sumTillgangar)}</p>
         </section>
 
         <section className="mb-12">
@@ -74,10 +94,8 @@ export default function Balansrakning({ initialData }: Props) {
             data={skulderOchEgetKapital}
             columns={kolumner}
             getRowId={(row) => row.kontonummer}
-            activeId={activeSkuldId}
-            handleRowClick={(id) => setActiveSkuldId(id)}
           />
-          <p className="mt-4 font-semibold">Summa: {format(sumSkulderEK)}</p>
+          <p className="mt-4 font-semibold">Summa: {formatSEK(sumSkulderEK)}</p>
         </section>
 
         <section className="mt-8">
@@ -87,7 +105,7 @@ export default function Balansrakning({ initialData }: Props) {
             </p>
           ) : (
             <p className="text-red-400 font-bold text-center text-lg">
-              ❌ Obalans ({format(differens)})
+              ❌ Obalans ({formatSEK(differens)})
             </p>
           )}
         </section>

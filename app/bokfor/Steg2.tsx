@@ -71,7 +71,6 @@ export default function Steg2(props: Step2Props) {
             setBelopp={props.setBelopp}
             setTransaktionsdatum={props.setTransaktionsdatum}
           />
-
           <Information
             belopp={props.belopp ?? 0}
             setBelopp={props.setBelopp}
@@ -80,7 +79,6 @@ export default function Steg2(props: Step2Props) {
           />
 
           <Kommentar kommentar={props.kommentar ?? ""} setKommentar={props.setKommentar} />
-
           <button
             type="button"
             onClick={() => props.setCurrentStep(3)}

@@ -1,7 +1,8 @@
+//#region Huvud
 "use client";
 
 export interface ColumnDefinition<T> {
-  key: keyof T | string; // ✅ Fix: tillåt dynamiska keys (t.ex. "2025")
+  key: keyof T | string;
   label?: string;
   render?: (value: any, row: T) => React.ReactNode;
   hiddenOnMobile?: boolean;
@@ -14,6 +15,7 @@ interface TableRowProps<T> {
   isActive?: boolean;
   rowIndex: number;
 }
+//#endregion
 
 export default function TabellRad<T>({
   item,
@@ -23,13 +25,13 @@ export default function TabellRad<T>({
   rowIndex,
 }: TableRowProps<T>) {
   const rowColorClass = rowIndex % 2 === 0 ? "bg-gray-950" : "bg-gray-900";
+  const activeClass = isActive ? "bg-gray-800" : "";
+  const clickableClass = onClick ? "cursor-pointer hover:bg-gray-700" : "";
 
   return (
     <tr
-      onClick={() => onClick?.(item)}
-      className={`cursor-pointer transition-colors duration-200 ${rowColorClass} hover:bg-gray-700 ${
-        isActive ? "bg-gray-800" : ""
-      }`}
+      onClick={onClick ? () => onClick(item) : undefined}
+      className={`transition-colors duration-200 ${rowColorClass} ${activeClass} ${clickableClass}`}
     >
       {columns.map((col, colIndex) => {
         const rawValue = (item as any)[col.key];
@@ -42,7 +44,9 @@ export default function TabellRad<T>({
         return (
           <td
             key={String(col.key)}
-            className={`${paddingClass} text-left ${col.hiddenOnMobile ? "hidden md:table-cell" : ""}`}
+            className={`${paddingClass} text-left ${
+              col.hiddenOnMobile ? "hidden md:table-cell" : ""
+            }`}
           >
             {renderedValue}
           </td>

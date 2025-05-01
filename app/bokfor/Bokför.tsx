@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import { useState } from "react";
@@ -36,6 +37,7 @@ type Forval = {
 type Props = {
   favoritFörvalen: Forval[];
 };
+//#endregion
 
 export default function Bokför({ favoritFörvalen }: Props) {
   const [currentStep, setCurrentStep] = useState<number>(1);

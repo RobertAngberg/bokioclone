@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import { useFakturaContext } from "./FakturaProvider";
@@ -6,6 +7,7 @@ import html2canvas from "html2canvas";
 import { useSession } from "next-auth/react";
 import { useRef, useState, useEffect } from "react";
 import { hämtaFöretagsprofilFörInloggadAnvändare } from "./actions";
+//#endregion
 
 export default function Forhandsgranskning() {
   const { formData, setFormData } = useFakturaContext();

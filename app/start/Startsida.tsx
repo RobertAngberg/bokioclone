@@ -1,3 +1,4 @@
+//#region: Huvud
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -22,19 +23,11 @@ type YearDataPoint = {
 type Props = {
   initialData: YearSummary;
 };
+//#endregion
 
 export default function Startsida({ initialData }: Props) {
   const [year, setYear] = useState("2025");
-  const [data, setData] = useState<YearSummary | null>(initialData);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (year === "2025") return; // redan laddad via initialData
-    setIsLoading(true);
-    fetchDataFromYear(year)
-      .then((newData) => setData(newData))
-      .finally(() => setIsLoading(false));
-  }, [year]);
+  const { data, isLoading } = useFetchYearSummary(year, initialData);
 
   return (
     <MainLayout>
@@ -53,4 +46,20 @@ export default function Startsida({ initialData }: Props) {
       )}
     </MainLayout>
   );
+}
+
+function useFetchYearSummary(year: string, initialData: YearSummary | null) {
+  const [data, setData] = useState<YearSummary | null>(initialData);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (year === "2025") return;
+
+    setIsLoading(true);
+    fetchDataFromYear(year)
+      .then((newData) => setData(newData))
+      .finally(() => setIsLoading(false));
+  }, [year]);
+
+  return { data, isLoading };
 }

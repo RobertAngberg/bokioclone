@@ -1,9 +1,11 @@
+//#region Huvud
 "use client";
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import TextFält from "../_components/TextFält"; // 👈 Importera din komponent
 import { hämtaFöretagsprofil, sparaFöretagsprofil } from "./actions"; // 👈 Importera actions
+//#endregion
 
 export default function Avsandare() {
   const { data: session } = useSession();
@@ -21,6 +23,7 @@ export default function Avsandare() {
 
   const [sparat, setSparat] = useState(false);
 
+  // Ladda företagsprofil när komponenten mountas
   useEffect(() => {
     const ladda = async () => {
       if (session?.user?.id) {
@@ -31,6 +34,7 @@ export default function Avsandare() {
     ladda();
   }, [session]);
 
+  // Hantera ändringar i formuläret
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));

@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import React, { useState } from "react";
@@ -5,6 +6,7 @@ import Tabell from "../_components/Tabell";
 import { ColumnDefinition } from "../_components/TabellRad";
 import MainLayout from "../_components/MainLayout";
 import { fetchTransactionDetails } from "./actions";
+import Dropdown from "../_components/Dropdown";
 
 export interface HistoryItem {
   transaktions_id: number;
@@ -26,6 +28,7 @@ export interface TransactionDetail {
 type Props = {
   initialData: HistoryItem[];
 };
+//#endregion
 
 export default function Grundbok({ initialData }: Props) {
   const [year, setYear] = useState("2025");
@@ -35,16 +38,20 @@ export default function Grundbok({ initialData }: Props) {
   const [detailsMap, setDetailsMap] = useState<Record<number, TransactionDetail[]>>({});
   const [activeId, setActiveId] = useState<number | null>(null);
 
-  const handleRowClick = async (id: number) => {
-    if (id === activeId) {
-      setActiveId(null);
-    } else {
-      setActiveId(id);
-      if (!detailsMap[id]) {
-        const detailResult = await fetchTransactionDetails(id);
-        setDetailsMap((prev) => ({ ...prev, [id]: detailResult }));
+  const handleRowClick = (id: string | number) => {
+    const numericId = typeof id === "string" ? parseInt(id) : id;
+
+    void (async () => {
+      if (numericId === activeId) {
+        setActiveId(null);
+      } else {
+        setActiveId(numericId);
+        if (!detailsMap[numericId]) {
+          const detailResult = await fetchTransactionDetails(numericId);
+          setDetailsMap((prev) => ({ ...prev, [numericId]: detailResult }));
+        }
       }
-    }
+    })();
   };
 
   const columns: ColumnDefinition<HistoryItem>[] = [
@@ -69,19 +76,19 @@ export default function Grundbok({ initialData }: Props) {
       <div className="text-center mb-8 space-y-4">
         <h1 className="text-3xl">Grundbok</h1>
 
-        <select
-          className="px-4 py-2 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-          id="year"
+        <Dropdown
           value={year}
-          onChange={(e) => setYear(e.target.value)}
-        >
-          <option value="2025">2025</option>
-          <option value="2024">2024</option>
-          <option value="2023">2023</option>
-          <option value="2022">2022</option>
-          <option value="2021">2021</option>
-          <option value="2020">2020</option>
-        </select>
+          onChange={setYear}
+          placeholder="Välj år"
+          options={[
+            { label: "2025", value: "2025" },
+            { label: "2024", value: "2024" },
+            { label: "2023", value: "2023" },
+            { label: "2022", value: "2022" },
+            { label: "2021", value: "2021" },
+            { label: "2020", value: "2020" },
+          ]}
+        />
       </div>
 
       <Tabell

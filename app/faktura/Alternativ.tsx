@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import Knapp from "../_components/Knapp";
@@ -9,6 +10,7 @@ type AlternativProps = {
   onPrint: () => void;
   onPreview: () => void;
 };
+//#endregion
 
 export default function Alternativ({ onSave, onReload, onPrint, onPreview }: AlternativProps) {
   return (

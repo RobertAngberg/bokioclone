@@ -1,14 +1,18 @@
+//#region Huvud
 "use client";
 
 import { useState, useEffect } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import { sparaNyKund, deleteKund, hämtaSparadeKunder, uppdateraKund } from "./actions";
 import Knapp from "../_components/Knapp";
+import Dropdown from "../_components/Dropdown";
+import TextFält from "../_components/TextFält";
 
 type KundSaveResponse = {
   success: boolean;
   id?: number;
 };
+//#endregion
 
 export default function KundUppgifter() {
   const { formData, setFormData, kundStatus, setKundStatus, resetKund } = useFakturaContext();
@@ -28,10 +32,7 @@ export default function KundUppgifter() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
-
-    if (kundStatus === "loaded") {
-      setKundStatus("editing");
-    }
+    if (kundStatus === "loaded") setKundStatus("editing");
   };
 
   const handleSave = async () => {
@@ -46,27 +47,19 @@ export default function KundUppgifter() {
     fd.append("kundstad", formData.kundstad);
     fd.append("kundemail", formData.kundemail);
 
-    let res: KundSaveResponse;
-
-    if (formData.kundId) {
-      // 🔥 Om vi redigerar en existerande kund
-      res = await uppdateraKund(parseInt(formData.kundId, 10), fd);
-    } else {
-      // 🔥 Annars sparar vi en ny kund
-      res = await sparaNyKund(fd);
-    }
+    const res: KundSaveResponse = formData.kundId
+      ? await uppdateraKund(parseInt(formData.kundId, 10), fd)
+      : await sparaNyKund(fd);
 
     setLoading(false);
 
     if (res.success) {
       if (!formData.kundId && res.id) {
-        // Om vi skapade en ny kund, spara ID
         setFormData((p) => ({ ...p, kundId: res.id!.toString() }));
       }
-      setKundStatus("loaded"); // Efter sparning, markera som loaded
+      setKundStatus("loaded");
       setShowSuccess(true);
       setFadeOut(false);
-
       setTimeout(() => setFadeOut(true), 1500);
       setTimeout(() => setShowSuccess(false), 3000);
     } else {
@@ -100,8 +93,7 @@ export default function KundUppgifter() {
 
   const handleDeleteCustomer = async () => {
     if (!formData.kundId) return;
-    const confirmed = confirm("Är du säker på att du vill ta bort kunden?");
-    if (!confirmed) return;
+    if (!confirm("Är du säker på att du vill ta bort kunden?")) return;
     await deleteKund(parseInt(formData.kundId, 10));
     resetKund();
     setKundStatus("none");
@@ -111,20 +103,16 @@ export default function KundUppgifter() {
 
   return (
     <div className="space-y-6 text-white">
-      {/* Toppsektion */}
       <div className="flex flex-col md:flex-row md:items-center gap-4">
-        <select
+        <Dropdown
           value={formData.kundId ?? ""}
-          onChange={(e) => handleSelectCustomer(e.target.value)}
-          className="h-10 px-3 rounded bg-slate-800 border border-slate-700 text-white"
-        >
-          <option value="">Välj existerande kund</option>
-          {kunder.map((kund) => (
-            <option key={kund.id} value={kund.id}>
-              {kund.kundnamn}
-            </option>
-          ))}
-        </select>
+          onChange={handleSelectCustomer}
+          placeholder="Välj existerande kund"
+          options={kunder.map((kund) => ({
+            label: kund.kundnamn,
+            value: kund.id.toString(),
+          }))}
+        />
 
         {kundStatus === "loaded" && (
           <div className="flex gap-2">
@@ -136,7 +124,6 @@ export default function KundUppgifter() {
         <Knapp onClick={handleCreateNewCustomer} text="➕ Skapa ny kund" />
       </div>
 
-      {/* Visa info om vald kund */}
       {kundStatus === "loaded" && (
         <div className="space-y-2 bg-slate-800 p-4 rounded">
           <p>
@@ -163,91 +150,64 @@ export default function KundUppgifter() {
         </div>
       )}
 
-      {/* Redigeringsformulär */}
       {kundStatus === "editing" && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Kundnamn</label>
-              <input
-                name="kundnamn"
-                value={formData.kundnamn}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Organisationsnummer</label>
-              <input
-                name="kundorganisationsnummer"
-                value={formData.kundorganisationsnummer}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Kundnummer</label>
-              <input
-                name="kundnummer"
-                value={formData.kundnummer}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Momsnummer</label>
-              <input
-                name="kundmomsnummer"
-                value={formData.kundmomsnummer}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">E‑post</label>
-              <input
-                name="kundemail"
-                value={formData.kundemail}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Adress</label>
-              <input
-                name="kundadress"
-                value={formData.kundadress}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Postnummer</label>
-              <input
-                name="kundpostnummer"
-                value={formData.kundpostnummer}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Stad</label>
-              <input
-                name="kundstad"
-                value={formData.kundstad}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700"
-              />
-            </div>
+            <TextFält
+              label="Kundnamn"
+              name="kundnamn"
+              value={formData.kundnamn}
+              onChange={handleChange}
+            />
+            <TextFält
+              label="Organisationsnummer"
+              name="kundorganisationsnummer"
+              value={formData.kundorganisationsnummer}
+              onChange={handleChange}
+            />
+            <TextFält
+              label="Kundnummer"
+              name="kundnummer"
+              value={formData.kundnummer}
+              onChange={handleChange}
+            />
+            <TextFält
+              label="Momsnummer"
+              name="kundmomsnummer"
+              value={formData.kundmomsnummer}
+              onChange={handleChange}
+            />
+            <TextFält
+              label="E‑post"
+              name="kundemail"
+              value={formData.kundemail}
+              onChange={handleChange}
+            />
+            <TextFält
+              label="Adress"
+              name="kundadress"
+              value={formData.kundadress}
+              onChange={handleChange}
+            />
+            <TextFält
+              label="Postnummer"
+              name="kundpostnummer"
+              value={formData.kundpostnummer}
+              onChange={handleChange}
+            />
+            <TextFält
+              label="Stad"
+              name="kundstad"
+              value={formData.kundstad}
+              onChange={handleChange}
+            />
           </div>
 
           <div className="pt-4 flex items-center gap-4">
             <Knapp onClick={handleSave} text="💾 Spara kund" />
             {showSuccess && (
               <span
-                className={`text-green-400 transition-opacity duration-500 ${
-                  fadeOut ? "opacity-0" : "opacity-100"
-                }`}
+                className={`text-green-400 transition-opacity duration-500 ${fadeOut ? "opacity-0" : "opacity-100"}`}
               >
                 ✅ Sparat!
               </span>

@@ -1,40 +1,42 @@
+//#region Huvud
 "use client";
 
 import { useFakturaContext } from "./FakturaProvider";
 import { useEffect } from "react";
-
-const rutKategorier = [
-  "Passa barn",
-  "Fiber- och it-tjänster",
-  "Flytta och packa",
-  "Transport till försäljning för återanvändning",
-  "Möblering",
-  "Ta hand om en person och ge omsorg",
-  "Reparera vitvaror",
-  "Skotta snö",
-  "Städa",
-  "Tvätta, laga och sy",
-  "Tvätt vid tvättinrättning",
-  "Trädgårdsarbete – fälla och beskära träd",
-  "Trädgårdsarbete – underhålla, klippa och gräva",
-  "Tillsyn",
-];
-
-const rotKategorier = [
-  "Bygg – reparera och underhålla",
-  "Bygg – bygga om och bygga till",
-  "El",
-  "Glas och plåt",
-  "Gräv- och markarbete",
-  "Murning och sotning",
-  "Målning och tapetsering",
-  "Rengöring",
-  "VVS",
-];
+//#endregion
 
 export default function RotRutForm() {
   const { formData, setFormData, nyArtikel } = useFakturaContext();
   const artiklar = formData.artiklar || [];
+
+  const rutKategorier = [
+    "Passa barn",
+    "Fiber- och it-tjänster",
+    "Flytta och packa",
+    "Transport till försäljning för återanvändning",
+    "Möblering",
+    "Ta hand om en person och ge omsorg",
+    "Reparera vitvaror",
+    "Skotta snö",
+    "Städa",
+    "Tvätta, laga och sy",
+    "Tvätt vid tvättinrättning",
+    "Trädgårdsarbete – fälla och beskära träd",
+    "Trädgårdsarbete – underhålla, klippa och gräva",
+    "Tillsyn",
+  ];
+
+  const rotKategorier = [
+    "Bygg – reparera och underhålla",
+    "Bygg – bygga om och bygga till",
+    "El",
+    "Glas och plåt",
+    "Gräv- och markarbete",
+    "Murning och sotning",
+    "Målning och tapetsering",
+    "Rengöring",
+    "VVS",
+  ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

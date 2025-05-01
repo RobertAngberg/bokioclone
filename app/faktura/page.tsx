@@ -1,7 +1,8 @@
-// app/faktura/page.tsx
+//#region Huvud
 import { FakturaProvider } from "./FakturaProvider";
 import Fakturor from "./Fakturor";
 import { hämtaSparadeKunder, hämtaSparadeFakturor, hämtaSparadeArtiklar } from "./actions";
+//#endregion
 
 export default async function Page() {
   await new Promise((r) => setTimeout(r, 400));
