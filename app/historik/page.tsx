@@ -1,5 +1,4 @@
-// ✅ app/grundbok/page.tsx
-import Grundbok from "./Grundbok";
+import Historik from "./Historik";
 import { fetchTransaktioner } from "./actions";
 
 export default async function Page() {
@@ -18,5 +17,5 @@ export default async function Page() {
         }))
       : [];
 
-  return <Grundbok initialData={historyData} />;
+  return <Historik initialData={historyData} />;
 }

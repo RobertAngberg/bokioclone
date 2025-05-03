@@ -18,9 +18,9 @@ const rapporter = [
   },
   {
     emoji: "🏦",
-    title: "Balansräkning",
+    title: "Balansrapport",
     description: "Tillgångar/skulder vid ett visst datum.",
-    href: "/rapporter/balansrakning",
+    href: "/rapporter/balansrapport",
   },
   {
     emoji: "📈",

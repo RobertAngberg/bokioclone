@@ -1,5 +1,5 @@
 import { fetchBalansData } from "./actions";
-import Balansrakning from "./Balansrakning";
+import Balansrapport from "./Balansrapport";
 
 export default async function Page() {
   const year = "2025";
@@ -9,5 +9,5 @@ export default async function Page() {
     return <div className="text-white p-8">❌ Ingen balansdata tillgänglig för {year}.</div>;
   }
 
-  return <Balansrakning initialData={data} />;
+  return <Balansrapport initialData={data} />;
 }

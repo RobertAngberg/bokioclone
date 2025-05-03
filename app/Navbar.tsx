@@ -15,6 +15,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Hem" },
     { href: "/bokfor", label: "Bokför" },
+    { href: "/historik", label: "Historik" },
     { href: "/faktura", label: "Fakturor" },
     { href: "/rapporter", label: "Rapporter" },
     ...(session?.user ? [{ href: "/admin", label: "Admin" }] : []),

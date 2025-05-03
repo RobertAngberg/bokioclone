@@ -1,12 +1,12 @@
-//#region Huvud
 "use client";
 
 import React, { useState } from "react";
 import Tabell from "../_components/Tabell";
 import { ColumnDefinition } from "../_components/TabellRad";
 import MainLayout from "../_components/MainLayout";
-import { fetchTransactionDetails } from "./actions";
+import { fetchTransactionDetails, exporteraTransaktionerMedPoster } from "./actions";
 import Dropdown from "../_components/Dropdown";
+import Knapp from "../_components/Knapp";
 
 export interface HistoryItem {
   transaktions_id: number;
@@ -28,9 +28,8 @@ export interface TransactionDetail {
 type Props = {
   initialData: HistoryItem[];
 };
-//#endregion
 
-export default function Grundbok({ initialData }: Props) {
+export default function Historik({ initialData }: Props) {
   const [year, setYear] = useState("2025");
   const [historyData] = useState<HistoryItem[]>(
     [...initialData].sort((a, b) => b.transaktions_id - a.transaktions_id)
@@ -54,6 +53,23 @@ export default function Grundbok({ initialData }: Props) {
     })();
   };
 
+  const handleExport = async () => {
+    const exportData = await exporteraTransaktionerMedPoster(year);
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `transaktioner_${year}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const columns: ColumnDefinition<HistoryItem>[] = [
     { key: "transaktions_id", label: "ID" },
     { key: "transaktionsdatum", label: "Datum" },
@@ -74,7 +90,7 @@ export default function Grundbok({ initialData }: Props) {
   return (
     <MainLayout>
       <div className="text-center mb-8 space-y-4">
-        <h1 className="text-3xl">Grundbok</h1>
+        <h1 className="text-3xl">Historik</h1>
 
         <Dropdown
           value={year}
@@ -89,6 +105,10 @@ export default function Grundbok({ initialData }: Props) {
             { label: "2020", value: "2020" },
           ]}
         />
+
+        <div className="pt-2">
+          <Knapp onClick={handleExport} text="Exportera JSON" />
+        </div>
       </div>
 
       <Tabell

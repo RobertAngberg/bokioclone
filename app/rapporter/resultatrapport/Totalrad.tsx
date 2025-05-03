@@ -1,30 +1,27 @@
-export default function Totalrad({
-  label,
-  values,
-  isCost,
-}: {
+type Props = {
   label: string;
-  values: Record<string, number>;
+  values: Record<string, number | string>;
   isCost?: boolean;
-}) {
-  const format = (val: number) =>
-    (isCost ? "-" : "") +
-    Math.abs(val).toLocaleString("sv-SE", { minimumFractionDigits: 2 }) +
-    " kr";
+};
 
+export default function Totalrad({ label, values, isCost = false }: Props) {
   return (
-    <div className="w-full border-t border-slate-600 mb-2 pt-0">
-      <div className="flex justify-between items-center text-white font-bold text-[16px] px-6 py-3 bg-slate-800">
-        <div>{label}</div>
-        <div className="flex gap-6">
-          {Object.keys(values)
-            .sort((a, b) => parseInt(a) - parseInt(b))
-            .map((year) => (
-              <div key={year} className="text-right min-w-[80px]" title={year}>
-                {format(values[year] || 0)}
-              </div>
-            ))}
-        </div>
+    <div className="flex justify-between items-center font-semibold border-t border-slate-500 py-3 px-6 bg-slate-900 mt-2">
+      <span>{label}</span>
+      <div className="flex gap-8">
+        {Object.entries(values).map(([year, value]) => {
+          const num = typeof value === "number" ? value : parseFloat(value as string) || 0;
+          const displayValue = isCost ? -Math.abs(num) : Math.abs(num);
+          return (
+            <span key={year} className="min-w-[100px] text-right">
+              {displayValue.toLocaleString("sv-SE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}{" "}
+              kr
+            </span>
+          );
+        })}
       </div>
     </div>
   );

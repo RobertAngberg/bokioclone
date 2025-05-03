@@ -36,32 +36,38 @@ export async function hamtaResultatrapport() {
   );
 
   const rows = result.rows;
-  console.log("📦 Alla rader:", rows.length, "exempel:", rows[0]);
 
   const årsSet = new Set<string>();
-  const intakterMap = new Map<string, any>(); // gruppnamn -> konton
-  const kostnaderMap = new Map<string, any>();
+  const intakterMap = new Map<string, Map<string, any>>();
+  const rorelsensMap = new Map<string, Map<string, any>>();
+  const finansiellaMap = new Map<string, Map<string, any>>();
 
   for (const row of rows) {
     const år = String(row.år);
     årsSet.add(år);
 
     const { kontonummer, beskrivning, kontoklass, debet, kredit } = row;
-    const belopp = debet - kredit; // netto
+    const belopp = debet - kredit;
 
-    const isIntakt = kontonummer.startsWith("3");
-    const isKostnad = /^[4-8]/.test(kontonummer);
+    let målMap: Map<string, Map<string, any>> | null = null;
+    let grupp = "";
 
-    const grupp = getGruppNamn(kontonummer, kontoklass, isIntakt);
-
-    const map = isIntakt ? intakterMap : isKostnad ? kostnaderMap : null;
-    if (!map) continue;
-
-    if (!map.has(grupp)) {
-      map.set(grupp, new Map()); // kontonummer -> { belopp per år }
+    if (/^3/.test(kontonummer)) {
+      målMap = intakterMap;
+      grupp = "Nettoomsättning";
+    } else if (/^[4-7]/.test(kontonummer)) {
+      målMap = rorelsensMap;
+      grupp = getGruppNamn(kontonummer, kontoklass);
+    } else if (/^8/.test(kontonummer)) {
+      målMap = finansiellaMap;
+      grupp = getGruppNamn(kontonummer, kontoklass);
     }
 
-    const kontoMap = map.get(grupp);
+    if (!målMap) continue;
+
+    if (!målMap.has(grupp)) målMap.set(grupp, new Map());
+    const kontoMap = målMap.get(grupp)!;
+
     if (!kontoMap.has(kontonummer)) {
       kontoMap.set(kontonummer, {
         kontonummer,
@@ -87,25 +93,21 @@ export async function hamtaResultatrapport() {
       return { namn, konton, summering };
     });
 
-  const intakter = formatData(intakterMap);
-  const kostnader = formatData(kostnaderMap);
-
-  const resultat = { ar: years, intakter, kostnader };
-
-  console.log("✅ Returnerar resultatrapport:");
-  console.log(JSON.stringify(resultat, null, 2));
-
-  return resultat;
+  return {
+    ar: years,
+    intakter: formatData(intakterMap),
+    rorelsensKostnader: formatData(rorelsensMap),
+    finansiellaKostnader: formatData(finansiellaMap),
+  };
 }
 
 // 🧠 Gruppnamn baserat på kontonummer
-function getGruppNamn(kontonummer: string, kontoklass: string, isIntakt: boolean): string {
-  if (isIntakt) return "Nettoomsättning";
-
+function getGruppNamn(kontonummer: string, kontoklass: string): string {
   if (/^4/.test(kontonummer)) return "Varukostnader";
-  if (/^5/.test(kontonummer)) return "Förbrukningsinventarier och material";
+  if (/^5/.test(kontonummer)) return "Förbrukningsinventarier";
   if (/^6/.test(kontonummer)) return "Försäljningskostnader";
   if (/^7/.test(kontonummer)) return "Administrationskostnader";
+  if (/^8/.test(kontonummer)) return "Finansiella kostnader";
 
   return kontoklass || "Övrigt";
 }

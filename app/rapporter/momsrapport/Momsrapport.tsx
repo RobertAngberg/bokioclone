@@ -19,6 +19,7 @@ const kvartalLista = ["Hela året", "Q1", "Q2", "Q3", "Q4"];
 export default function Momsrapport() {
   // Hämtar momsrapportdata baserat på valt år och kvartal, med tillhörande state
   const { år, setÅr, kvartal, setKvartal, data } = useMomsrapportData();
+
   const [activeId, setActiveId] = useState<string | number | null>(null);
 
   const get = (fält: string) => data.find((r) => r.fält === fält)?.belopp ?? 0;
