@@ -106,9 +106,7 @@ export default function Historik({ initialData }: Props) {
           ]}
         />
 
-        <div className="pt-2">
-          <Knapp onClick={handleExport} text="Exportera JSON" />
-        </div>
+        <div className="pt-2">{/* <Knapp onClick={handleExport} text="Exportera JSON" /> */}</div>
       </div>
 
       <Tabell

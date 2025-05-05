@@ -1,7 +1,10 @@
+// #region Huvud
 "use client";
 
 import MainLayout from "../../_components/MainLayout";
 import AnimeradFlik from "../../_components/AnimeradFlik";
+import Totalrad from "../../_components/Totalrad";
+import InreTabell from "../../_components/InreTabell";
 
 type Transaktion = {
   id: string;
@@ -26,6 +29,7 @@ type BalansData = {
 type Props = {
   initialData: BalansData;
 };
+// #endregion
 
 export default function Balansrapport({ initialData }: Props) {
   const {
@@ -65,55 +69,24 @@ export default function Balansrapport({ initialData }: Props) {
     };
   }
 
-  const renderTransaktioner = (transaktioner: Transaktion[]) =>
-    transaktioner.map((tx) => (
-      <div
-        key={tx.id + String(tx.datum)}
-        className="flex justify-between text-sm py-1 pl-4 text-white"
-      >
-        <div>
-          <span>{tx.id}</span>
-          <span className="mx-1">·</span>
-          <span>{new Date(tx.datum).toISOString().slice(0, 10)}</span>
-          {tx.beskrivning && (
-            <>
-              <span className="mx-1">·</span>
-              <span>{tx.beskrivning}</span>
-            </>
-          )}
-        </div>
-        <div>{formatSEK(tx.belopp)}</div>
-      </div>
-    ));
-
-  const renderKonton = (konton: Konto[]) =>
-    konton.map((konto) => (
-      <AnimeradFlik
-        key={konto.kontonummer}
-        title={`${konto.kontonummer} – ${konto.beskrivning}`}
-        icon=""
-      >
-        <div className="flex justify-between text-sm font-semibold text-white mb-2">
-          <span>Saldo</span>
-          <span>{formatSEK(konto.saldo)}</span>
-        </div>
-        {renderTransaktioner(konto.transaktioner)}
+  const renderKategori = (titel: string, icon: string, konton: Konto[]) => {
+    const summa = konton.reduce((a, b) => a + b.saldo, 0);
+    return (
+      <AnimeradFlik title={titel} icon={icon}>
+        <InreTabell
+          rows={konton.map((konto) => ({
+            label: `${konto.kontonummer} – ${konto.beskrivning}`,
+            value: konto.saldo,
+          }))}
+          totalLabel={`Summa ${titel.toLowerCase()}`}
+          totalValue={summa}
+        />
       </AnimeradFlik>
-    ));
-
-  const renderKategori = (titel: string, icon: string, konton: Konto[]) => (
-    <AnimeradFlik title={titel} icon={icon}>
-      {renderKonton(konton)}
-      <div className="flex justify-between border-t border-gray-600 pt-2 mt-2 font-semibold text-white">
-        <span>Summa {titel.toLowerCase()}</span>
-        <span>{formatSEK(konton.reduce((a, b) => a + b.saldo, 0))}</span>
-      </div>
-    </AnimeradFlik>
-  );
+    );
+  };
 
   const omsättningstillgångar = tillgangar.filter((k) => /^19|^16|^17/.test(k.kontonummer));
   const anläggningstillgångar = tillgangar.filter((k) => /^1(0|1)/.test(k.kontonummer));
-
   const egetKapital = skulderOchEgetKapital.filter((k) => /^2(0|1)/.test(k.kontonummer));
   const kortfristigaSkulder = skulderOchEgetKapital.filter((k) => /^2(4|6)/.test(k.kontonummer));
   const långfristigaSkulder = skulderOchEgetKapital.filter((k) => /^2(3)/.test(k.kontonummer));
@@ -127,11 +100,7 @@ export default function Balansrapport({ initialData }: Props) {
         <h2 className="text-xl mb-4 border-b border-gray-500 pb-1">Tillgångar</h2>
         {renderKategori("Anläggningstillgångar", "🏗️", anläggningstillgångar)}
         {renderKategori("Omsättningstillgångar", "💼", omsättningstillgångar)}
-
-        <div className="flex justify-between mt-4 border-t border-gray-500 pt-2 font-bold">
-          <span>Summa tillgångar</span>
-          <span>{formatSEK(sumTillgangar)}</span>
-        </div>
+        <Totalrad label="Summa tillgångar" values={{ [year]: sumTillgangar }} />
 
         <h2 className="text-xl mt-12 mb-4 border-b border-gray-500 pb-1">
           Eget kapital och skulder
@@ -142,11 +111,7 @@ export default function Balansrapport({ initialData }: Props) {
         ])}
         {renderKategori("Långfristiga skulder", "🏦", långfristigaSkulder)}
         {renderKategori("Kortfristiga skulder", "⏳", kortfristigaSkulder)}
-
-        <div className="flex justify-between mt-4 border-t border-gray-500 pt-2 font-bold">
-          <span>Summa eget kapital och skulder</span>
-          <span>{formatSEK(sumSkulderEK)}</span>
-        </div>
+        <Totalrad label="Summa eget kapital och skulder" values={{ [year]: sumSkulderEK }} isCost />
 
         <section className="mt-8">
           {differens === 0 ? (

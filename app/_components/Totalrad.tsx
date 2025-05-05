@@ -6,7 +6,7 @@ type Props = {
 
 export default function Totalrad({ label, values, isCost = false }: Props) {
   return (
-    <div className="flex justify-between items-center font-semibold border-t border-slate-500 py-3 px-6 bg-slate-900 mt-2">
+    <div className="flex justify-between items-center font-semibold border-t border-slate-500 py-3 mt-2">
       <span>{label}</span>
       <div className="flex gap-8">
         {Object.entries(values).map(([year, value]) => {

@@ -1,14 +1,13 @@
-//#region Huvud
 "use client";
 
 import React, { useEffect, useState } from "react";
 import MainLayout from "../_components/MainLayout";
 import AnimeradFlik from "../_components/AnimeradFlik";
-import Tabell, { ColumnDefinition } from "../_components/Tabell";
+import InreTabell from "../_components/InreTabell";
 
 type TransactionItem = {
   kontonummer: string;
-  beskrivning: string;
+  beskrivning: string; // transaktionsbeskrivning
   transaktionsdatum: string;
   fil: string;
   debet: number;
@@ -22,89 +21,60 @@ type GroupedTransactions = {
 type Props = {
   initialData: TransactionItem[];
 };
-//#endregion
 
 export default function Huvudbok({ initialData }: Props) {
   const [groupedData, setGroupedData] = useState<GroupedTransactions>({});
 
-  // Grupperar transaktioner på kontonummer och beskrivning ex "1930 – Företagskonto"
   useEffect(() => {
     const grouped = initialData.reduce<GroupedTransactions>((acc, item) => {
-      const key = `${item.kontonummer} – ${item.beskrivning}`;
-      // Om nyckeln inte finns i ackumulatorn än, skapa en tom array och lägg till transaktionen
+      const key = item.kontonummer;
       (acc[key] ??= []).push({
         ...item,
-        transaktionsdatum: item.transaktionsdatum.slice(0, 10), // Tar bort tid från datumet
+        transaktionsdatum: item.transaktionsdatum.slice(0, 10),
       });
       return acc;
     }, {});
-
-    // Sparar den grupperade datan i state för vidare användning (t.ex. rendering i UI)
     setGroupedData(grouped);
   }, [initialData]);
+
+  const formatSEK = (val: number) =>
+    val.toLocaleString("sv-SE", {
+      style: "currency",
+      currency: "SEK",
+    });
 
   const renderTable = (items: TransactionItem[]) => {
     let saldo = 0;
 
-    const columns: ColumnDefinition<TransactionItem>[] = [
-      {
-        key: "transaktionsdatum",
-        label: "Datum",
-      },
-      {
-        key: "fil",
-        label: "Fil",
-        render: (value) =>
-          value ? (
-            <span className="text-cyan-300 underline">{value}</span>
-          ) : (
-            <span className="text-gray-400 italic">—</span>
-          ),
-      },
-      {
-        key: "debet",
-        label: "Debet",
-        render: (value) =>
-          value
-            ? value.toLocaleString("sv-SE", {
-                style: "currency",
-                currency: "SEK",
-              })
-            : "—",
-      },
-      {
-        key: "kredit",
-        label: "Kredit",
-        render: (value) =>
-          value
-            ? value.toLocaleString("sv-SE", {
-                style: "currency",
-                currency: "SEK",
-              })
-            : "—",
-      },
-      {
-        key: "saldo",
-        label: "Saldo",
-        render: (_, row) => {
-          saldo += (row.debet ?? 0) - (row.kredit ?? 0);
-          return saldo.toLocaleString("sv-SE", {
-            style: "currency",
-            currency: "SEK",
-          });
-        },
-      },
-    ];
+    const rows = items.map((item) => {
+      saldo += (item.debet ?? 0) - (item.kredit ?? 0);
+      return {
+        kontonummer: item.kontonummer,
+        beskrivning: item.beskrivning,
+        datum: item.transaktionsdatum, // 👈 Ändrat här
+        fil: item.fil,
+        debet: item.debet,
+        kredit: item.kredit,
+        saldo,
+      };
+    });
 
-    const getRowId = (item: TransactionItem) => `${item.transaktionsdatum}-${item.fil || "nofile"}`;
+    const utgåendeBalans = rows.at(-1)?.saldo ?? 0;
 
-    return <Tabell data={items} columns={columns} getRowId={getRowId} activeId={null} />;
+    return (
+      <div className="space-y-2">
+        <div className="text-sm text-white font-semibold mb-2">Ingående balans 0,00 kr</div>
+        <InreTabell rows={rows} />
+        <div className="text-sm text-white font-semibold mt-4 text-right">
+          Utgående balans {formatSEK(utgåendeBalans)}
+        </div>
+      </div>
+    );
   };
 
   return (
     <MainLayout>
-      <h1 className="mb-8 text-3xl text-center">Huvudbok</h1>
-
+      <h1 className="mb-8 text-3xl text-center text-white">Huvudbok</h1>
       <div className="space-y-6">
         {(() => {
           const sorted = Object.entries(groupedData).sort(([a], [b]) =>
@@ -113,14 +83,16 @@ export default function Huvudbok({ initialData }: Props) {
 
           let lastSection: string | null = null;
 
-          return sorted.map(([konto, items]) => {
-            const kontoNum = konto.split(" – ")[0];
+          return sorted.map(([kontoNummer, items]) => {
+            const kontoNamn = items[0]?.beskrivning || "";
+            const konto = `${kontoNummer} – ${kontoNamn}`;
+
             let section =
-              kontoNum === "1930"
+              kontoNummer === "1930"
                 ? "Företagskonto"
-                : /^26(1|2|3|4)/.test(kontoNum)
+                : /^26(1|2|3|4)/.test(kontoNummer)
                   ? "Momskonton"
-                  : `Kontoklass ${kontoNum.charAt(0)}XXX`;
+                  : `Kontoklass ${kontoNummer.charAt(0)}XXX`;
 
             const showHeading = section !== lastSection;
             lastSection = section;

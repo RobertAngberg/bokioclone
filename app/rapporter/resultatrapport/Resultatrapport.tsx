@@ -1,7 +1,9 @@
-//#region: Huvud
+"use client";
+
 import AnimeradFlik from "../../_components/AnimeradFlik";
 import MainLayout from "../../_components/MainLayout";
-import Totalrad from "./Totalrad";
+import Totalrad from "../../_components/Totalrad";
+import InreTabell from "../../_components/InreTabell";
 
 type Konto = {
   kontonummer: string;
@@ -25,10 +27,10 @@ type ResultatData = {
 type Props = {
   initialData: ResultatData;
 };
-//#endregion
 
 export default function Resultatrapport({ initialData }: Props) {
   const data = initialData;
+  const year = data.ar[0]; // antar bara ett år i denna vy
 
   const summering = (rader: KontoRad[]) => {
     const result: Record<string, number> = {};
@@ -41,9 +43,9 @@ export default function Resultatrapport({ initialData }: Props) {
     return result;
   };
 
-  const intaktsSum = summering(data.intakter); // ex: -800
-  const rorelsensSum = summering(data.rorelsensKostnader); // ex: 800
-  const finansiellaSum = summering(data.finansiellaKostnader); // ex: 0
+  const intaktsSum = summering(data.intakter);
+  const rorelsensSum = summering(data.rorelsensKostnader);
+  const finansiellaSum = summering(data.finansiellaKostnader);
 
   const resultat: Record<string, number> = {};
   const resultatEfterFinansiella: Record<string, number> = {};
@@ -60,86 +62,52 @@ export default function Resultatrapport({ initialData }: Props) {
   const renderGrupper = (rader: KontoRad[], isCost = false, icon?: string) =>
     rader.map((grupp) => (
       <AnimeradFlik key={grupp.namn} title={grupp.namn} icon={icon || (isCost ? "💸" : "💰")}>
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th className="text-left py-2 pl-6">Konto</th>
-              {data.ar.map((year) => (
-                <th key={year} className="text-right py-2 pr-6">
-                  {year}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {grupp.konton.map((konto) => (
-              <tr key={konto.kontonummer} className="border-t border-slate-700">
-                <td className="py-2 pl-6 pr-4">
-                  {konto.kontonummer} – {konto.beskrivning}
-                </td>
-                {data.ar.map((year) => (
-                  <td key={year} className="py-2 pr-6 text-right">
-                    {typeof konto[year] === "number"
-                      ? Math.abs(konto[year] as number).toLocaleString("sv-SE", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }) + " kr"
-                      : "–"}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            <tr className="font-semibold border-t border-slate-600">
-              <td className="py-2 pl-6 pr-4">Summa {grupp.namn}</td>
-              {data.ar.map((year) => (
-                <td key={year} className="py-2 pr-6 text-right">
-                  {Math.abs(grupp.summering[year] ?? 0).toLocaleString("sv-SE", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}{" "}
-                  kr
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+        <InreTabell
+          rows={grupp.konton.map((konto) => ({
+            label: `${konto.kontonummer} – ${konto.beskrivning}`,
+            value: konto[year] as number,
+          }))}
+          totalLabel={`Summa ${grupp.namn.toLowerCase()}`}
+          totalValue={grupp.summering[year] ?? 0}
+        />
       </AnimeradFlik>
     ));
 
   return (
     <MainLayout>
-      <h1 className="text-3xl text-center mb-8">Resultatrapport</h1>
+      <div className="max-w-2xl mx-auto px-4 text-white">
+        <h1 className="text-3xl text-center mb-8">Resultatrapport</h1>
 
-      {renderGrupper(data.intakter, false, "💰")}
-      <Totalrad
-        label="Summa rörelsens intäkter"
-        values={Object.fromEntries(data.ar.map((year) => [year, Math.abs(intaktsSum[year] ?? 0)]))}
-      />
+        {renderGrupper(data.intakter, false, "💰")}
+        <Totalrad
+          label="Summa rörelsens intäkter"
+          values={{ [year]: Math.abs(intaktsSum[year] ?? 0) }}
+        />
 
-      <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens kostnader</h2>
-      {renderGrupper(data.rorelsensKostnader, true, "💸")}
-      <Totalrad
-        label="Summa rörelsens kostnader"
-        values={Object.fromEntries(
-          data.ar.map((year) => [year, Math.abs(rorelsensSum[year] ?? 0)])
-        )}
-        isCost
-      />
+        <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens kostnader</h2>
+        {renderGrupper(data.rorelsensKostnader, true, "💸")}
+        <Totalrad
+          label="Summa rörelsens kostnader"
+          values={{ [year]: Math.abs(rorelsensSum[year] ?? 0) }}
+          isCost
+        />
 
-      <h2 className="text-xl font-semibold mt-10 mb-4">Finansiella kostnader</h2>
-      {renderGrupper(data.finansiellaKostnader, true, "💸")}
-      <Totalrad
-        label="Summa finansiella kostnader"
-        values={Object.fromEntries(
-          data.ar.map((year) => [year, Math.abs(finansiellaSum[year] ?? 0)])
-        )}
-        isCost
-      />
+        <h2 className="text-xl font-semibold mt-10 mb-4">Finansiella kostnader</h2>
+        {renderGrupper(data.finansiellaKostnader, true, "💸")}
+        <Totalrad
+          label="Summa finansiella kostnader"
+          values={{ [year]: Math.abs(finansiellaSum[year] ?? 0) }}
+          isCost
+        />
 
-      <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>
-      <Totalrad label="Summa rörelsens resultat" values={resultat} />
-      <Totalrad label="Resultat efter finansiella poster" values={resultatEfterFinansiella} />
-      <Totalrad label="Beräknat resultat" values={resultatEfterFinansiella} />
+        <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>
+        <Totalrad label="Summa rörelsens resultat" values={{ [year]: resultat[year] }} />
+        <Totalrad
+          label="Resultat efter finansiella poster"
+          values={{ [year]: resultatEfterFinansiella[year] }}
+        />
+        <Totalrad label="Beräknat resultat" values={{ [year]: resultatEfterFinansiella[year] }} />
+      </div>
     </MainLayout>
   );
 }

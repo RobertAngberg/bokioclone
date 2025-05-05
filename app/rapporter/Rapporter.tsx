@@ -5,12 +5,6 @@ import MainLayout from "../_components/MainLayout";
 
 const rapporter = [
   {
-    emoji: "📒",
-    title: "Grundbok",
-    description: "Alla verifikationer i datumordning.",
-    href: "/grundbok",
-  },
-  {
     emoji: "📚",
     title: "Huvudbok",
     description: "Transaktioner per konto.",
@@ -33,12 +27,6 @@ const rapporter = [
     title: "Momsrapport",
     description: "Summering av ingående/utgående moms.",
     href: "/rapporter/momsrapport",
-  },
-  {
-    emoji: "🧾",
-    title: "Verifikationslista",
-    description: "Lista på alla verifikationer.",
-    href: "/rapporter/verifikationer",
   },
 ];
 
