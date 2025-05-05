@@ -1,3 +1,4 @@
+// #region Huvud
 "use client";
 
 import AnimeradFlik from "../../_components/AnimeradFlik";
@@ -27,6 +28,7 @@ type ResultatData = {
 type Props = {
   initialData: ResultatData;
 };
+// #endregion
 
 export default function Resultatrapport({ initialData }: Props) {
   const data = initialData;
@@ -89,7 +91,6 @@ export default function Resultatrapport({ initialData }: Props) {
         <Totalrad
           label="Summa rörelsens kostnader"
           values={{ [year]: Math.abs(rorelsensSum[year] ?? 0) }}
-          isCost
         />
 
         <h2 className="text-xl font-semibold mt-10 mb-4">Finansiella kostnader</h2>
@@ -97,7 +98,6 @@ export default function Resultatrapport({ initialData }: Props) {
         <Totalrad
           label="Summa finansiella kostnader"
           values={{ [year]: Math.abs(finansiellaSum[year] ?? 0) }}
-          isCost
         />
 
         <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>

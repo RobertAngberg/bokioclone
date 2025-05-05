@@ -111,7 +111,7 @@ export default function Balansrapport({ initialData }: Props) {
         ])}
         {renderKategori("Långfristiga skulder", "🏦", långfristigaSkulder)}
         {renderKategori("Kortfristiga skulder", "⏳", kortfristigaSkulder)}
-        <Totalrad label="Summa eget kapital och skulder" values={{ [year]: sumSkulderEK }} isCost />
+        <Totalrad label="Summa eget kapital och skulder" values={{ [year]: sumSkulderEK }} />
 
         <section className="mt-8">
           {differens === 0 ? (

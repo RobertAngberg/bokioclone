@@ -28,7 +28,7 @@ interface Props {
 const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
 const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
-export default function ITtjansterUtanfEU(props: Props) {
+export default function InkopTjanstUtanfEU(props: Props) {
   const {
     mode,
     belopp,
@@ -72,16 +72,6 @@ export default function ITtjansterUtanfEU(props: Props) {
           debet: val,
           kredit: 0,
         },
-        "4598": {
-          label: "Justering, omvänd moms",
-          debet: 0,
-          kredit: val,
-        },
-        "6540": {
-          label: "IT-tjänster",
-          debet: val,
-          kredit: 0,
-        },
       };
 
       setExtrafält?.(extrafaltObj);
@@ -90,7 +80,7 @@ export default function ITtjansterUtanfEU(props: Props) {
 
     return (
       <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center text-white">Steg 2: IT-tjänster utanför EU</h1>
+        <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Inköp tjänster utanför EU</h1>
 
         <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
           <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
@@ -133,7 +123,11 @@ export default function ITtjansterUtanfEU(props: Props) {
   if (mode === "steg3") {
     const rad = extrafält || {};
     const rows = [
-      { konto: "1930 Företagskonto / affärskonto", debet: 0, kredit: rad["1930"]?.kredit ?? 0 },
+      {
+        konto: "1930 Företagskonto / affärskonto",
+        debet: 0,
+        kredit: rad["1930"]?.kredit ?? 0,
+      },
       {
         konto: "2614 Utgående moms omvänd skattskyldighet, 25 %",
         debet: 0,
@@ -149,8 +143,6 @@ export default function ITtjansterUtanfEU(props: Props) {
         debet: rad["4531"]?.debet ?? 0,
         kredit: 0,
       },
-      { konto: "4598 Justering, omvänd moms", debet: 0, kredit: rad["4598"]?.kredit ?? 0 },
-      { konto: "6540 IT-tjänster", debet: rad["6540"]?.debet ?? 0, kredit: 0 },
     ];
 
     const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
@@ -160,7 +152,7 @@ export default function ITtjansterUtanfEU(props: Props) {
       <main className="min-h-screen text-white bg-slate-950 px-4">
         <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
-          <p className="text-center font-bold text-xl mb-1">IT-tjänster utanför EU</p>
+          <p className="text-center font-bold text-xl mb-1">Inköp tjänster utanför EU</p>
           <p className="text-center text-gray-300 mb-8">
             {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
           </p>

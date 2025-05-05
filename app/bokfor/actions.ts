@@ -72,145 +72,6 @@ export async function getKontoklass(kontonummer: string) {
   }
 }
 
-export async function saveTransaction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Ingen användare inloggad");
-  const userId = parseInt(session.user.id);
-
-  const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
-  const kommentar = formData.get("kommentar")?.toString().trim() || "";
-  const fil = formData.get("fil") as File | null;
-  const filename = fil ? fil.name : "";
-
-  const valtFörvalRaw = formData.get("valtFörval")?.toString();
-  if (!valtFörvalRaw) throw new Error("⛔ Saknar valda förval");
-  const valtFörval = JSON.parse(valtFörvalRaw);
-
-  const moms = parseFloat(formData.get("moms")?.toString().trim() || "0");
-  const beloppUtanMoms = parseFloat(formData.get("beloppUtanMoms")?.toString().trim() || "0");
-  const belopp = parseFloat(formData.get("belopp")?.toString().trim() || "0");
-
-  const extrafältRaw = formData.get("extrafält")?.toString();
-  const extrafält = extrafältRaw ? (JSON.parse(extrafältRaw) as Record<string, ExtrafältRad>) : {};
-
-  const client = await pool.connect();
-  try {
-    const kontobeskrivning = valtFörval.namn || "";
-
-    // 1. Skapa huvudtransaktion
-    const insertTransactionQuery = `
-      INSERT INTO transaktioner (
-        transaktionsdatum, kontobeskrivning, belopp, fil, kommentar, "userId"
-      ) VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id
-    `;
-
-    const res = await client.query(insertTransactionQuery, [
-      new Date(transaktionsdatum),
-      kontobeskrivning,
-      belopp,
-      filename,
-      kommentar,
-      userId,
-    ]);
-
-    const transaktionsId = res.rows[0].id;
-    console.log("🆔 transaktions_id:", transaktionsId);
-
-    // 2. Om extrafält finns: bokför endast extrafält
-    if (Object.keys(extrafält).length > 0) {
-      for (const [kontonummer, data] of Object.entries(extrafält)) {
-        const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
-          kontonummer,
-        ]);
-
-        if (kontoRes.rows.length === 0) {
-          console.warn(`⛔ Konto ${kontonummer} hittades inte (extrafält)`);
-          continue;
-        }
-
-        const kontoId = kontoRes.rows[0].id;
-        const debet = Number(data.debet ?? 0);
-        const kredit = Number(data.kredit ?? 0);
-
-        if (debet === 0 && kredit === 0) continue;
-
-        console.log(`➕ Extrafält ${kontonummer}: Debet ${debet}, Kredit ${kredit}`);
-
-        await client.query(
-          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
-           VALUES ($1, $2, $3, $4)`,
-          [transaktionsId, kontoId, debet, kredit]
-        );
-      }
-    } else {
-      // 3. Annars: använd valtFörval.konton
-      const getBelopp = (konto: any, typ: "debet" | "kredit") => {
-        const nr = konto.kontonummer?.toString() ?? "";
-        const andel = konto.andelAv;
-
-        if (andel === "moms") return moms;
-        if (andel === "utanMoms") return beloppUtanMoms;
-        if (andel === "hela") return belopp;
-
-        const alwaysFull = ["4531", "4535", "4500", "4010", "4400"];
-        if (alwaysFull.includes(nr)) return belopp;
-
-        const prefix = nr[0];
-        if (typ === "debet") {
-          if (prefix === "1") return belopp;
-          if (prefix === "2") return moms;
-          return beloppUtanMoms;
-        }
-        if (typ === "kredit") {
-          if (prefix === "1") return belopp;
-          if (prefix === "2") return moms;
-          if (prefix === "3") return beloppUtanMoms;
-        }
-
-        return 0;
-      };
-
-      for (const konto of valtFörval.konton) {
-        const kontonummer = konto.kontonummer?.toString().trim();
-        if (!kontonummer) continue;
-
-        const kontoRes = await client.query("SELECT id FROM konton WHERE kontonummer::text = $1", [
-          kontonummer,
-        ]);
-
-        if (kontoRes.rows.length === 0) {
-          console.warn(`⛔ Konto ${kontonummer} hittades inte`);
-          continue;
-        }
-
-        const kontoId = kontoRes.rows[0].id;
-        const debet = konto.debet ? getBelopp(konto, "debet") : 0;
-        const kredit = konto.kredit ? getBelopp(konto, "kredit") : 0;
-
-        if (debet === 0 && kredit === 0) continue;
-
-        console.log(`📘 Konto ${kontonummer} – Debet: ${debet}, Kredit: ${kredit}`);
-
-        await client.query(
-          `INSERT INTO transaktionsposter (transaktions_id, konto_id, debet, kredit)
-           VALUES ($1, $2, $3, $4)`,
-          [transaktionsId, kontoId, debet, kredit]
-        );
-      }
-    }
-
-    client.release();
-    revalidatePath("/grundbok");
-
-    return { success: true, id: transaktionsId };
-  } catch (error) {
-    client.release();
-    console.error("❌ saveTransaction error:", error);
-    return { success: false, error: (error as Error).message };
-  }
-}
-
 export async function taBortTransaktion(id: number) {
   const client = await pool.connect();
   try {
@@ -326,5 +187,136 @@ export async function fetchFavoritforval() {
     return res.rows;
   } finally {
     client.release();
+  }
+}
+
+export async function saveTransaction(formData: FormData) {
+  /* 1. ---------------------------  AUTH  --------------------------- */
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Ingen användare inloggad");
+  const userId = Number(session.user.id);
+
+  /* 2. -------------------  PLATTA FÄLT FRÅN FORM  ------------------ */
+  const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
+  const kommentar = formData.get("kommentar")?.toString().trim() || "";
+  const fil = formData.get("fil") as File | null;
+  const filename = fil?.name ?? "";
+
+  const valtFörval = JSON.parse(formData.get("valtFörval")?.toString() || "{}");
+  if (!valtFörval?.konton) throw new Error("⛔ Saknar valda förval");
+
+  const moms = Number(formData.get("moms")?.toString() || 0);
+  const beloppUtanMoms = Number(formData.get("beloppUtanMoms")?.toString() || 0);
+  const belopp = Number(formData.get("belopp")?.toString() || 0);
+
+  const extrafält = JSON.parse(formData.get("extrafält")?.toString() || "{}") as Record<
+    string,
+    ExtrafältRad
+  >;
+
+  console.log("📥 formData:", { transaktionsdatum, belopp, moms, beloppUtanMoms });
+
+  /* 3. --------------------  STARTA DB‑SESSION  -------------------- */
+  const client = await pool.connect();
+  try {
+    /* 3‑a. HUVUDTRANSAKTION -------------------------------------- */
+    const { rows } = await client.query(
+      `
+      INSERT INTO transaktioner (
+        transaktionsdatum, kontobeskrivning, belopp, fil, kommentar, "userId"
+      ) VALUES ($1,$2,$3,$4,$5,$6)
+      RETURNING id
+      `,
+      [new Date(transaktionsdatum), valtFörval.namn ?? "", belopp, filename, kommentar, userId]
+    );
+    const transaktionsId = rows[0].id;
+    console.log("🆔  Skapad transaktion:", transaktionsId);
+
+    /* 3‑b. Förberedd SQL för varje transaktionspost -------------- */
+    const insertPost = `
+      INSERT INTO transaktionsposter
+        (transaktions_id, konto_id, debet, kredit)
+      VALUES ($1,$2,$3,$4)
+    `;
+
+    /* ------------------------------------------------------------- *
+     *  FUNKTION: getBelopp
+     *  Regler:
+     *   - Klass 1 (tillgångar): belopp in på debet, belopp ut på kredit
+     *   - Klass 2 (moms/skulder):
+     *       • momsfordran  -> debet = moms
+     *       • momsskuld    -> kredit = moms
+     *       • EK‑konton 20x krediteras med hela beloppet
+     *   - Klass 3 (intäkt): kredit = beloppUtanMoms
+     *   - Klass 4‑8 (kostnad): debet = beloppUtanMoms
+     * ------------------------------------------------------------- */
+    const getBelopp = (nr: string, typ: "debet" | "kredit"): number => {
+      const klass = nr[0];
+
+      /* ----- DEBET ----- */
+      if (typ === "debet") {
+        if (klass === "1") return belopp; // tillgång ökar
+        if (klass === "2") return moms; // momsfordran
+        return beloppUtanMoms; // kostnad (4‑8)
+      }
+
+      /* ----- KREDIT ---- */
+      if (klass === "1") return belopp; // tillgång minskar
+      if (nr.startsWith("20")) return belopp; // EK‑konton (2010, 2018 …)
+      if (klass === "2") return moms; // momsskuld
+      if (klass === "3") return beloppUtanMoms; // intäkt
+      return 0;
+    };
+
+    /* 3‑c. -----------------  SPARA POSTER  --------------------- */
+
+    /* ---- EXTRAFÄLT (från steg 3‑form) ------------------------ */
+    if (Object.keys(extrafält).length) {
+      for (const [nr, data] of Object.entries(extrafält)) {
+        const { rows } = await client.query(`SELECT id FROM konton WHERE kontonummer::text=$1`, [
+          nr,
+        ]);
+        if (!rows.length) {
+          console.warn(`⛔ Konto ${nr} hittades inte`);
+          continue;
+        }
+
+        const { debet = 0, kredit = 0 } = data;
+        if (debet === 0 && kredit === 0) continue; // hoppa rad
+
+        console.log(`➕ Extrafält  ${nr}: D ${debet}  K ${kredit}`);
+        await client.query(insertPost, [transaktionsId, rows[0].id, debet, kredit]);
+      }
+    }
+
+    /* ---- KONTOPOSTER FRÅN FÖRVALET --------------------------- */
+    for (const k of valtFörval.konton) {
+      const nr = k.kontonummer?.toString().trim();
+      if (!nr) continue;
+
+      const { rows } = await client.query(`SELECT id FROM konton WHERE kontonummer::text=$1`, [nr]);
+      if (!rows.length) {
+        console.warn(`⛔ Konto ${nr} hittades inte`);
+        continue;
+      }
+
+      const debet = k.debet ? getBelopp(nr, "debet") : 0;
+      const kredit = k.kredit ? getBelopp(nr, "kredit") : 0;
+      if (debet === 0 && kredit === 0) continue;
+
+      console.log(`📘 Förvalskonto ${nr}: D ${debet}  K ${kredit}`);
+      await client.query(insertPost, [transaktionsId, rows[0].id, debet, kredit]);
+    }
+
+    /* 3‑d. KLART ---------------------------------------------- */
+    client.release();
+    revalidatePath("/grundbok");
+
+    console.log("✅ Transaktion sparad & grundbok uppdaterad");
+    return { success: true, id: transaktionsId };
+  } catch (err) {
+    client.release();
+    console.error("❌ saveTransaction error:", err);
+    return { success: false, error: (err as Error).message };
   }
 }
