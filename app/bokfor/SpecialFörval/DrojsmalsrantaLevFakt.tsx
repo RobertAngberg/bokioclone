@@ -1,10 +1,15 @@
+// #region Huvud
 "use client";
 
 import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import Falt from "./Falt";
-import SubmitButton from "./SubmitButton";
+import TextFält from "../../_components/TextFält";
+import KnappFullWidth from "../../_components/KnappFullWidth";
+import DatePicker from "react-datepicker";
+import { formatSEK } from "../../_utils/format";
+import { sammanfattaExtrafalt } from "../../_utils/extrafalt";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -24,120 +29,112 @@ interface Props {
   formRef?: React.RefObject<HTMLFormElement | null>;
   handleSubmit?: (formData: FormData) => void;
 }
+// #endregion
 
-const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
-const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
+export default function DrojsmalsrantaLevFakt({
+  mode,
+  belopp,
+  setBelopp,
+  transaktionsdatum,
+  setTransaktionsdatum,
+  kommentar,
+  setKommentar,
+  setCurrentStep,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
+  extrafält,
+  setExtrafält,
+  formRef,
+  handleSubmit,
+}: Props) {
+  const [amount, setAmount] = useState<number>(belopp ?? 0);
+  const [date, setDate] = useState<string>(
+    transaktionsdatum ?? new Date().toISOString().split("T")[0]
+  );
+  const [comment, setComment] = useState<string>(kommentar ?? "");
 
-export default function DrojsmalsrantaLevFakt(props: Props) {
-  const {
-    mode,
+  useAutofyllFrånPdf({
     belopp,
-    setBelopp,
+    beloppState: [amount, setAmount],
     transaktionsdatum,
-    setTransaktionsdatum,
-    kommentar,
-    setKommentar,
-    setCurrentStep,
-    fil,
-    setFil,
-    pdfUrl,
-    setPdfUrl,
-    extrafält,
-    setExtrafält,
-    formRef,
-    handleSubmit,
-  } = props;
+    dateState: [date, setDate],
+  });
 
-  const [beloppInput, setBeloppInput] = useState("");
+  const valid = amount > 0;
 
-  // === STEG 2 ===
+  const handleStep2 = () => {
+    setBelopp?.(amount);
+    setKommentar?.(comment);
+    setTransaktionsdatum?.(date);
+
+    setExtrafält?.({
+      "8422": {
+        label: "Dröjsmålsräntor",
+        debet: amount,
+        kredit: 0,
+      },
+      "1930": {
+        label: "Företagskonto",
+        debet: 0,
+        kredit: amount,
+      },
+    });
+
+    setCurrentStep?.(3);
+  };
+
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
-      const val = round(parseFloat(beloppInput || "0"));
-      const extrafaltObj = {
-        "8422": {
-          label: "Dröjsmålsräntor",
-          debet: val,
-          kredit: 0,
-        },
-        "1930": {
-          label: "Företagskonto",
-          debet: 0,
-          kredit: val,
-        },
-      };
-      setBelopp?.(val);
-      setExtrafält?.(extrafaltObj);
-      setCurrentStep?.(3);
-    };
-
     return (
-      <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center text-white">
-          Steg 2: Dröjsmålsränta Leverantörsfaktura
-        </h1>
-
-        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
-          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
+      <section className="bg-cyan-950 text-white">
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Dröjsmålsränta Leverantörsfaktura</h1>
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
+          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
-              setBelopp={() => {}}
+              setTransaktionsdatum={setDate}
+              setBelopp={setAmount}
             />
 
-            <Falt
+            <TextFält
               label="Belopp (dröjsmålsränta)"
-              type="number"
-              value={beloppInput}
-              onChange={setBeloppInput}
-            />
-            <Falt
-              label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={setKommentar ?? (() => {})}
-            />
-            <Falt
-              label="Betaldatum"
-              type="date"
-              value={transaktionsdatum ?? ""}
-              onChange={setTransaktionsdatum ?? (() => {})}
+              name="belopp"
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              required
             />
 
-            <button
-              onClick={handleLocalSubmit}
-              className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+            <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+            <DatePicker
+              className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
+              selected={new Date(`${date}T00:00:00`)}
+              onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+              dateFormat="yyyy-MM-dd"
+              locale="sv"
+            />
+
+            <TextFält
+              label="Kommentar"
+              name="kommentar"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required={false}
+            />
+
+            <KnappFullWidth text="Bokför" onClick={handleStep2} disabled={!valid} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
         </div>
-      </div>
+      </section>
     );
   }
 
-  // === STEG 3 ===
   if (mode === "steg3") {
-    const rad = extrafält || {};
-    const rows = [
-      {
-        konto: "8422 Dröjsmålsräntor",
-        debet: rad["8422"]?.debet ?? 0,
-        kredit: 0,
-      },
-      {
-        konto: "1930 Företagskonto",
-        debet: 0,
-        kredit: rad["1930"]?.kredit ?? 0,
-      },
-    ];
-
-    const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
-    const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
+    const { rows, totalDebet, totalKredit } = sammanfattaExtrafalt(extrafält);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -145,48 +142,39 @@ export default function DrojsmalsrantaLevFakt(props: Props) {
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
           <p className="text-center font-bold text-xl mb-1">Dröjsmålsränta Leverantörsfaktura</p>
           <p className="text-center text-gray-300 mb-8">
-            {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
+            {date ? new Date(`${date}T00:00:00`).toLocaleDateString("sv-SE") : ""}
           </p>
 
-          <form ref={formRef} action={handleSubmit}>
-            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 border-b border-gray-700">Konto</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
+          <table className="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-sm text-gray-300">
+                <th className="px-2">Konto</th>
+                <th className="px-2 text-right">Debet</th>
+                <th className="px-2 text-right">Kredit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ konto, debet, kredit }) => (
+                <tr key={konto} className="bg-slate-900 rounded">
+                  <td className="px-2 py-1">{konto}</td>
+                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
+                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.debet > 0 ? formatSEK(r.debet) : ""}
-                    </td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4 text-left">Totalt</td>
-                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
-                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
+              ))}
+            </tbody>
+          </table>
 
-            <div className="mt-8">
-              <SubmitButton />
-            </div>
+          <div className="flex justify-end mt-4 text-lg font-bold">
+            <span className="mr-4">Totalt:</span>
+            <span className="w-28 text-right">{formatSEK(totalDebet)}</span>
+            <span className="w-28 text-right">{formatSEK(totalKredit)}</span>
+          </div>
+
+          <form ref={formRef} action={handleSubmit ?? undefined} className="mt-8">
+            <KnappFullWidth text="Slutför bokföring" />
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }

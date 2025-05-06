@@ -1,18 +1,15 @@
 // #region Huvud
 "use client";
 
-import { useEffect, useState } from "react";
-import { useBokforForm } from "../../_hooks/useBokforForm";
+import { useState } from "react";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import DatePicker from "react-datepicker";
-import { registerLocale } from "react-datepicker";
-import { sv } from "date-fns/locale/sv";
-import "react-datepicker/dist/react-datepicker.css";
-
-registerLocale("sv", sv);
+import { formatSEK } from "../../_utils/format";
+import { sammanfattaExtrafalt } from "../../_utils/extrafalt";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -34,8 +31,6 @@ interface Props {
 }
 // #endregion
 
-const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
-
 export default function Billeasing({
   mode,
   belopp,
@@ -54,51 +49,68 @@ export default function Billeasing({
   formRef,
   handleSubmit,
 }: Props) {
-  const {
-    state: { total: leasing, extra: forsakring, date, comment },
-    setters: { setTotal: setLeasing, setExtra: setForsakring, setDate, setComment },
-    toNum,
-    valid,
-  } = useBokforForm({
-    keys: ["total", "extra"],
-    defaultDate: transaktionsdatum,
+  const [leasing, setLeasing] = useState<number>(0);
+  const [forsakring, setForsakring] = useState<number>(0);
+  const [admin, setAdmin] = useState<number>(0);
+  const [forhojd, setForhojd] = useState<number>(0);
+  const [date, setDate] = useState<string>(
+    transaktionsdatum ?? new Date().toISOString().split("T")[0]
+  );
+  const [comment, setComment] = useState<string>(kommentar ?? "");
+
+  useAutofyllFrånPdf({
+    belopp,
+    beloppState: [leasing, setLeasing],
+    transaktionsdatum,
+    dateState: [date, setDate],
   });
 
-  const [admin, setAdmin] = useState("");
-  const [forhojd, setForhojd] = useState("0");
+  const valid = leasing > 0;
 
-  useEffect(() => {
+  const handleSubmitStep2 = () => {
+    const momsLeasing = leasing * 0.25;
+    const momsAdmin = admin * 0.25;
+    const momsForhojd = forhojd * 0.25;
+    const nettoForhojd = forhojd - momsForhojd;
+
+    const total = leasing + admin + forsakring + forhojd + momsLeasing + momsAdmin;
+
+    setExtrafält?.({
+      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
+      "2640": {
+        label: "Ingående moms",
+        debet: momsLeasing + momsAdmin + momsForhojd,
+        kredit: 0,
+      },
+      "5612": {
+        label: "Försäkring och skatt för personbilar",
+        debet: forsakring,
+        kredit: 0,
+      },
+      "5615": {
+        label: "Leasing av personbilar",
+        debet: leasing,
+        kredit: 0,
+      },
+      "6990": {
+        label: "Övriga externa kostnader",
+        debet: admin,
+        kredit: 0,
+      },
+      "1720": {
+        label: "Förutbetalda leasingavgifter",
+        debet: nettoForhojd,
+        kredit: 0,
+      },
+    });
+
+    setBelopp?.(total);
     setKommentar?.(comment);
     setTransaktionsdatum?.(date);
-  }, [comment, date, setKommentar, setTransaktionsdatum]);
+    setCurrentStep?.(3);
+  };
 
   if (mode === "steg2") {
-    const handleNext = () => {
-      const leasingEx = toNum(leasing) ?? 0;
-      const adminEx = toNum(admin) ?? 0;
-      const forsakringVal = toNum(forsakring) ?? 0;
-      const forhojdInkl = toNum(forhojd) ?? 0;
-
-      const momsLeasing = leasingEx * 0.25;
-      const momsAdmin = adminEx * 0.25;
-      const momsForhojd = forhojdInkl * 0.25;
-      const nettoForhojd = forhojdInkl - momsForhojd;
-
-      const total = leasingEx + adminEx + forsakringVal + forhojdInkl + momsLeasing + momsAdmin;
-      setBelopp?.(total);
-
-      setExtrafält?.({
-        "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
-        "2640": { label: "Ingående moms", debet: momsLeasing + momsAdmin + momsForhojd, kredit: 0 },
-        "5612": { label: "Försäkring och skatt för personbilar", debet: forsakringVal, kredit: 0 },
-        "5615": { label: "Leasing av personbilar", debet: leasingEx, kredit: 0 },
-        "6990": { label: "Övriga externa kostnader", debet: adminEx, kredit: 0 },
-        "1720": { label: "Förutbetalda leasingavgifter", debet: nettoForhojd, kredit: 0 },
-      });
-
-      setCurrentStep?.(3);
-    };
-
     return (
       <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Billeasing</h1>
@@ -109,14 +121,14 @@ export default function Billeasing({
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
               setTransaktionsdatum={setDate}
-              setBelopp={() => {}}
+              setBelopp={setLeasing}
             />
 
             <TextFält
               label="Leasingavgift (exkl. moms)"
               name="leasing"
               value={leasing}
-              onChange={(e) => setLeasing(e.target.value)}
+              onChange={(e) => setLeasing(Number(e.target.value))}
               required
             />
 
@@ -124,7 +136,7 @@ export default function Billeasing({
               label="Försäkring + skatt"
               name="forsakring"
               value={forsakring}
-              onChange={(e) => setForsakring(e.target.value)}
+              onChange={(e) => setForsakring(Number(e.target.value))}
               required
             />
 
@@ -132,7 +144,7 @@ export default function Billeasing({
               label="Adminavgifter (exkl. moms)"
               name="admin"
               value={admin}
-              onChange={(e) => setAdmin(e.target.value)}
+              onChange={(e) => setAdmin(Number(e.target.value))}
               required
             />
 
@@ -140,21 +152,18 @@ export default function Billeasing({
               label="Förhöjd avgift (inkl. moms)"
               name="forhojd"
               value={forhojd}
-              onChange={(e) => setForhojd(e.target.value)}
+              onChange={(e) => setForhojd(Number(e.target.value))}
               required={false}
             />
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
-              <DatePicker
-                wrapperClassName="w-full"
-                className="w-full p-2 rounded bg-slate-900 text-white border border-gray-700"
-                selected={date ? new Date(date) : new Date()}
-                onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
-                dateFormat="yyyy-MM-dd"
-                locale="sv"
-              />
-            </div>
+            <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+            <DatePicker
+              className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
+              selected={new Date(`${date}T00:00:00`)}
+              onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+              dateFormat="yyyy-MM-dd"
+              locale="sv"
+            />
 
             <TextFält
               label="Kommentar"
@@ -164,12 +173,7 @@ export default function Billeasing({
               required={false}
             />
 
-            <KnappFullWidth
-              text="Gå vidare"
-              pendingText="..."
-              onClick={handleNext}
-              disabled={!valid}
-            />
+            <KnappFullWidth text="Gå vidare" onClick={handleSubmitStep2} disabled={!valid} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -179,14 +183,7 @@ export default function Billeasing({
   }
 
   if (mode === "steg3") {
-    const rows = Object.entries(extrafält).map(([konto, info]) => ({
-      konto: `${konto} ${info.label}`,
-      debet: info.debet,
-      kredit: info.kredit,
-    }));
-
-    const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
-    const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
+    const { rows, totalDebet, totalKredit } = sammanfattaExtrafalt(extrafält);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -197,40 +194,33 @@ export default function Billeasing({
             {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
           </p>
 
-          <form ref={formRef} action={handleSubmit}>
-            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 border-b border-gray-700">Konto</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
+          <table className="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-sm text-gray-300">
+                <th className="px-2">Konto</th>
+                <th className="px-2 text-right">Debet</th>
+                <th className="px-2 text-right">Kredit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ konto, debet, kredit }) => (
+                <tr key={konto} className="bg-slate-900 rounded">
+                  <td className="px-2 py-1">{konto}</td>
+                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
+                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.debet > 0 ? formatSEK(r.debet) : ""}
-                    </td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4 text-left">Totalt</td>
-                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
-                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
+              ))}
+            </tbody>
+          </table>
 
-            <div className="mt-8">
-              <KnappFullWidth text="Slutför bokföring" pendingText="Bokför..." />
-            </div>
+          <div className="flex justify-end mt-4 text-lg font-bold">
+            <span className="mr-4">Totalt:</span>
+            <span className="w-28 text-right">{formatSEK(totalDebet)}</span>
+            <span className="w-28 text-right">{formatSEK(totalKredit)}</span>
+          </div>
+
+          <form ref={formRef} action={handleSubmit} className="mt-8">
+            <KnappFullWidth text="Slutför bokföring" />
           </form>
         </div>
       </main>

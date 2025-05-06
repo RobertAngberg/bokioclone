@@ -1,17 +1,15 @@
 // #region Huvud
 "use client";
 
-import { useEffect } from "react";
+import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
-import { useBokforForm } from "../../_hooks/useBokforForm";
 import DatePicker from "react-datepicker";
-import { registerLocale } from "react-datepicker";
-import { sv } from "date-fns/locale/sv";
-registerLocale("sv", sv);
-import "react-datepicker/dist/react-datepicker.css";
+import { formatSEK } from "../../_utils/format";
+import { sammanfattaExtrafalt } from "../../_utils/extrafalt";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -33,105 +31,93 @@ interface Props {
 }
 // #endregion
 
-const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
+export default function Banklan({
+  mode,
+  belopp,
+  setBelopp,
+  transaktionsdatum,
+  setTransaktionsdatum,
+  kommentar,
+  setKommentar,
+  setCurrentStep,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
+  extrafält,
+  setExtrafält,
+  formRef,
+  handleSubmit,
+}: Props) {
+  const [amount, setAmount] = useState<number>(belopp ?? 0);
+  const [date, setDate] = useState<string>(
+    transaktionsdatum ?? new Date().toISOString().split("T")[0]
+  );
+  const [comment, setComment] = useState<string>(kommentar ?? "");
 
-export default function Banklan(props: Props) {
-  const {
-    mode,
-    setBelopp,
-    setTransaktionsdatum,
-    setKommentar,
-    setCurrentStep,
-    fil,
-    setFil,
-    pdfUrl,
-    setPdfUrl,
-    extrafält,
-    setExtrafält,
-    formRef,
-    handleSubmit,
-  } = props;
-
-  const {
-    state: { total, date, comment },
-    setters: { setTotal, setDate, setComment },
-    valid,
-    toNum,
-    handlePdfAmount,
-  } = useBokforForm({
-    keys: ["total"],
-    defaultDate: props.transaktionsdatum,
-    onPdfAmount: (v, set) => {
-      if (v !== null && total.trim() === "") {
-        set(String(v));
-      }
-      setBelopp?.(null);
-    },
+  useAutofyllFrånPdf({
+    belopp,
+    beloppState: [amount, setAmount],
+    transaktionsdatum,
+    dateState: [date, setDate],
   });
 
-  useEffect(() => {
-    setTransaktionsdatum?.(date);
-    setKommentar?.(comment);
-  }, [date, comment, setKommentar, setTransaktionsdatum]);
+  const valid = amount > 0;
 
-  if (mode === "steg2") {
-    const handleNext = () => {
-      const summa = toNum(total);
-      if (summa === null) return;
-
-      setExtrafält?.({
-        "1930": {
-          label: "Företagskonto / affärskonto",
-          debet: summa,
-          kredit: 0,
-        },
-        "2350": {
-          label: "Lån från kreditinstitut",
-          debet: 0,
-          kredit: summa,
-        },
-      });
-
-      setBelopp?.(summa);
-      setCurrentStep?.(3);
+  const handleSubmitStep2 = () => {
+    const extrafaltObj = {
+      "1930": {
+        label: "Företagskonto / affärskonto",
+        debet: amount,
+        kredit: 0,
+      },
+      "2350": {
+        label: "Lån från kreditinstitut",
+        debet: 0,
+        kredit: amount,
+      },
     };
 
+    setExtrafält?.(extrafaltObj);
+    setBelopp?.(amount);
+    setTransaktionsdatum?.(date);
+    setKommentar?.(comment);
+    setCurrentStep?.(3);
+  };
+
+  if (mode === "steg2") {
     return (
-      <section id="Huvud" className="bg-cyan-950 text-white">
+      <section className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Banklån</h1>
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
-          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6">
+          <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
+              setBelopp={setAmount}
               setTransaktionsdatum={setDate}
-              setBelopp={handlePdfAmount}
             />
 
             <TextFält
               label="Totalt lånebelopp"
               name="total"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
               required
             />
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-white mb-2">
-                Utbetalningsdatum (ÅÅÅÅ‑MM‑DD)
-              </label>
-              <DatePicker
-                wrapperClassName="w-full"
-                className="w-full p-2 rounded text-white bg-slate-900 border border-gray-700"
-                selected={date ? new Date(date) : new Date()}
-                onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
-                dateFormat="yyyy-MM-dd"
-                locale="sv"
-                required
-              />
-            </div>
+            <label className="block text-sm font-medium text-white mb-2">
+              Utbetalningsdatum (ÅÅÅÅ‑MM‑DD)
+            </label>
+            <DatePicker
+              className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
+              selected={new Date(`${date}T00:00:00`)}
+              onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+              dateFormat="yyyy-MM-dd"
+              locale="sv"
+              required
+            />
 
             <TextFält
               label="Kommentar"
@@ -141,12 +127,7 @@ export default function Banklan(props: Props) {
               required={false}
             />
 
-            <KnappFullWidth
-              text="Gå vidare"
-              pendingText="..."
-              onClick={handleNext}
-              disabled={!valid}
-            />
+            <KnappFullWidth text="Gå vidare" onClick={handleSubmitStep2} disabled={!valid} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -156,22 +137,7 @@ export default function Banklan(props: Props) {
   }
 
   if (mode === "steg3") {
-    const rad = extrafält || {};
-    const rows = [
-      {
-        konto: "1930 Företagskonto / affärskonto",
-        debet: rad["1930"]?.debet ?? 0,
-        kredit: 0,
-      },
-      {
-        konto: "2350 Lån från kreditinstitut",
-        debet: 0,
-        kredit: rad["2350"]?.kredit ?? 0,
-      },
-    ];
-
-    const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
-    const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
+    const { rows, totalDebet, totalKredit } = sammanfattaExtrafalt(extrafält);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -182,40 +148,33 @@ export default function Banklan(props: Props) {
             {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
           </p>
 
-          <form ref={formRef} action={handleSubmit}>
-            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 border-b border-gray-700">Konto</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
+          <table className="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-sm text-gray-300">
+                <th className="px-2">Konto</th>
+                <th className="px-2 text-right">Debet</th>
+                <th className="px-2 text-right">Kredit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ konto, debet, kredit }) => (
+                <tr key={konto} className="bg-slate-900 rounded">
+                  <td className="px-2 py-1">{konto}</td>
+                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
+                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.debet > 0 ? formatSEK(r.debet) : ""}
-                    </td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4 text-left">Totalt</td>
-                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
-                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
+              ))}
+            </tbody>
+          </table>
 
-            <div className="mt-8">
-              <KnappFullWidth text="Slutför bokföring" pendingText="Bokför..." />
-            </div>
+          <div className="flex justify-end mt-4 text-lg font-bold">
+            <span className="mr-4">Totalt:</span>
+            <span className="w-28 text-right">{formatSEK(totalDebet)}</span>
+            <span className="w-28 text-right">{formatSEK(totalKredit)}</span>
+          </div>
+
+          <form ref={formRef} action={handleSubmit} className="mt-8">
+            <KnappFullWidth text="Slutför bokföring" />
           </form>
         </div>
       </main>
