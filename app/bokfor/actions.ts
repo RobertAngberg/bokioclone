@@ -211,7 +211,7 @@ export async function saveTransaction(formData: FormData) {
 
   const extrafält = JSON.parse(formData.get("extrafält")?.toString() || "{}") as Record<
     string,
-    ExtrafältRad
+    { label?: string; debet: number; kredit: number }
   >;
 
   console.log("📥 formData:", { transaktionsdatum, belopp, moms, beloppUtanMoms });
@@ -239,36 +239,19 @@ export async function saveTransaction(formData: FormData) {
       VALUES ($1,$2,$3,$4)
     `;
 
-    /* ------------------------------------------------------------- *
-     *  FUNKTION: getBelopp
-     *  Regler:
-     *   - Klass 1 (tillgångar): belopp in på debet, belopp ut på kredit
-     *   - Klass 2 (moms/skulder):
-     *       • momsfordran  -> debet = moms
-     *       • momsskuld    -> kredit = moms
-     *       • EK‑konton 20x krediteras med hela beloppet
-     *   - Klass 3 (intäkt): kredit = beloppUtanMoms
-     *   - Klass 4‑8 (kostnad): debet = beloppUtanMoms
-     * ------------------------------------------------------------- */
     const getBelopp = (nr: string, typ: "debet" | "kredit"): number => {
       const klass = nr[0];
-
-      /* ----- DEBET ----- */
       if (typ === "debet") {
-        if (klass === "1") return belopp; // tillgång ökar
-        if (klass === "2") return moms; // momsfordran
-        return beloppUtanMoms; // kostnad (4‑8)
+        if (klass === "1") return belopp;
+        if (klass === "2") return moms;
+        return beloppUtanMoms;
       }
-
-      /* ----- KREDIT ---- */
-      if (klass === "1") return belopp; // tillgång minskar
-      if (nr.startsWith("20")) return belopp; // EK‑konton (2010, 2018 …)
-      if (klass === "2") return moms; // momsskuld
-      if (klass === "3") return beloppUtanMoms; // intäkt
+      if (klass === "1") return belopp;
+      if (nr.startsWith("20")) return belopp;
+      if (klass === "2") return moms;
+      if (klass === "3") return beloppUtanMoms;
       return 0;
     };
-
-    /* 3‑c. -----------------  SPARA POSTER  --------------------- */
 
     /* ---- EXTRAFÄLT (från steg 3‑form) ------------------------ */
     if (Object.keys(extrafält).length) {
@@ -282,7 +265,7 @@ export async function saveTransaction(formData: FormData) {
         }
 
         const { debet = 0, kredit = 0 } = data;
-        if (debet === 0 && kredit === 0) continue; // hoppa rad
+        if (debet === 0 && kredit === 0) continue;
 
         console.log(`➕ Extrafält  ${nr}: D ${debet}  K ${kredit}`);
         await client.query(insertPost, [transaktionsId, rows[0].id, debet, kredit]);
@@ -290,25 +273,30 @@ export async function saveTransaction(formData: FormData) {
     }
 
     /* ---- KONTOPOSTER FRÅN FÖRVALET --------------------------- */
-    for (const k of valtFörval.konton) {
-      const nr = k.kontonummer?.toString().trim();
-      if (!nr) continue;
+    if (!valtFörval.specialtyp) {
+      for (const k of valtFörval.konton) {
+        const nr = k.kontonummer?.toString().trim();
+        if (!nr) continue;
 
-      const { rows } = await client.query(`SELECT id FROM konton WHERE kontonummer::text=$1`, [nr]);
-      if (!rows.length) {
-        console.warn(`⛔ Konto ${nr} hittades inte`);
-        continue;
+        const { rows } = await client.query(`SELECT id FROM konton WHERE kontonummer::text=$1`, [
+          nr,
+        ]);
+        if (!rows.length) {
+          console.warn(`⛔ Konto ${nr} hittades inte`);
+          continue;
+        }
+
+        const debet = k.debet ? getBelopp(nr, "debet") : 0;
+        const kredit = k.kredit ? getBelopp(nr, "kredit") : 0;
+        if (debet === 0 && kredit === 0) continue;
+
+        console.log(`📘 Förvalskonto ${nr}: D ${debet}  K ${kredit}`);
+        await client.query(insertPost, [transaktionsId, rows[0].id, debet, kredit]);
       }
-
-      const debet = k.debet ? getBelopp(nr, "debet") : 0;
-      const kredit = k.kredit ? getBelopp(nr, "kredit") : 0;
-      if (debet === 0 && kredit === 0) continue;
-
-      console.log(`📘 Förvalskonto ${nr}: D ${debet}  K ${kredit}`);
-      await client.query(insertPost, [transaktionsId, rows[0].id, debet, kredit]);
+    } else {
+      console.log("⏭️  Förvalskonton hoppas över – specialtyp:", valtFörval.specialtyp);
     }
 
-    /* 3‑d. KLART ---------------------------------------------- */
     client.release();
     revalidatePath("/grundbok");
 

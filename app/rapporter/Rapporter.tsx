@@ -8,7 +8,7 @@ const rapporter = [
     emoji: "📚",
     title: "Huvudbok",
     description: "Transaktioner per konto.",
-    href: "/huvudbok",
+    href: "/rapporter/huvudbok",
   },
   {
     emoji: "🏦",

@@ -1,3 +1,4 @@
+// #region Huvud
 "use client";
 
 import LaddaUppFil from "./LaddaUppFil";
@@ -39,6 +40,7 @@ type Step2Props = {
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
 };
+// #endregion
 
 export default function Steg2(props: Step2Props) {
   const { valtFörval } = props;

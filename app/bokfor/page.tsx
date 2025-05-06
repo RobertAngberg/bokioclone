@@ -1,4 +1,3 @@
-// ✅ app/bokfor/page.tsx
 import Bokför from "./Bokför";
 import { fetchFavoritforval } from "./actions";
 

@@ -1,3 +1,4 @@
+// #region Huvud
 "use client";
 
 import React, { useState } from "react";
@@ -28,6 +29,7 @@ export interface TransactionDetail {
 type Props = {
   initialData: HistoryItem[];
 };
+// #endregion
 
 export default function Historik({ initialData }: Props) {
   const [year, setYear] = useState("2025");

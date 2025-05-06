@@ -1,3 +1,4 @@
+// #region Huvud
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -39,6 +40,7 @@ interface Step3Props {
   setCurrentStep: (step: number) => void;
   extrafält: Record<string, ExtrafältRad>;
 }
+// #endregion
 
 export default function Steg3({
   kontonummer,
@@ -55,6 +57,9 @@ export default function Steg3({
   const [kontoklass, setKontoklass] = useState<"Intäkt" | "Kostnad" | "Tillgång" | "Skuld" | null>(
     null
   );
+
+  console.log("Step3 extrafält:", extrafält);
+  console.log("valtFörval.specialtyp:", valtFörval?.specialtyp);
 
   useEffect(() => {
     if (!valtFörval || valtFörval.specialtyp) return;
