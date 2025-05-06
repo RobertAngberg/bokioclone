@@ -1,18 +1,17 @@
 // #region Huvud
 "use client";
 
-import { useEffect } from "react";
+import { useState } from "react";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import TextFält from "../../_components/TextFält";
 import Forhandsgranskning from "../Förhandsgranskning";
 import LaddaUppFil from "../LaddaUppFil";
-import { useBokforForm } from "../../_hooks/useBokforForm";
-
+import Tabell, { ColumnDefinition } from "../../_components/Tabell";
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
 import { sv } from "date-fns/locale/sv";
-registerLocale("sv", sv);
 import "react-datepicker/dist/react-datepicker.css";
+registerLocale("sv", sv);
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -33,199 +32,167 @@ interface Props {
 }
 // #endregion
 
-const momsSats = 0.25;
-const round = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
-const formatSEK = (v: number) => v.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
+export default function AvgifterAvrakningsnotaMoms({
+  mode,
+  setBelopp,
+  setTransaktionsdatum,
+  setKommentar,
+  setCurrentStep,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
+  extrafält,
+  setExtrafält,
+  formRef,
+  handleSubmit,
+  transaktionsdatum,
+  kommentar,
+}: Props) {
+  const [brutto, setBrutto] = useState("");
+  const [date, setDate] = useState<Date | null>(
+    transaktionsdatum ? new Date(transaktionsdatum) : null
+  );
+  const [comment, setComment] = useState(() => kommentar ?? "");
 
-export default function AvgifterAvrakningsnotaMoms(props: Props) {
-  const {
-    mode,
-    setBelopp,
-    setCurrentStep,
-    fil,
-    setFil,
-    pdfUrl,
-    setPdfUrl,
-    extrafält,
-    setExtrafält,
-    formRef,
-    handleSubmit,
-  } = props;
+  const momsSats = 0.25;
+  const formatSEK = (v: number) => v.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
+  const parseAmount = (s: string) => parseFloat(s.replace(",", ".")) || 0;
 
-  /* ----------- bokför‑hook ----------- */
-  const {
-    state: { total: brutto, date, comment: kommentar },
-    setters: { setTotal: setBrutto, setDate, setComment: setKommentar },
-    valid,
-    toNum,
-    handlePdfAmount,
-  } = useBokforForm({
-    keys: ["total"],
-    defaultDate: props.transaktionsdatum,
-    onPdfAmount: (v, setTotal) => {
-      if (v !== null && brutto.trim() === "") setTotal(String(v));
-      setBelopp?.(null);
-    },
-  });
+  const valid = parseAmount(brutto) > 0;
 
-  /* synka datum uppåt så steg3 ser rätt datum */
-  useEffect(() => {
-    props.setTransaktionsdatum?.(date);
-  }, [date, props]);
+  const beräknaExtrafält = () => {
+    const total = parseAmount(brutto);
+    const moms = (total * momsSats) / (1 + momsSats);
+    const netto = total - moms;
 
-  /* ---------- submit steg 2 ---------- */
-  const nextStep = () => {
-    if (!valid) return;
-
-    const total = toNum(brutto)!;
-    const momsBelopp = round((total * momsSats) / (1 + momsSats)); // 20 % av brutto
-    const netto = round(total - momsBelopp);
-
-    setExtrafält?.({
+    return {
       6064: { label: "Factoringavgifter", debet: netto, kredit: 0 },
-      2640: { label: "Ingående moms", debet: momsBelopp, kredit: 0 },
-      1930: {
-        label: "Företagskonto / affärskonto",
-        debet: 0,
-        kredit: total,
-      },
-    });
+      2640: { label: "Ingående moms", debet: moms, kredit: 0 },
+      1930: { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
+    };
+  };
 
+  const handleSubmitStep2 = () => {
+    setExtrafält?.(beräknaExtrafält());
     setBelopp?.(null);
+    setKommentar?.(comment);
+    setTransaktionsdatum?.(date ? date.toISOString().split("T")[0] : null);
     setCurrentStep?.(3);
   };
 
-  /* ---------- step 2 ---------- */
-  const step2 = (
-    <section id="Huvud" className="bg-cyan-950 text-white">
-      <h1 className="mb-6 text-3xl text-center">Steg 2: Avgifter avräkningsnota</h1>
+  const rows = [
+    {
+      konto: "6064 Factoringavgifter",
+      debet: extrafält["6064"]?.debet ?? 0,
+      kredit: 0,
+    },
+    {
+      konto: "2640 Ingående moms",
+      debet: extrafält["2640"]?.debet ?? 0,
+      kredit: 0,
+    },
+    {
+      konto: "1930 Företagskonto / affärskonto",
+      debet: 0,
+      kredit: extrafält["1930"]?.kredit ?? 0,
+    },
+  ];
 
-      <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
-        <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6">
-          <LaddaUppFil
-            fil={fil ?? null}
-            setFil={setFil ?? (() => {})}
-            setPdfUrl={setPdfUrl ?? (() => {})}
-            setBelopp={handlePdfAmount}
-            setTransaktionsdatum={setDate}
-          />
+  const columns: ColumnDefinition<(typeof rows)[0]>[] = [
+    { key: "konto", label: "Konto" },
+    {
+      key: "debet",
+      label: "Debet",
+      render: (v: number) => <div className="text-center">{v > 0 ? formatSEK(v) : ""}</div>,
+    },
+    {
+      key: "kredit",
+      label: "Kredit",
+      render: (v: number) => <div className="text-center">{v > 0 ? formatSEK(v) : ""}</div>,
+    },
+  ];
 
-          <TextFält
-            label="Totalbelopp (inkl. moms)"
-            name="brutto"
-            value={brutto}
-            onChange={(e) => setBrutto(e.target.value)}
-            required
-          />
+  const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
+  const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
 
-          <div className="mb-4">
+  if (mode === "steg2") {
+    return (
+      <section className="bg-cyan-950 text-white">
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Avgifter avräkningsnota</h1>
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
+          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6">
+            <LaddaUppFil
+              fil={fil ?? null}
+              setFil={setFil ?? (() => {})}
+              setPdfUrl={setPdfUrl ?? (() => {})}
+              setBelopp={() => {}}
+              setTransaktionsdatum={(val) => setDate(val ? new Date(val) : null)}
+            />
+
+            <TextFält
+              label="Totalbelopp (inkl. moms)"
+              name="brutto"
+              value={brutto}
+              onChange={(e) => setBrutto(e.target.value)}
+              required
+            />
+
             <label className="block text-sm font-medium text-white mb-2">
-              Betaldatum&nbsp;(ÅÅÅÅ‑MM‑DD)
+              Betaldatum (ÅÅÅÅ‑MM‑DD)
             </label>
             <DatePicker
-              wrapperClassName="w-full"
               className="w-full p-2 rounded text-white bg-slate-900 border border-gray-700"
-              selected={date ? new Date(date) : new Date()}
-              onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+              selected={date}
+              onChange={(d) => setDate(d)}
               dateFormat="yyyy-MM-dd"
               locale="sv"
               required
             />
+
+            <TextFält
+              label="Kommentar"
+              name="kommentar"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required={false}
+            />
+
+            <KnappFullWidth
+              text="Gå vidare"
+              pendingText="Vänta..."
+              onClick={handleSubmitStep2}
+              disabled={!valid}
+            />
           </div>
 
-          <TextFält
-            label="Kommentar"
-            name="kommentar"
-            value={kommentar}
-            onChange={(e) => setKommentar(e.target.value)}
-            required={false}
-          />
+          <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
+        </div>
+      </section>
+    );
+  }
 
-          <KnappFullWidth
-            text="Gå vidare"
-            pendingText="Vänta..."
-            onClick={nextStep}
-            disabled={!valid}
-          />
+  return (
+    <section className="min-h-screen text-white bg-slate-950 px-4">
+      <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
+        <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
+        <p className="text-center font-bold text-xl mb-1">Avgifter avräkningsnota 25 % moms</p>
+        <p className="text-center text-gray-300 mb-8">
+          {date ? date.toLocaleDateString("sv-SE") : ""}
+        </p>
+
+        <Tabell data={rows} columns={columns} getRowId={(r) => r.konto} />
+
+        <div className="flex justify-end mt-4 text-lg font-bold">
+          <span className="mr-4">Totalt:</span>
+          <span className="w-28 text-center">{formatSEK(totalDebet)}</span>
+          <span className="w-28 text-center">{formatSEK(totalKredit)}</span>
         </div>
 
-        <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
+        <form ref={formRef} action={handleSubmit} className="mt-8">
+          <KnappFullWidth text="Slutför bokföring" pendingText="Bokför..." />
+        </form>
       </div>
     </section>
   );
-
-  /* ---------- step 3 ---------- */
-  const step3 = (() => {
-    const rows = [
-      {
-        konto: "1930 Företagskonto / affärskonto",
-        debet: 0,
-        kredit: extrafält["1930"]?.kredit ?? 0,
-      },
-      {
-        konto: "2640 Ingående moms",
-        debet: extrafält["2640"]?.debet ?? 0,
-        kredit: 0,
-      },
-      {
-        konto: "6064 Factoringavgifter",
-        debet: extrafält["6064"]?.debet ?? 0,
-        kredit: 0,
-      },
-    ];
-    const totalDebet = rows.reduce((s, r) => s + r.debet, 0);
-    const totalKredit = rows.reduce((s, r) => s + r.kredit, 0);
-
-    return (
-      <main className="min-h-screen text-white bg-slate-950 px-4">
-        <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
-          <h1 className="text-3xl mb-4 text-center">Steg&nbsp;3: Kontrollera och slutför</h1>
-          <p className="text-center font-bold text-xl mb-1">
-            Avgifter avräkningsnota&nbsp;25&nbsp;% moms
-          </p>
-          <p className="text-center text-gray-300 mb-8">
-            {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
-          </p>
-
-          <form ref={formRef} action={handleSubmit}>
-            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 border-b border-gray-700">Konto</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.debet > 0 ? formatSEK(r.debet) : ""}
-                    </td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4 text-left">Totalt</td>
-                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
-                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
-
-            <div className="mt-8">
-              <KnappFullWidth text="Slutför bokföring" pendingText="Bokför..." />
-            </div>
-          </form>
-        </div>
-      </main>
-    );
-  })();
-
-  return <>{mode === "steg2" ? step2 : step3}</>;
 }

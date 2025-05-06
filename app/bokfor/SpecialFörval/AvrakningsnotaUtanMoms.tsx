@@ -1,13 +1,12 @@
 // #region Huvud
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import Tabell, { ColumnDefinition } from "../../_components/Tabell";
-import { useBokforForm } from "../../_hooks/useBokforForm";
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
 import { sv } from "date-fns/locale/sv";
@@ -50,35 +49,25 @@ export default function AvrakningsnotaUtanMoms(props: Props) {
     handleSubmit,
   } = props;
 
-  /* ---------- Bokför‑hook ---------- */
-  const {
-    state: { total: beloppStr, date, comment: kommentar },
-    setters: { setTotal: setBeloppStr, setDate, setComment: setKommentar },
-    valid,
-    toNum,
-    handlePdfAmount,
-  } = useBokforForm({
-    keys: ["total"],
-    defaultDate: props.transaktionsdatum,
-    onPdfAmount: (v, set) => {
-      if (v !== null && beloppStr.trim() === "") {
-        set(String(v));
-      }
-      setBelopp?.(null);
-    },
-  });
+  const [beloppStr, setBeloppStr] = useState("");
+  const [date, setDate] = useState(props.transaktionsdatum ?? "");
+  const [kommentar, setKommentar] = useState(props.kommentar ?? "");
 
+  const { setTransaktionsdatum } = props;
   useEffect(() => {
-    props.setTransaktionsdatum?.(date);
-  }, [date, props]);
+    if (!date) {
+      const idag = new Date().toISOString().split("T")[0];
+      setDate(idag);
+      setTransaktionsdatum?.(idag);
+    }
+  }, [date, setTransaktionsdatum]);
 
   const formatSEK = (v: number) => v.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
-  /* ---------- step 2 ---------- */
   if (mode === "steg2") {
     const handleNext = () => {
-      const summa = toNum(beloppStr);
-      if (summa === null) return;
+      const summa = parseFloat(beloppStr.replace(",", "."));
+      if (isNaN(summa)) return;
 
       setExtrafält?.({
         6570: {
@@ -95,6 +84,7 @@ export default function AvrakningsnotaUtanMoms(props: Props) {
 
       setBelopp?.(summa);
       props.setTransaktionsdatum?.(date);
+      props.setKommentar?.(kommentar);
       setCurrentStep?.(3);
     };
 
@@ -108,7 +98,12 @@ export default function AvrakningsnotaUtanMoms(props: Props) {
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
               setTransaktionsdatum={setDate}
-              setBelopp={handlePdfAmount}
+              setBelopp={(val) => {
+                if (val !== null && beloppStr.trim() === "") {
+                  setBeloppStr(String(val));
+                }
+                setBelopp?.(null);
+              }}
             />
 
             <TextFält
@@ -126,7 +121,7 @@ export default function AvrakningsnotaUtanMoms(props: Props) {
               <DatePicker
                 wrapperClassName="w-full"
                 className="w-full p-2 rounded text-white bg-slate-900 border border-gray-700"
-                selected={date ? new Date(date) : new Date()}
+                selected={date ? new Date(`${date}T00:00:00`) : new Date()}
                 onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
                 dateFormat="yyyy-MM-dd"
                 locale="sv"
@@ -146,7 +141,7 @@ export default function AvrakningsnotaUtanMoms(props: Props) {
               text="Gå vidare"
               pendingText="..."
               onClick={handleNext}
-              disabled={!valid}
+              disabled={isNaN(parseFloat(beloppStr))}
             />
           </div>
 
@@ -156,7 +151,6 @@ export default function AvrakningsnotaUtanMoms(props: Props) {
     );
   }
 
-  /* ---------- step 3 ---------- */
   if (mode === "steg3") {
     const rows: Row[] = [
       {
@@ -194,7 +188,7 @@ export default function AvrakningsnotaUtanMoms(props: Props) {
           <h1 className="text-3xl mb-6 text-center">Steg&nbsp;3: Kontrollera och slutför</h1>
           <p className="text-center font-bold text-xl mb-1">Avräkningsnota utan moms</p>
           <p className="text-center text-gray-300 mb-8">
-            {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
+            {date ? new Date(`${date}T00:00:00`).toLocaleDateString("sv-SE") : ""}
           </p>
 
           <Tabell data={rows} columns={cols} getRowId={(row) => row.konto} />

@@ -1,32 +1,39 @@
+// #region Huvud
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import Falt from "./Falt";
-import SubmitButton from "./SubmitButton";
+import TextFält from "../../_components/TextFält";
+import KnappFullWidth from "../../_components/KnappFullWidth";
+import Tabell, { ColumnDefinition } from "../../_components/Tabell";
+import DatePicker from "react-datepicker";
+import { registerLocale } from "react-datepicker";
+import { sv } from "date-fns/locale/sv";
+import "react-datepicker/dist/react-datepicker.css";
+registerLocale("sv", sv);
 
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp?: (amount: number | null) => void;
+  setBelopp?: (val: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (date: string | null) => void;
+  setTransaktionsdatum?: (val: string | null) => void;
   kommentar?: string | null;
-  setKommentar?: (comment: string | null) => void;
-  setCurrentStep?: (step: number) => void;
+  setKommentar?: (val: string | null) => void;
+  setCurrentStep?: (val: number) => void;
   fil?: File | null;
-  setFil?: (file: File | null) => void;
+  setFil?: (val: File | null) => void;
   pdfUrl?: string | null;
-  setPdfUrl?: (url: string | null) => void;
+  setPdfUrl?: (val: string | null) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
-  setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
-  formRef?: React.RefObject<HTMLFormElement | null>;
+  setExtrafält?: (val: Record<string, { label: string; debet: number; kredit: number }>) => void;
+  formRef?: React.RefObject<HTMLFormElement>;
   handleSubmit?: (formData: FormData) => void;
 }
+// #endregion
 
-const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
-const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
+const formatSEK = (v: number) => v.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
 export default function Direktpension(props: Props) {
   const {
@@ -49,12 +56,28 @@ export default function Direktpension(props: Props) {
   } = props;
 
   const [total, setTotal] = useState("");
+  const [date, setDate] = useState(transaktionsdatum ?? "");
+  const [comment, setComment] = useState(kommentar ?? "");
+
+  useEffect(() => {
+    if (!date) {
+      const idag = new Date().toISOString().split("T")[0];
+      setDate(idag);
+      setTransaktionsdatum?.(idag);
+    }
+  }, [date, setTransaktionsdatum]);
+
+  useEffect(() => {
+    setKommentar?.(comment);
+    setTransaktionsdatum?.(date);
+  }, [comment, date, setKommentar, setTransaktionsdatum]);
 
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
-      const val = round(parseFloat(total || "0"));
+    const handleNext = () => {
+      const val = parseFloat(total.replace(",", ".")) || 0;
+      setBelopp?.(val);
 
-      const extrafaltObj = {
+      const extrafältObj = {
         "1385": { label: "Värde av kapitalförsäkring", debet: val, kredit: 0 },
         "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: val },
         "2230": {
@@ -65,44 +88,60 @@ export default function Direktpension(props: Props) {
         "7421": { label: "Direktpension, ej avdragsgill", debet: val, kredit: 0 },
       };
 
-      setExtrafält?.(extrafaltObj);
+      setExtrafält?.(extrafältObj);
       setCurrentStep?.(3);
     };
 
     return (
       <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Direktpension</h1>
-
-        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
-          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Direktpension</h1>
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
+          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
+              setTransaktionsdatum={setDate}
               setBelopp={() => {}}
             />
 
-            <Falt label="Totalt belopp" type="number" value={total} onChange={setTotal} />
-            <Falt
-              label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={setKommentar ?? (() => {})}
-            />
-            <Falt
-              label="Betaldatum"
-              type="date"
-              value={transaktionsdatum ?? ""}
-              onChange={setTransaktionsdatum ?? (() => {})}
+            <TextFält
+              label="Totalt belopp"
+              name="belopp"
+              value={total}
+              onChange={(e) => setTotal(e.target.value)}
+              required
             />
 
-            <button
-              onClick={handleLocalSubmit}
-              className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+              <DatePicker
+                wrapperClassName="w-full"
+                className="w-full p-2 rounded bg-slate-900 text-white border border-gray-700"
+                selected={date ? new Date(date) : null}
+                onChange={(d) => {
+                  const iso = d?.toISOString().split("T")[0] ?? "";
+                  setDate(iso);
+                }}
+                dateFormat="yyyy-MM-dd"
+                locale="sv"
+              />
+            </div>
+
+            <TextFält
+              label="Kommentar"
+              name="kommentar"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required={false}
+            />
+
+            <KnappFullWidth
+              text="Gå vidare"
+              pendingText="..."
+              onClick={handleNext}
+              disabled={isNaN(parseFloat(total))}
+            />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -112,7 +151,7 @@ export default function Direktpension(props: Props) {
   }
 
   if (mode === "steg3") {
-    const rad = extrafält || {};
+    const rad = extrafält;
     const rows = [
       {
         konto: "1385 Värde av kapitalförsäkring",
@@ -136,8 +175,22 @@ export default function Direktpension(props: Props) {
       },
     ];
 
-    const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
-    const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
+    const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
+    const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
+
+    const columns: ColumnDefinition<(typeof rows)[0]>[] = [
+      { key: "konto", label: "Konto" },
+      {
+        key: "debet",
+        label: "Debet",
+        render: (val) => <div className="text-center">{val > 0 ? formatSEK(val) : ""}</div>,
+      },
+      {
+        key: "kredit",
+        label: "Kredit",
+        render: (val) => <div className="text-center">{val > 0 ? formatSEK(val) : ""}</div>,
+      },
+    ];
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -145,48 +198,22 @@ export default function Direktpension(props: Props) {
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
           <p className="text-center font-bold text-xl mb-1">Direktpension</p>
           <p className="text-center text-gray-300 mb-8">
-            {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
+            {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
           </p>
 
-          <form ref={formRef} action={handleSubmit}>
-            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 border-b border-gray-700">Konto</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.debet > 0 ? formatSEK(r.debet) : ""}
-                    </td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4 text-left">Totalt</td>
-                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
-                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
+          <Tabell data={rows} columns={columns} getRowId={(row) => row.konto} />
 
-            <div className="mt-8">
-              <SubmitButton />
-            </div>
+          <div className="flex justify-end mt-4 text-lg font-bold">
+            <span className="mr-4">Totalt:</span>
+            <span className="w-28 text-center">{formatSEK(totalDebet)}</span>
+            <span className="w-28 text-center">{formatSEK(totalKredit)}</span>
+          </div>
+
+          <form ref={formRef} action={handleSubmit} className="mt-8">
+            <KnappFullWidth text="Slutför bokföring" pendingText="Bokför..." />
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }

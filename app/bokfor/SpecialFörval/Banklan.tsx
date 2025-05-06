@@ -1,41 +1,46 @@
+// #region Huvud
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import Falt from "./Falt";
-import SubmitButton from "./SubmitButton";
+import TextFält from "../../_components/TextFält";
+import KnappFullWidth from "../../_components/KnappFullWidth";
+import { useBokforForm } from "../../_hooks/useBokforForm";
+import DatePicker from "react-datepicker";
+import { registerLocale } from "react-datepicker";
+import { sv } from "date-fns/locale/sv";
+registerLocale("sv", sv);
+import "react-datepicker/dist/react-datepicker.css";
 
-interface BanklanProps {
+interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp?: (amount: number | null) => void;
+  setBelopp?: (v: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (date: string | null) => void;
+  setTransaktionsdatum?: (v: string | null) => void;
   kommentar?: string | null;
-  setKommentar?: (comment: string | null) => void;
-  setCurrentStep?: (step: number) => void;
+  setKommentar?: (v: string | null) => void;
+  setCurrentStep?: (v: number) => void;
   fil?: File | null;
-  setFil?: (file: File | null) => void;
+  setFil?: (f: File | null) => void;
   pdfUrl?: string | null;
-  setPdfUrl?: (url: string | null) => void;
+  setPdfUrl?: (u: string | null) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
-  setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
-  formRef?: React.RefObject<HTMLFormElement | null>;
-  handleSubmit?: (formData: FormData) => void;
+  setExtrafält?: (v: Record<string, { label: string; debet: number; kredit: number }>) => void;
+  formRef?: React.RefObject<HTMLFormElement>;
+  handleSubmit?: (fd: FormData) => void;
 }
+// #endregion
 
-const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
+const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
 const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
-export default function Banklan(props: BanklanProps) {
+export default function Banklan(props: Props) {
   const {
     mode,
-    belopp,
     setBelopp,
-    transaktionsdatum,
     setTransaktionsdatum,
-    kommentar,
     setKommentar,
     setCurrentStep,
     fil,
@@ -48,74 +53,108 @@ export default function Banklan(props: BanklanProps) {
     handleSubmit,
   } = props;
 
-  const [total, setTotal] = useState((belopp ?? "").toString());
+  const {
+    state: { total, date, comment },
+    setters: { setTotal, setDate, setComment },
+    valid,
+    toNum,
+    handlePdfAmount,
+  } = useBokforForm({
+    keys: ["total"],
+    defaultDate: props.transaktionsdatum,
+    onPdfAmount: (v, set) => {
+      if (v !== null && total.trim() === "") {
+        set(String(v));
+      }
+      setBelopp?.(null);
+    },
+  });
 
-  // === STEG 2 ===
+  useEffect(() => {
+    setTransaktionsdatum?.(date);
+    setKommentar?.(comment);
+  }, [date, comment, setKommentar, setTransaktionsdatum]);
+
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
-      const valTotal = round(parseFloat(total || "0"));
+    const handleNext = () => {
+      const summa = toNum(total);
+      if (summa === null) return;
 
-      const extrafaltObj = {
+      setExtrafält?.({
         "1930": {
           label: "Företagskonto / affärskonto",
-          debet: valTotal,
+          debet: summa,
           kredit: 0,
         },
         "2350": {
           label: "Lån från kreditinstitut",
           debet: 0,
-          kredit: valTotal,
+          kredit: summa,
         },
-      };
+      });
 
-      setBelopp?.(valTotal);
-      setExtrafält?.(extrafaltObj);
+      setBelopp?.(summa);
       setCurrentStep?.(3);
     };
 
     return (
-      <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Banklån</h1>
-
-        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
-          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
+      <section id="Huvud" className="bg-cyan-950 text-white">
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Banklån</h1>
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
+          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
-              setBelopp={setBelopp ?? (() => {})}
+              setTransaktionsdatum={setDate}
+              setBelopp={handlePdfAmount}
             />
 
-            <Falt label="Totalt lånebelopp" type="number" value={total} onChange={setTotal} />
-            <Falt
+            <TextFält
+              label="Totalt lånebelopp"
+              name="total"
+              value={total}
+              onChange={(e) => setTotal(e.target.value)}
+              required
+            />
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-white mb-2">
+                Utbetalningsdatum (ÅÅÅÅ‑MM‑DD)
+              </label>
+              <DatePicker
+                wrapperClassName="w-full"
+                className="w-full p-2 rounded text-white bg-slate-900 border border-gray-700"
+                selected={date ? new Date(date) : new Date()}
+                onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+                dateFormat="yyyy-MM-dd"
+                locale="sv"
+                required
+              />
+            </div>
+
+            <TextFält
               label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={setKommentar ?? (() => {})}
-            />
-            <Falt
-              label="Utbetalningsdatum"
-              type="date"
-              value={transaktionsdatum ?? ""}
-              onChange={setTransaktionsdatum ?? (() => {})}
+              name="kommentar"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required={false}
             />
 
-            <button
-              onClick={handleLocalSubmit}
-              className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+            <KnappFullWidth
+              text="Gå vidare"
+              pendingText="..."
+              onClick={handleNext}
+              disabled={!valid}
+            />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
         </div>
-      </div>
+      </section>
     );
   }
 
-  // === STEG 3 ===
   if (mode === "steg3") {
     const rad = extrafält || {};
     const rows = [
@@ -140,7 +179,7 @@ export default function Banklan(props: BanklanProps) {
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
           <p className="text-center font-bold text-xl mb-1">Banklån</p>
           <p className="text-center text-gray-300 mb-8">
-            {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
+            {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
           </p>
 
           <form ref={formRef} action={handleSubmit}>
@@ -175,13 +214,11 @@ export default function Banklan(props: BanklanProps) {
             </table>
 
             <div className="mt-8">
-              <SubmitButton />
+              <KnappFullWidth text="Slutför bokföring" pendingText="Bokför..." />
             </div>
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }

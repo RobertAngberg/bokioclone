@@ -1,10 +1,18 @@
+// #region Huvud
 "use client";
 
 import { useEffect, useState } from "react";
-import Falt from "./Falt";
-import SubmitButton from "./SubmitButton";
-import Forhandsgranskning from "../Förhandsgranskning";
+import { useBokforForm } from "../../_hooks/useBokforForm";
+import TextFält from "../../_components/TextFält";
+import KnappFullWidth from "../../_components/KnappFullWidth";
 import LaddaUppFil from "../LaddaUppFil";
+import Forhandsgranskning from "../Förhandsgranskning";
+import DatePicker from "react-datepicker";
+import { registerLocale } from "react-datepicker";
+import { sv } from "date-fns/locale/sv";
+import "react-datepicker/dist/react-datepicker.css";
+
+registerLocale("sv", sv);
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -24,162 +32,146 @@ interface Props {
   formRef?: React.RefObject<HTMLFormElement>;
   handleSubmit?: (formData: FormData) => void;
 }
+// #endregion
 
-const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
 const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
-export default function Billeasing(props: Props) {
+export default function Billeasing({
+  mode,
+  belopp,
+  setBelopp,
+  transaktionsdatum,
+  setTransaktionsdatum,
+  kommentar,
+  setKommentar,
+  setCurrentStep,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
+  extrafält,
+  setExtrafält,
+  formRef,
+  handleSubmit,
+}: Props) {
   const {
-    mode,
-    belopp,
-    setBelopp,
-    transaktionsdatum,
-    setTransaktionsdatum,
-    kommentar,
-    setKommentar,
-    setCurrentStep,
-    fil,
-    setFil,
-    pdfUrl,
-    setPdfUrl,
-    extrafält,
-    setExtrafält,
-    formRef,
-    handleSubmit,
-  } = props;
+    state: { total: leasing, extra: forsakring, date, comment },
+    setters: { setTotal: setLeasing, setExtra: setForsakring, setDate, setComment },
+    toNum,
+    valid,
+  } = useBokforForm({
+    keys: ["total", "extra"],
+    defaultDate: transaktionsdatum,
+  });
 
-  const [leasing, setLeasing] = useState("");
-  const [forsakring, setForsakring] = useState("");
   const [admin, setAdmin] = useState("");
   const [forhojd, setForhojd] = useState("0");
 
   useEffect(() => {
-    if (!transaktionsdatum) {
-      const idag = new Date().toISOString().substring(0, 10);
-      setTransaktionsdatum?.(idag);
-    }
-  }, [transaktionsdatum, setTransaktionsdatum]);
+    setKommentar?.(comment);
+    setTransaktionsdatum?.(date);
+  }, [comment, date, setKommentar, setTransaktionsdatum]);
 
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
-      const leasingEx = round(parseFloat(leasing || "0"));
-      const adminEx = round(parseFloat(admin || "0"));
-      const forsakringVal = round(parseFloat(forsakring || "0"));
-      const forhojdInkl = round(parseFloat(forhojd || "0"));
+    const handleNext = () => {
+      const leasingEx = toNum(leasing) ?? 0;
+      const adminEx = toNum(admin) ?? 0;
+      const forsakringVal = toNum(forsakring) ?? 0;
+      const forhojdInkl = toNum(forhojd) ?? 0;
 
-      const momsLeasing = round(leasingEx * 0.25);
-      const momsAdmin = round(adminEx * 0.25);
-      const momsForhojd = round(forhojdInkl * 0.25);
-      const nettoForhojd = round(forhojdInkl - momsForhojd);
+      const momsLeasing = leasingEx * 0.25;
+      const momsAdmin = adminEx * 0.25;
+      const momsForhojd = forhojdInkl * 0.25;
+      const nettoForhojd = forhojdInkl - momsForhojd;
 
       const total = leasingEx + adminEx + forsakringVal + forhojdInkl + momsLeasing + momsAdmin;
-
       setBelopp?.(total);
 
-      const extrafältObj = {
-        "1930": {
-          label: "Företagskonto / affärskonto",
-          debet: 0,
-          kredit: total,
-        },
-        "2640": {
-          label: "Ingående moms",
-          debet: momsLeasing + momsAdmin + momsForhojd,
-          kredit: 0,
-        },
-        "5612": {
-          label: "Försäkring och skatt för personbilar",
-          debet: forsakringVal,
-          kredit: 0,
-        },
-        "5615": {
-          label: "Leasing av personbilar",
-          debet: leasingEx,
-          kredit: 0,
-        },
-        "6990": {
-          label: "Övriga externa kostnader",
-          debet: adminEx,
-          kredit: 0,
-        },
-        "1720": {
-          label: "Förutbetalda leasingavgifter",
-          debet: nettoForhojd,
-          kredit: 0,
-        },
-      };
+      setExtrafält?.({
+        "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
+        "2640": { label: "Ingående moms", debet: momsLeasing + momsAdmin + momsForhojd, kredit: 0 },
+        "5612": { label: "Försäkring och skatt för personbilar", debet: forsakringVal, kredit: 0 },
+        "5615": { label: "Leasing av personbilar", debet: leasingEx, kredit: 0 },
+        "6990": { label: "Övriga externa kostnader", debet: adminEx, kredit: 0 },
+        "1720": { label: "Förutbetalda leasingavgifter", debet: nettoForhojd, kredit: 0 },
+      });
 
-      console.log("✅ Extrafält:", extrafältObj);
-      setExtrafält?.(extrafältObj);
       setCurrentStep?.(3);
     };
 
     return (
       <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Billeasing</h1>
-        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
           <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
+              setTransaktionsdatum={setDate}
               setBelopp={() => {}}
             />
-            <Falt
+
+            <TextFält
               label="Leasingavgift (exkl. moms)"
-              type="number"
+              name="leasing"
               value={leasing}
-              onChange={setLeasing}
+              onChange={(e) => setLeasing(e.target.value)}
+              required
             />
-            <Falt
+
+            <TextFält
               label="Försäkring + skatt"
-              type="number"
+              name="forsakring"
               value={forsakring}
-              onChange={setForsakring}
+              onChange={(e) => setForsakring(e.target.value)}
+              required
             />
-            <Falt
+
+            <TextFält
               label="Adminavgifter (exkl. moms)"
-              type="number"
+              name="admin"
               value={admin}
-              onChange={setAdmin}
+              onChange={(e) => setAdmin(e.target.value)}
+              required
             />
 
-            <details className="mt-6 group transition-all">
-              <summary className="cursor-pointer text-white font-semibold hover:underline flex items-center">
-                <span className="mr-2 transform transition-transform group-open:rotate-90">▶</span>
-                Förhöjd avgift? (valfritt)
-              </summary>
-              <div className="mt-3 ml-2 transition-opacity">
-                <Falt
-                  label="Förhöjd avgift (inkl. moms)"
-                  type="number"
-                  value={forhojd}
-                  onChange={setForhojd}
-                />
-              </div>
-            </details>
+            <TextFält
+              label="Förhöjd avgift (inkl. moms)"
+              name="forhojd"
+              value={forhojd}
+              onChange={(e) => setForhojd(e.target.value)}
+              required={false}
+            />
 
-            <Falt
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+              <DatePicker
+                wrapperClassName="w-full"
+                className="w-full p-2 rounded bg-slate-900 text-white border border-gray-700"
+                selected={date ? new Date(date) : new Date()}
+                onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+                dateFormat="yyyy-MM-dd"
+                locale="sv"
+              />
+            </div>
+
+            <TextFält
               label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={setKommentar ?? (() => {})}
-            />
-            <Falt
-              label="Betaldatum"
-              type="date"
-              value={transaktionsdatum ?? new Date().toISOString().substring(0, 10)}
-              onChange={setTransaktionsdatum ?? (() => {})}
+              name="kommentar"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required={false}
             />
 
-            <button
-              onClick={handleLocalSubmit}
-              className="w-full py-4 mt-6 font-bold rounded bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+            <KnappFullWidth
+              text="Gå vidare"
+              pendingText="..."
+              onClick={handleNext}
+              disabled={!valid}
+            />
           </div>
+
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
         </div>
       </div>
@@ -187,15 +179,14 @@ export default function Billeasing(props: Props) {
   }
 
   if (mode === "steg3") {
-    const rad = extrafält || {};
-    const rows = Object.entries(rad).map(([konto, info]) => ({
+    const rows = Object.entries(extrafält).map(([konto, info]) => ({
       konto: `${konto} ${info.label}`,
       debet: info.debet,
       kredit: info.kredit,
     }));
 
-    const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
-    const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
+    const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
+    const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -203,7 +194,7 @@ export default function Billeasing(props: Props) {
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
           <p className="text-center font-bold text-xl mb-1">Billeasing</p>
           <p className="text-center text-gray-300 mb-8">
-            {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
+            {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
           </p>
 
           <form ref={formRef} action={handleSubmit}>
@@ -238,13 +229,11 @@ export default function Billeasing(props: Props) {
             </table>
 
             <div className="mt-8">
-              <SubmitButton />
+              <KnappFullWidth text="Slutför bokföring" pendingText="Bokför..." />
             </div>
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }
