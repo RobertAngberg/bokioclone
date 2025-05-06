@@ -7,6 +7,12 @@ import Steg2 from "./Steg2";
 import Steg3 from "./Steg3";
 import Steg4 from "./Steg4";
 import MainLayout from "../_components/MainLayout";
+import { registerLocale } from "react-datepicker";
+import { sv } from "date-fns/locale/sv";
+import "react-datepicker/dist/react-datepicker.css";
+
+// För React DatePicker
+registerLocale("sv", sv);
 
 type KontoRad = {
   beskrivning: string;

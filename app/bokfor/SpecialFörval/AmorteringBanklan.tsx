@@ -4,14 +4,16 @@
 import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import Tabell, { ColumnDefinition } from "../../_components/Tabell";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import { formatSEK } from "../../_utils/format";
+import { sammanfattaExtrafalt } from "../../_utils/extrafalt";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
+  belopp?: number | null;
   setBelopp?: (v: number | null) => void;
   transaktionsdatum?: string | null;
   setTransaktionsdatum?: (v: string | null) => void;
@@ -31,6 +33,7 @@ interface Props {
 
 export default function AmorteringBanklan({
   mode,
+  belopp,
   setBelopp,
   setCurrentStep,
   fil,
@@ -48,10 +51,15 @@ export default function AmorteringBanklan({
 }: Props) {
   const [amortering, setAmortering] = useState(0);
   const [ranta, setRanta] = useState(0);
-  const [date, setDate] = useState(transaktionsdatum ?? new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(transaktionsdatum ?? "");
   const [comment, setComment] = useState(kommentar ?? "");
 
-  const formatSEK = (v: number) => v.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
+  useAutofyllFrånPdf({
+    belopp,
+    beloppState: [amortering, setAmortering],
+    transaktionsdatum,
+    dateState: [date, setDate],
+  });
 
   if (mode === "steg2") {
     const handleSubmitStep2 = () => {
@@ -60,21 +68,13 @@ export default function AmorteringBanklan({
       const amort = total - interest;
 
       const extrafaltObj = {
-        "1930": {
-          label: "Företagskonto / affärskonto",
-          debet: 0,
-          kredit: total,
-        },
+        "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
         "2350": {
           label: "Andra långfristiga skulder till kreditinstitut",
           debet: amort,
           kredit: 0,
         },
-        "8410": {
-          label: "Räntekostnader för långfristiga skulder",
-          debet: interest,
-          kredit: 0,
-        },
+        "8410": { label: "Räntekostnader för långfristiga skulder", debet: interest, kredit: 0 },
       };
 
       setExtrafält?.(extrafaltObj);
@@ -93,8 +93,8 @@ export default function AmorteringBanklan({
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setDate}
-              setBelopp={() => {}}
+              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
+              setBelopp={setBelopp ?? (() => {})}
             />
 
             <TextFält
@@ -143,20 +143,7 @@ export default function AmorteringBanklan({
   }
 
   if (mode === "steg3") {
-    const rows = [];
-
-    let totalDebet = 0;
-    let totalKredit = 0;
-
-    for (const [konto, { label, debet, kredit }] of Object.entries(extrafält)) {
-      rows.push({
-        konto: `${konto} ${label}`,
-        debet,
-        kredit,
-      });
-      totalDebet += debet;
-      totalKredit += kredit;
-    }
+    const { rows, totalDebet, totalKredit } = sammanfattaExtrafalt(extrafält);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -167,28 +154,29 @@ export default function AmorteringBanklan({
             {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
           </p>
 
-          <Tabell
-            data={rows}
-            getRowId={(r) => r.konto}
-            columns={[
-              { key: "konto", label: "Konto" },
-              {
-                key: "debet",
-                label: "Debet",
-                render: (v: number) => <>{formatSEK(v)}</>,
-              },
-              {
-                key: "kredit",
-                label: "Kredit",
-                render: (v: number) => <>{formatSEK(v)}</>,
-              },
-            ]}
-          />
+          <table className="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-sm text-gray-300">
+                <th className="px-2">Konto</th>
+                <th className="px-2 text-right">Debet</th>
+                <th className="px-2 text-right">Kredit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ konto, debet, kredit }) => (
+                <tr key={konto} className="bg-slate-900 rounded">
+                  <td className="px-2 py-1">{konto}</td>
+                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
+                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
           <div className="flex justify-end mt-4 text-lg font-bold">
             <span className="mr-4">Totalt:</span>
-            <span className="w-28 text-center">{formatSEK(totalDebet)}</span>
-            <span className="w-28 text-center">{formatSEK(totalKredit)}</span>
+            <span className="w-28 text-right">{formatSEK(totalDebet)}</span>
+            <span className="w-28 text-right">{formatSEK(totalKredit)}</span>
           </div>
 
           <form ref={formRef} action={handleSubmit} className="mt-8">
@@ -198,4 +186,6 @@ export default function AmorteringBanklan({
       </main>
     );
   }
+
+  return null;
 }

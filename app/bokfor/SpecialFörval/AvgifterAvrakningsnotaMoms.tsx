@@ -1,4 +1,3 @@
-// #region Huvud
 "use client";
 
 import { useState } from "react";
@@ -8,10 +7,6 @@ import Forhandsgranskning from "../Förhandsgranskning";
 import LaddaUppFil from "../LaddaUppFil";
 import Tabell, { ColumnDefinition } from "../../_components/Tabell";
 import DatePicker from "react-datepicker";
-import { registerLocale } from "react-datepicker";
-import { sv } from "date-fns/locale/sv";
-import "react-datepicker/dist/react-datepicker.css";
-registerLocale("sv", sv);
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -30,7 +25,6 @@ interface Props {
   formRef?: React.RefObject<HTMLFormElement>;
   handleSubmit?: (fd: FormData) => void;
 }
-// #endregion
 
 export default function AvgifterAvrakningsnotaMoms({
   mode,
@@ -49,7 +43,7 @@ export default function AvgifterAvrakningsnotaMoms({
   transaktionsdatum,
   kommentar,
 }: Props) {
-  const [brutto, setBrutto] = useState("");
+  const [brutto, setBrutto] = useState<number | null>(null);
   const [date, setDate] = useState<Date | null>(
     transaktionsdatum ? new Date(transaktionsdatum) : null
   );
@@ -57,12 +51,10 @@ export default function AvgifterAvrakningsnotaMoms({
 
   const momsSats = 0.25;
   const formatSEK = (v: number) => v.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
-  const parseAmount = (s: string) => parseFloat(s.replace(",", ".")) || 0;
-
-  const valid = parseAmount(brutto) > 0;
+  const valid = !!brutto && brutto > 0;
 
   const beräknaExtrafält = () => {
-    const total = parseAmount(brutto);
+    const total = brutto ?? 0;
     const moms = (total * momsSats) / (1 + momsSats);
     const netto = total - moms;
 
@@ -75,7 +67,7 @@ export default function AvgifterAvrakningsnotaMoms({
 
   const handleSubmitStep2 = () => {
     setExtrafält?.(beräknaExtrafält());
-    setBelopp?.(null);
+    setBelopp?.(brutto ?? null);
     setKommentar?.(comment);
     setTransaktionsdatum?.(date ? date.toISOString().split("T")[0] : null);
     setCurrentStep?.(3);
@@ -126,15 +118,15 @@ export default function AvgifterAvrakningsnotaMoms({
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
-              setBelopp={() => {}}
+              setBelopp={(v) => setBrutto(v)}
               setTransaktionsdatum={(val) => setDate(val ? new Date(val) : null)}
             />
 
             <TextFält
               label="Totalbelopp (inkl. moms)"
               name="brutto"
-              value={brutto}
-              onChange={(e) => setBrutto(e.target.value)}
+              value={brutto ?? ""}
+              onChange={(e) => setBrutto(Number(e.target.value))}
               required
             />
 
@@ -142,7 +134,7 @@ export default function AvgifterAvrakningsnotaMoms({
               Betaldatum (ÅÅÅÅ‑MM‑DD)
             </label>
             <DatePicker
-              className="w-full p-2 rounded text-white bg-slate-900 border border-gray-700"
+              className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
               selected={date}
               onChange={(d) => setDate(d)}
               dateFormat="yyyy-MM-dd"

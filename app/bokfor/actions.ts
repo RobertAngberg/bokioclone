@@ -9,12 +9,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-type ExtrafältRad = {
-  debet?: number;
-  kredit?: number;
-  label?: string;
-};
-
 export async function extractDataFromOCR(text: string) {
   console.log("🧠 Extracting data from OCR text:", text);
 
