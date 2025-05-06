@@ -186,6 +186,4 @@ export default function AmorteringBanklan({
       </main>
     );
   }
-
-  return null;
 }
