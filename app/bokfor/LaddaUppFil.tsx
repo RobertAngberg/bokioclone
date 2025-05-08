@@ -9,7 +9,7 @@ interface FileUploadProps {
   setFil: (file: File | null) => void;
   setPdfUrl: (url: string) => void;
   setTransaktionsdatum: (datum: string) => void;
-  setBelopp: (belopp: number) => void;
+  setBelopp: (belopp: number | null) => void;
   fil: File | null;
 }
 

@@ -5,8 +5,8 @@ import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
-import SubmitButton from "./SubmitButton";
 import { formatSEK } from "../../_utils/format";
+import KnappFullWidth from "../../_components/KnappFullWidth";
 
 interface ImportmomsProps {
   mode: "steg2" | "steg3";
@@ -55,7 +55,7 @@ export default function Importmoms(props: ImportmomsProps) {
   const [comment, setComment] = useState(kommentar ?? "");
 
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
+    function gåTillSteg3() {
       const val1930 = parseFloat(summaAttBetala || "0");
       const valTull = parseFloat(tullOchSpedition || "0");
       const valFiktiv = parseFloat(ingFiktivMoms || "0");
@@ -84,7 +84,7 @@ export default function Importmoms(props: ImportmomsProps) {
       setBelopp?.(val1930);
       setExtrafält?.(extrafaltObj);
       setCurrentStep?.(3);
-    };
+    }
 
     return (
       <div className="bg-cyan-950 text-white">
@@ -143,7 +143,7 @@ export default function Importmoms(props: ImportmomsProps) {
             />
 
             <button
-              onClick={handleLocalSubmit}
+              onClick={gåTillSteg3}
               className="w-full mt-4 px-4 py-4 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
             >
               Bokför
@@ -207,7 +207,7 @@ export default function Importmoms(props: ImportmomsProps) {
             </table>
 
             <div className="mt-8">
-              <SubmitButton />
+              <KnappFullWidth text="Slutför bokföring" />
             </div>
           </form>
         </div>

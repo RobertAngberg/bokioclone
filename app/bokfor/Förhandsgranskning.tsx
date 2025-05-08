@@ -4,8 +4,8 @@ import Image from "next/image";
 import { useState, useRef } from "react";
 
 interface ForhandsgranskningProps {
-  fil: File | null;
-  pdfUrl: string | null;
+  fil?: File | null;
+  pdfUrl?: string | null;
 }
 
 export default function Forhandsgranskning({ fil, pdfUrl }: ForhandsgranskningProps) {

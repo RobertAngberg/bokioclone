@@ -1,57 +1,55 @@
+// #region Huvud
 "use client";
 
 import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import Falt from "./Falt";
-import SubmitButton from "./SubmitButton";
+import { round, formatSEK, summeraFält, parseNumber } from "../../_utils/format";
+import TextFält from "../../_components/TextFält";
+import KnappFullWidth from "../../_components/KnappFullWidth";
 
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
   setBelopp?: (amount: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (date: string | null) => void;
+  setTransaktionsdatum: (date: string) => void;
   kommentar?: string | null;
   setKommentar?: (comment: string | null) => void;
   setCurrentStep?: (step: number) => void;
   fil?: File | null;
-  setFil?: (file: File | null) => void;
+  setFil: (file: File | null) => void;
   pdfUrl?: string | null;
-  setPdfUrl?: (url: string | null) => void;
+  setPdfUrl: (url: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
   formRef?: React.RefObject<HTMLFormElement | null>;
   handleSubmit?: (formData: FormData) => void;
 }
+// #endregion
 
-const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
-const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
-
-export default function InkopTjansterSverigeOmvand(props: Props) {
-  const {
-    mode,
-    transaktionsdatum,
-    setTransaktionsdatum,
-    kommentar,
-    setKommentar,
-    setCurrentStep,
-    fil,
-    setFil,
-    pdfUrl,
-    setPdfUrl,
-    extrafält,
-    setExtrafält,
-    formRef,
-    handleSubmit,
-  } = props;
-
-  const [total, setTotal] = useState("");
+export default function InkopTjansterSverigeOmvand({
+  mode,
+  transaktionsdatum,
+  setTransaktionsdatum,
+  kommentar,
+  setKommentar,
+  setCurrentStep,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
+  extrafält,
+  setExtrafält,
+  formRef,
+  handleSubmit,
+}: Props) {
+  const [total, setTotal] = useState<string>("");
 
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
-      const belopp = round(parseFloat(total || "0"));
-      const moms = round(belopp * 0.25);
+    function gåTillSteg3() {
+      const belopp = parseNumber(total);
+      const moms = belopp * 0.25;
 
       const extrafaltObj = {
         "1930": {
@@ -88,7 +86,7 @@ export default function InkopTjansterSverigeOmvand(props: Props) {
 
       setExtrafält?.(extrafaltObj);
       setCurrentStep?.(3);
-    };
+    }
 
     return (
       <div className="bg-cyan-950 text-white">
@@ -99,75 +97,84 @@ export default function InkopTjansterSverigeOmvand(props: Props) {
           <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
             <LaddaUppFil
               fil={fil ?? null}
-              setFil={setFil ?? (() => {})}
-              setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
+              setTransaktionsdatum={setTransaktionsdatum}
               setBelopp={() => {}}
             />
-            <Falt
+            <TextFält
               label="Totalt belopp exkl. moms"
+              name="belopp"
               type="number"
               value={total}
-              onChange={setTotal}
+              onChange={(e) => setTotal(e.target.value)}
             />
-            <Falt
+
+            <TextFält
               label="Kommentar"
+              name="kommentar"
               type="textarea"
-              value={kommentar ?? ""}
-              onChange={setKommentar ?? (() => {})}
+              value={kommentar || ""}
+              onChange={(e) => setKommentar?.(e.target.value)}
             />
-            <Falt
+
+            <TextFält
               label="Betaldatum"
+              name="datum"
               type="date"
-              value={transaktionsdatum ?? ""}
-              onChange={setTransaktionsdatum ?? (() => {})}
+              value={transaktionsdatum || ""}
+              onChange={(e) => setTransaktionsdatum?.(e.target.value)}
             />
+
             <button
-              onClick={handleLocalSubmit}
+              onClick={gåTillSteg3}
               className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
             >
               Bokför
             </button>
           </div>
-          <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
+          <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
       </div>
     );
   }
 
   if (mode === "steg3") {
-    const rad = extrafält || {};
     const rows = [
-      { konto: "1930 Företagskonto / affärskonto", debet: 0, kredit: rad["1930"]?.kredit ?? 0 },
+      {
+        konto: "1930 Företagskonto / affärskonto",
+        debet: 0,
+        kredit: extrafält["1930"]?.kredit ?? 0,
+      },
       {
         konto: "2617 Utgående moms omvänd skattskyldighet varor och tjänster i Sverige, 25 %",
         debet: 0,
-        kredit: rad["2617"]?.kredit ?? 0,
+        kredit: extrafält["2617"]?.kredit ?? 0,
       },
       {
         konto: "2647 Ingående moms omvänd skattskyldighet varor och tjänster i Sverige",
-        debet: rad["2647"]?.debet ?? 0,
+        debet: extrafält["2647"]?.debet ?? 0,
         kredit: 0,
       },
       {
         konto: "4400 Inköpta tjänster i Sverige, omvänd skattskyldighet",
-        debet: rad["4400"]?.debet ?? 0,
+        debet: extrafält["4400"]?.debet ?? 0,
         kredit: 0,
       },
       {
         konto: "4425 Inköpta tjänster i Sverige, omvänd skattskyldighet, 25 %",
         debet: 0,
-        kredit: rad["4425"]?.kredit ?? 0,
+        kredit: extrafält["4425"]?.kredit ?? 0,
       },
       {
         konto: "4600 Legoarbeten och underentreprenader (gruppkonto)",
-        debet: rad["4600"]?.debet ?? 0,
+        debet: extrafält["4600"]?.debet ?? 0,
         kredit: 0,
       },
     ];
 
-    const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
-    const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
+    const totalDebet = summeraFält(rows, "debet");
+    const totalKredit = summeraFält(rows, "kredit");
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -212,13 +219,11 @@ export default function InkopTjansterSverigeOmvand(props: Props) {
             </table>
 
             <div className="mt-8">
-              <SubmitButton />
+              <KnappFullWidth text="Slutför bokföring" />
             </div>
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }

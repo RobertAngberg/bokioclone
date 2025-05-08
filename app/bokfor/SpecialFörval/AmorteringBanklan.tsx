@@ -1,7 +1,7 @@
 // #region Huvud
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
@@ -14,16 +14,16 @@ import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp?: (v: number | null) => void;
+  setBelopp: (v: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (v: string | null) => void;
+  setTransaktionsdatum: (v: string) => void;
   kommentar?: string | null;
   setKommentar?: (v: string | null) => void;
   setCurrentStep?: (v: number) => void;
-  fil?: File | null;
-  setFil?: (f: File | null) => void;
-  pdfUrl?: string | null;
-  setPdfUrl?: (u: string | null) => void;
+  fil: File | null;
+  setFil: (f: File | null) => void;
+  pdfUrl: string | null;
+  setPdfUrl: (u: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (f: Record<string, { label: string; debet: number; kredit: number }>) => void;
   formRef?: React.RefObject<HTMLFormElement>;
@@ -55,14 +55,16 @@ export default function AmorteringBanklan({
   const [comment, setComment] = useState(kommentar ?? "");
 
   useAutofyllFrånPdf({
-    belopp,
-    beloppState: [amortering, setAmortering],
-    transaktionsdatum,
-    dateState: [date, setDate],
+    extractedBelopp: belopp,
+    currentBelopp: amortering,
+    setBelopp: setAmortering,
+    extractedDatum: transaktionsdatum,
+    currentDatum: date,
+    setDatum: setDate,
   });
 
   if (mode === "steg2") {
-    const handleSubmitStep2 = () => {
+    function handleSubmitStep2() {
       const total = amortering;
       const interest = ranta;
       const amort = total - interest;
@@ -78,11 +80,11 @@ export default function AmorteringBanklan({
       };
 
       setExtrafält?.(extrafaltObj);
-      setBelopp?.(null);
+      setBelopp?.(amortering);
       setTransaktionsdatum?.(date);
       setKommentar?.(comment);
       setCurrentStep?.(3);
-    };
+    }
 
     return (
       <div className="bg-cyan-950 text-white">
@@ -90,11 +92,11 @@ export default function AmorteringBanklan({
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
           <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
-              fil={fil ?? null}
-              setFil={setFil ?? (() => {})}
-              setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
-              setBelopp={setBelopp ?? (() => {})}
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
+              setTransaktionsdatum={setTransaktionsdatum}
+              setBelopp={setBelopp}
             />
 
             <TextFält

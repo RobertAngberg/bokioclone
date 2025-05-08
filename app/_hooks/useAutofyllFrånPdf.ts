@@ -1,31 +1,28 @@
 import { useEffect } from "react";
 
-type UseAutofyllFrånPdfProps = {
-  belopp?: number | null;
-  beloppState: [number, (v: number) => void];
-
-  transaktionsdatum?: string | null;
-  dateState: [string, (v: string) => void];
-};
+interface Props {
+  extractedBelopp?: number | null;
+  setBelopp: (v: number) => void;
+  currentBelopp: number;
+  extractedDatum?: string | null;
+  setDatum: (v: string) => void;
+  currentDatum: string;
+}
 
 export function useAutofyllFrånPdf({
-  belopp,
-  beloppState,
-  transaktionsdatum,
-  dateState,
-}: UseAutofyllFrånPdfProps) {
-  const [beloppValue, setBelopp] = beloppState;
-  const [dateValue, setDate] = dateState;
-
+  extractedBelopp,
+  setBelopp,
+  currentBelopp,
+  extractedDatum,
+  setDatum,
+  currentDatum,
+}: Props) {
   useEffect(() => {
-    if (belopp != null && beloppValue === 0) {
-      setBelopp(belopp);
+    if (extractedBelopp != null && currentBelopp === 0) {
+      setBelopp(extractedBelopp);
     }
-  }, [belopp, beloppValue, setBelopp]);
-
-  useEffect(() => {
-    if (transaktionsdatum && dateValue === "") {
-      setDate(transaktionsdatum);
+    if (extractedDatum && currentDatum === "") {
+      setDatum(extractedDatum);
     }
-  }, [transaktionsdatum, dateValue, setDate]);
+  }, [extractedBelopp, extractedDatum, currentBelopp, currentDatum, setBelopp, setDatum]);
 }
