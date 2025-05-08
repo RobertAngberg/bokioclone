@@ -1,5 +1,4 @@
 export type Extrafält = Record<string, { label: string; debet: number; kredit: number }>;
-
 export type ExtrafältRow = {
   konto: string;
   debet: number;
@@ -7,7 +6,7 @@ export type ExtrafältRow = {
 };
 
 // summerar extrafält till rader + totalsumma
-export function sammanfattaExtrafalt(extrafält: Extrafält): {
+export function sammanfattaExtrafält(extrafält: Extrafält): {
   rows: ExtrafältRow[];
   totalDebet: number;
   totalKredit: number;
