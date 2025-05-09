@@ -4,9 +4,12 @@
 import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import { round, formatSEK, summeraFält, parseNumber } from "../../_utils/format";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
+import { formatSEK } from "../../_utils/format";
+import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
+import DatePicker from "react-datepicker";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -17,9 +20,9 @@ interface Props {
   kommentar?: string | null;
   setKommentar?: (comment: string | null) => void;
   setCurrentStep?: (step: number) => void;
-  fil?: File | null;
+  fil: File | null;
   setFil: (file: File | null) => void;
-  pdfUrl?: string | null;
+  pdfUrl: string | null;
   setPdfUrl: (url: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
@@ -30,6 +33,8 @@ interface Props {
 
 export default function InkopTjansterSverigeOmvand({
   mode,
+  belopp,
+  setBelopp,
   transaktionsdatum,
   setTransaktionsdatum,
   kommentar,
@@ -44,19 +49,25 @@ export default function InkopTjansterSverigeOmvand({
   formRef,
   handleSubmit,
 }: Props) {
-  const [total, setTotal] = useState<string>("");
+  const [lokaltBelopp, setLokaltBelopp] = useState<number>(belopp ?? 0);
+  const [datum, setDatum] = useState<string>(transaktionsdatum ?? "");
+  const [kommentarText, setKommentarText] = useState<string>(kommentar ?? "");
+
+  useAutofyllFrånPdf({
+    extractedBelopp: belopp,
+    currentBelopp: lokaltBelopp,
+    setBelopp: setLokaltBelopp,
+    extractedDatum: transaktionsdatum,
+    currentDatum: datum,
+    setDatum,
+  });
 
   if (mode === "steg2") {
-    function gåTillSteg3() {
-      const belopp = parseNumber(total);
-      const moms = belopp * 0.25;
+    const gåTillSteg3 = () => {
+      const moms = lokaltBelopp * 0.25;
 
-      const extrafaltObj = {
-        "1930": {
-          label: "Företagskonto / affärskonto",
-          debet: 0,
-          kredit: belopp,
-        },
+      const extrafältObj = {
+        "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: lokaltBelopp },
         "2617": {
           label: "Utgående moms omvänd skattskyldighet varor och tjänster i Sverige, 25 %",
           debet: 0,
@@ -69,112 +80,85 @@ export default function InkopTjansterSverigeOmvand({
         },
         "4400": {
           label: "Inköpta tjänster i Sverige, omvänd skattskyldighet",
-          debet: belopp,
+          debet: lokaltBelopp,
           kredit: 0,
         },
         "4425": {
           label: "Inköpta tjänster i Sverige, omvänd skattskyldighet, 25 %",
           debet: 0,
-          kredit: belopp,
+          kredit: lokaltBelopp,
         },
         "4600": {
           label: "Legoarbeten och underentreprenader (gruppkonto)",
-          debet: belopp,
+          debet: lokaltBelopp,
           kredit: 0,
         },
       };
 
-      setExtrafält?.(extrafaltObj);
+      setKommentar?.(kommentarText);
+      setTransaktionsdatum(datum);
+      setBelopp?.(lokaltBelopp);
+      setExtrafält?.(extrafältObj);
       setCurrentStep?.(3);
-    }
+    };
 
     return (
-      <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center text-white">
-          Steg 2: Inköp tjänster Sverige (omvänd moms)
-        </h1>
-        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
-          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
+      <section className="bg-cyan-950 text-white">
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Inköp tjänster Sverige (omvänd moms)</h1>
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
+          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
-              fil={fil ?? null}
+              fil={fil}
               setFil={setFil}
               setPdfUrl={setPdfUrl}
               setTransaktionsdatum={setTransaktionsdatum}
-              setBelopp={() => {}}
+              setBelopp={setLokaltBelopp}
             />
+
             <TextFält
               label="Totalt belopp exkl. moms"
               name="belopp"
-              type="number"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
+              value={lokaltBelopp}
+              onChange={(e) => setLokaltBelopp(Number(e.target.value))}
+              required
+            />
+
+            <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+            <DatePicker
+              className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
+              selected={ÅÅÅÅMMDDTillDate(datum)}
+              onChange={(date) => setDatum(dateTillÅÅÅÅMMDD(date))}
+              dateFormat="yyyy-MM-dd"
+              locale="sv"
+              required
             />
 
             <TextFält
               label="Kommentar"
               name="kommentar"
-              type="textarea"
-              value={kommentar || ""}
-              onChange={(e) => setKommentar?.(e.target.value)}
+              value={kommentarText}
+              onChange={(e) => setKommentarText(e.target.value)}
+              required={false}
             />
 
-            <TextFält
-              label="Betaldatum"
-              name="datum"
-              type="date"
-              value={transaktionsdatum || ""}
-              onChange={(e) => setTransaktionsdatum?.(e.target.value)}
-            />
-
-            <button
-              onClick={gåTillSteg3}
-              className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+            <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={lokaltBelopp <= 0} />
           </div>
+
           <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
-      </div>
+      </section>
     );
   }
 
   if (mode === "steg3") {
-    const rows = [
-      {
-        konto: "1930 Företagskonto / affärskonto",
-        debet: 0,
-        kredit: extrafält["1930"]?.kredit ?? 0,
-      },
-      {
-        konto: "2617 Utgående moms omvänd skattskyldighet varor och tjänster i Sverige, 25 %",
-        debet: 0,
-        kredit: extrafält["2617"]?.kredit ?? 0,
-      },
-      {
-        konto: "2647 Ingående moms omvänd skattskyldighet varor och tjänster i Sverige",
-        debet: extrafält["2647"]?.debet ?? 0,
-        kredit: 0,
-      },
-      {
-        konto: "4400 Inköpta tjänster i Sverige, omvänd skattskyldighet",
-        debet: extrafält["4400"]?.debet ?? 0,
-        kredit: 0,
-      },
-      {
-        konto: "4425 Inköpta tjänster i Sverige, omvänd skattskyldighet, 25 %",
-        debet: 0,
-        kredit: extrafält["4425"]?.kredit ?? 0,
-      },
-      {
-        konto: "4600 Legoarbeten och underentreprenader (gruppkonto)",
-        debet: extrafält["4600"]?.debet ?? 0,
-        kredit: 0,
-      },
-    ];
+    const rows = Object.entries(extrafält).map(([konto, info]) => ({
+      konto: `${konto} ${info.label}`,
+      debet: info.debet,
+      kredit: info.kredit,
+    }));
 
-    const totalDebet = summeraFält(rows, "debet");
-    const totalKredit = summeraFält(rows, "kredit");
+    const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
+    const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -184,43 +168,37 @@ export default function InkopTjansterSverigeOmvand({
             Inköp tjänster i Sverige (omvänd moms)
           </p>
           <p className="text-center text-gray-300 mb-8">
-            {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
+            {datum ? new Date(`${datum}T00:00:00`).toLocaleDateString("sv-SE") : ""}
           </p>
 
-          <form ref={formRef} action={handleSubmit}>
-            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 border-b border-gray-700">Konto</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
+          <table className="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-sm text-gray-300">
+                <th className="px-2">Konto</th>
+                <th className="px-2 text-right">Debet</th>
+                <th className="px-2 text-right">Kredit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ konto, debet, kredit }) => (
+                <tr key={konto} className="bg-slate-900 rounded">
+                  <td className="px-2 py-1">{konto}</td>
+                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
+                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.debet > 0 ? formatSEK(r.debet) : ""}
-                    </td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4 text-left">Totalt</td>
-                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
-                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="font-bold bg-cyan-900 text-white">
+                <td className="p-4 text-left">Totalt</td>
+                <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
+                <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
+              </tr>
+            </tfoot>
+          </table>
 
-            <div className="mt-8">
-              <KnappFullWidth text="Slutför bokföring" />
-            </div>
+          <form ref={formRef} action={handleSubmit ?? undefined} className="mt-8">
+            <KnappFullWidth text="Slutför bokföring" />
           </form>
         </div>
       </main>

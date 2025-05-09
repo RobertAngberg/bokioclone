@@ -6,7 +6,11 @@ import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
+import DatePicker from "react-datepicker";
 import { formatSEK } from "../../_utils/format";
+import { sammanfattaExtrafält } from "../../_utils/extrafalt";
+import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -17,10 +21,10 @@ interface Props {
   kommentar?: string | null;
   setKommentar?: (val: string | null) => void;
   setCurrentStep?: (val: number) => void;
-  fil?: File | null;
-  setFil?: (val: File | null) => void;
-  pdfUrl?: string | null;
-  setPdfUrl?: (val: string | null) => void;
+  fil: File | null; // ⬅️ inte längre optional
+  setFil: (val: File | null) => void; // ⬅️ inte längre optional
+  pdfUrl: string | null; // ⬅️ inte längre optional
+  setPdfUrl: (val: string) => void; // ⬅️ inte längre optional
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (val: Record<string, { label: string; debet: number; kredit: number }>) => void;
   formRef?: React.RefObject<HTMLFormElement>;
@@ -46,90 +50,81 @@ export default function Hyrbil({
   formRef,
   handleSubmit,
 }: Props) {
-  const [kostnad, setKostnad] = useState("0");
-  const [date, setDate] = useState(transaktionsdatum ?? new Date().toISOString().split("T")[0]);
-  const [comment, setComment] = useState(kommentar ?? "");
+  const [lokaltBelopp, setLokaltBelopp] = useState<number>(belopp ?? 0);
+  const [datum, setDatum] = useState(transaktionsdatum ?? new Date().toISOString().split("T")[0]);
+  const [kommentarText, setKommentarText] = useState(kommentar ?? "");
 
-  const kostnadVal = parseFloat(kostnad || "0");
-  const moms = parseFloat((kostnadVal * 0.25 * 0.5).toFixed(2));
-  const netto = parseFloat((kostnadVal - moms).toFixed(2));
-  const brutto = parseFloat(kostnad || "0");
+  useAutofyllFrånPdf({
+    extractedBelopp: belopp,
+    currentBelopp: lokaltBelopp,
+    setBelopp: setLokaltBelopp,
+    extractedDatum: transaktionsdatum,
+    currentDatum: datum,
+    setDatum,
+  });
+
+  const moms = +(lokaltBelopp * 0.25 * 0.5).toFixed(2);
+  const netto = +(lokaltBelopp - moms).toFixed(2);
+  const giltigt = lokaltBelopp > 0;
+
+  function gåVidare() {
+    setBelopp?.(lokaltBelopp);
+    setTransaktionsdatum?.(datum);
+    setKommentar?.(kommentarText);
+
+    setExtrafält?.({
+      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: lokaltBelopp },
+      "5820": { label: "Hyrbilskostnader", debet: netto, kredit: 0 },
+      "2640": { label: "Ingående moms", debet: moms, kredit: 0 },
+    });
+
+    setCurrentStep?.(3);
+  }
 
   if (mode === "steg2") {
-    const handleNext = () => {
-      if (isNaN(brutto) || !setExtrafält || !setBelopp) return;
-
-      setBelopp(brutto);
-      setKommentar?.(comment);
-      setTransaktionsdatum?.(date);
-
-      setExtrafält({
-        "1930": {
-          label: "Företagskonto / affärskonto",
-          debet: 0,
-          kredit: brutto,
-        },
-        "5820": {
-          label: "Hyrbilskostnader",
-          debet: netto,
-          kredit: 0,
-        },
-        "2640": {
-          label: "Ingående moms",
-          debet: moms,
-          kredit: 0,
-        },
-      });
-
-      setCurrentStep?.(3);
-    };
-
     return (
       <section className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Hyrbil</h1>
-
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
           <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
-              fil={fil ?? null}
-              setFil={setFil ?? (() => {})}
-              setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setDate}
-              setBelopp={() => {}}
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
+              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
+              setBelopp={setLokaltBelopp}
             />
 
             <TextFält
               label="Total kostnad inkl. moms"
               name="kostnad"
-              value={kostnad}
-              onChange={(e) => setKostnad(e.target.value)}
+              value={lokaltBelopp.toString()}
+              onChange={(e) => setLokaltBelopp(Number(e.target.value))}
               required
             />
 
-            <p className="text-sm text-gray-400 mb-4">Moms (25% × 50%): {formatSEK(moms)} kr</p>
+            <p className="text-sm text-gray-400 mb-4">
+              Avdragbar moms (25% × 50%): {formatSEK(moms)} kr
+            </p>
 
-            <TextFält
-              label="Betaldatum"
-              name="datum"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
+            <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+            <DatePicker
+              className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
+              selected={ÅÅÅÅMMDDTillDate(datum)}
+              onChange={(d) => setDatum(d ? dateTillÅÅÅÅMMDD(d) : "")}
+              dateFormat="yyyy-MM-dd"
+              locale="sv"
             />
 
             <TextFält
               label="Kommentar"
               name="kommentar"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              value={kommentarText}
+              onChange={(e) => setKommentarText(e.target.value)}
               required={false}
             />
 
-            <KnappFullWidth
-              text="Gå vidare"
-              pendingText="..."
-              onClick={handleNext}
-              disabled={isNaN(brutto)}
-            />
+            <KnappFullWidth text="Gå vidare" onClick={gåVidare} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -139,14 +134,7 @@ export default function Hyrbil({
   }
 
   if (mode === "steg3") {
-    const rows = Object.entries(extrafält).map(([konto, info]) => ({
-      konto: `${konto} ${info.label}`,
-      debet: info.debet,
-      kredit: info.kredit,
-    }));
-
-    const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
-    const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
+    const { rows, totalDebet, totalKredit } = sammanfattaExtrafält(extrafält);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -154,48 +142,39 @@ export default function Hyrbil({
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
           <p className="text-center font-bold text-xl mb-1">Hyrbil</p>
           <p className="text-center text-gray-300 mb-8">
-            {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
+            {datum ? new Date(`${datum}T00:00:00`).toLocaleDateString("sv-SE") : ""}
           </p>
 
-          <form ref={formRef} action={handleSubmit ?? undefined}>
-            <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
-              <thead className="bg-slate-800 text-white">
-                <tr>
-                  <th className="p-4 border-b border-gray-700">Konto</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Debet</th>
-                  <th className="p-4 border-b border-gray-700 text-center">Kredit</th>
+          <table className="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-sm text-gray-300">
+                <th className="px-2">Konto</th>
+                <th className="px-2 text-right">Debet</th>
+                <th className="px-2 text-right">Kredit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ konto, debet, kredit }) => (
+                <tr key={konto} className="bg-slate-900 rounded">
+                  <td className="px-2 py-1">{konto}</td>
+                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
+                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="p-4 border-b border-gray-700">{r.konto}</td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.debet > 0 ? formatSEK(r.debet) : ""}
-                    </td>
-                    <td className="p-4 text-center border-b border-gray-700">
-                      {r.kredit > 0 ? formatSEK(r.kredit) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold bg-cyan-900 text-white">
-                  <td className="p-4 text-left">Totalt</td>
-                  <td className="p-4 text-center">{formatSEK(totalDebet)}</td>
-                  <td className="p-4 text-center">{formatSEK(totalKredit)}</td>
-                </tr>
-              </tfoot>
-            </table>
+              ))}
+            </tbody>
+          </table>
 
-            <div className="mt-8">
-              <KnappFullWidth text="Slutför bokföring" />
-            </div>
+          <div className="flex justify-end mt-4 text-lg font-bold">
+            <span className="mr-4">Totalt:</span>
+            <span className="w-28 text-right">{formatSEK(totalDebet)}</span>
+            <span className="w-28 text-right">{formatSEK(totalKredit)}</span>
+          </div>
+
+          <form ref={formRef} action={handleSubmit} className="mt-8">
+            <KnappFullWidth text="Slutför bokföring" />
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }

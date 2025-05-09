@@ -67,6 +67,7 @@ export default function Banklan({
 
   function gåTillSteg3() {
     const belopp = lokaltBelopp ?? 0;
+    const valid = belopp > 0;
 
     const extrafältObj = {
       "1930": {

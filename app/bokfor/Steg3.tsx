@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { saveTransaction, getKontoklass } from "./actions";
-import SubmitButton from "./SpecialFörval/SubmitButton";
+import KnappFullWidth from "../_components/KnappFullWidth";
 
 type KontoRad = {
   kontonummer?: string;
@@ -182,7 +182,7 @@ export default function Steg3({
         </table>
 
         <div className="mt-8">
-          <SubmitButton />
+          <KnappFullWidth text="Bokför" />
         </div>
       </form>
     </>

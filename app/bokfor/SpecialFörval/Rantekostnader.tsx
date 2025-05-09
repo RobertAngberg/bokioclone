@@ -1,10 +1,13 @@
+// #region Huvud
 "use client";
 
 import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import Falt from "./Falt";
-import SubmitButton from "./SubmitButton";
+import TextFält from "../../_components/TextFält";
+import KnappFullWidth from "../../_components/KnappFullWidth";
+import { formatSEK } from "../../_utils/format";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -15,18 +18,15 @@ interface Props {
   kommentar?: string | null;
   setKommentar?: (val: string | null) => void;
   setCurrentStep?: (val: number) => void;
-  fil?: File | null;
-  setFil?: (val: File | null) => void;
-  pdfUrl?: string | null;
-  setPdfUrl?: (val: string | null) => void;
+  fil: File | null;
+  setFil: (val: File | null) => void;
+  pdfUrl: string | null;
+  setPdfUrl: (val: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (val: Record<string, { label: string; debet: number; kredit: number }>) => void;
   formRef?: React.RefObject<HTMLFormElement>;
   handleSubmit?: (formData: FormData) => void;
 }
-
-const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
 export default function Rantekostnader(props: Props) {
   const {
@@ -50,32 +50,34 @@ export default function Rantekostnader(props: Props) {
 
   const [total, setTotal] = useState("");
   const [amortering, setAmortering] = useState("");
+  const [lokaltBelopp, setLokaltBelopp] = useState<number>(belopp ?? 0);
+
+  useAutofyllFrånPdf({
+    extractedBelopp: belopp,
+    currentBelopp: lokaltBelopp,
+    setBelopp: setLokaltBelopp,
+    extractedDatum: transaktionsdatum,
+    currentDatum: transaktionsdatum ?? "",
+    setDatum: setTransaktionsdatum ?? (() => {}),
+  });
 
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
-      const totalVal = round(parseFloat(total || "0"));
-      const amorteringVal = round(parseFloat(amortering || "0"));
-      const räntaVal = round(totalVal - amorteringVal);
+    const gåTillSteg3 = () => {
+      const totalVal = Number(total || "0");
+      const amorteringVal = Number(amortering || "0");
+      const rantaVal = Math.max(totalVal - amorteringVal, 0);
 
-      const extrafältObj = {
-        "1930": {
-          label: "Företagskonto / affärskonto",
-          debet: 0,
-          kredit: totalVal,
-        },
-        "2310": {
-          label: "Obligations- och förlagslån",
-          debet: amorteringVal,
-          kredit: 0,
-        },
+      const extrafaltObj = {
+        "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: totalVal },
+        "2310": { label: "Obligations- och förlagslån", debet: amorteringVal, kredit: 0 },
         "8410": {
           label: "Räntekostnader för långfristiga skulder",
-          debet: räntaVal,
+          debet: rantaVal,
           kredit: 0,
         },
       };
 
-      setExtrafält?.(extrafältObj);
+      setExtrafält?.(extrafaltObj);
       setBelopp?.(totalVal);
       setCurrentStep?.(3);
     };
@@ -86,67 +88,64 @@ export default function Rantekostnader(props: Props) {
         <div className="flex flex-col-reverse md:flex-row justify-between gap-8">
           <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
-              fil={fil ?? null}
-              setFil={setFil ?? (() => {})}
-              setPdfUrl={setPdfUrl ?? (() => {})}
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
               setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
-              setBelopp={() => {}}
+              setBelopp={setLokaltBelopp}
             />
-            <Falt
+
+            <TextFält
+              name="total"
               label="Summa ränta & amortering"
               type="number"
               value={total}
-              onChange={setTotal}
+              onChange={(e) => setTotal(e.target.value)}
             />
-            <Falt
+            <TextFält
+              name="amortering"
               label="Varav amortering"
               type="number"
               value={amortering}
-              onChange={setAmortering}
+              onChange={(e) => setAmortering(e.target.value)}
             />
+
             <p className="text-sm text-gray-400 mb-4">
-              Ränta:{" "}
-              {formatSEK(
-                Math.max(round(parseFloat(total || "0") - parseFloat(amortering || "0")), 0)
-              )}{" "}
-              kr
+              Ränta: {formatSEK(Math.max(Number(total || 0) - Number(amortering || 0), 0))} kr
             </p>
 
-            <Falt
+            <TextFält
+              name="kommentar"
               label="Kommentar"
               type="textarea"
               value={kommentar ?? ""}
-              onChange={setKommentar ?? (() => {})}
+              onChange={(e) => setKommentar?.(e.target.value)}
             />
-            <Falt
+            <TextFält
+              name="datum"
               label="Betaldatum"
               type="date"
               value={transaktionsdatum ?? ""}
-              onChange={setTransaktionsdatum ?? (() => {})}
+              onChange={(e) => setTransaktionsdatum?.(e.target.value)}
             />
-            <button
-              onClick={handleLocalSubmit}
-              className="w-full py-4 mt-6 font-bold rounded bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+
+            <KnappFullWidth text="Bokför" onClick={gåTillSteg3} />
           </div>
-          <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
+          <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
       </div>
     );
   }
 
   if (mode === "steg3") {
-    const rad = extrafält || {};
-    const rows = Object.entries(rad).map(([konto, info]) => ({
+    const rows = Object.entries(extrafält).map(([konto, info]) => ({
       konto: `${konto} ${info.label}`,
       debet: info.debet,
       kredit: info.kredit,
     }));
 
-    const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
-    const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
+    const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
+    const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -189,13 +188,12 @@ export default function Rantekostnader(props: Props) {
             </table>
 
             <div className="mt-8">
-              <SubmitButton />
+              <KnappFullWidth text="Slutför bokföring" />
             </div>
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }
+// #endregion

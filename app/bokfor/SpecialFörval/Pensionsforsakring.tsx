@@ -1,59 +1,58 @@
+// #region Huvud
 "use client";
 
 import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
-import Falt from "./Falt";
-import SubmitButton from "./SubmitButton";
+import TextFält from "../../_components/TextFält";
+import KnappFullWidth from "../../_components/KnappFullWidth";
+import { formatSEK, parseNumber } from "../../_utils/format";
 
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp?: (amount: number | null) => void;
+  setBelopp?: (val: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (date: string | null) => void;
+  setTransaktionsdatum?: (val: string | null) => void;
   kommentar?: string | null;
-  setKommentar?: (comment: string | null) => void;
-  setCurrentStep?: (step: number) => void;
-  fil?: File | null;
-  setFil?: (file: File | null) => void;
-  pdfUrl?: string | null;
-  setPdfUrl?: (url: string | null) => void;
+  setKommentar?: (val: string | null) => void;
+  setCurrentStep?: (val: number) => void;
+  fil: File | null;
+  setFil: (val: File | null) => void;
+  pdfUrl: string | null;
+  setPdfUrl: (val: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
-  formRef?: React.RefObject<HTMLFormElement | null>;
+  formRef?: React.RefObject<HTMLFormElement>;
   handleSubmit?: (formData: FormData) => void;
 }
+// #endregion
 
-const round = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
-const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
-
-export default function Pensionsforsakring(props: Props) {
-  const {
-    mode,
-    belopp,
-    setBelopp,
-    transaktionsdatum,
-    setTransaktionsdatum,
-    kommentar,
-    setKommentar,
-    setCurrentStep,
-    fil,
-    setFil,
-    pdfUrl,
-    setPdfUrl,
-    extrafält,
-    setExtrafält,
-    formRef,
-    handleSubmit,
-  } = props;
-
+export default function Pensionsforsakring({
+  mode,
+  belopp,
+  setBelopp,
+  transaktionsdatum,
+  setTransaktionsdatum,
+  kommentar,
+  setKommentar,
+  setCurrentStep,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
+  extrafält,
+  setExtrafält,
+  formRef,
+  handleSubmit,
+}: Props) {
   const [total, setTotal] = useState("");
+  const [lokaltBelopp, setLokaltBelopp] = useState<number>(belopp ?? 0);
 
   if (mode === "steg2") {
-    const handleLocalSubmit = () => {
-      const val = round(parseFloat(total || "0"));
-      const loneskatt = round(val * 0.2425); // 24.25%
+    const gåVidare = () => {
+      const val = parseNumber(total);
+      const loneskatt = val * 0.2425;
 
       const extrafaltObj = {
         "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: val },
@@ -74,44 +73,50 @@ export default function Pensionsforsakring(props: Props) {
         },
       };
 
+      setBelopp?.(val);
       setExtrafält?.(extrafaltObj);
       setCurrentStep?.(3);
     };
 
     return (
       <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Pensionsförsäkring</h1>
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Pensionsförsäkring</h1>
 
-        <div className="flex flex-col-reverse justify-between h-auto max-w-5xl px-4 mx-auto md:flex-row">
-          <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
+          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
-              fil={fil ?? null}
-              setFil={setFil ?? (() => {})}
-              setPdfUrl={setPdfUrl ?? (() => {})}
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
               setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
-              setBelopp={() => {}}
+              setBelopp={setLokaltBelopp}
             />
 
-            <Falt label="Totalt belopp" type="number" value={total} onChange={setTotal} />
-            <Falt
+            <TextFält
+              name="belopp"
+              label="Totalt belopp"
+              type="number"
+              value={total}
+              onChange={(e) => setTotal(e.target.value)}
+            />
+
+            <TextFält
+              name="kommentar"
               label="Kommentar"
               type="textarea"
               value={kommentar ?? ""}
-              onChange={setKommentar ?? (() => {})}
+              onChange={(e) => setKommentar?.(e.target.value)}
             />
-            <Falt
+
+            <TextFält
+              name="datum"
               label="Betaldatum"
               type="date"
               value={transaktionsdatum ?? ""}
-              onChange={setTransaktionsdatum ?? (() => {})}
+              onChange={(e) => setTransaktionsdatum?.(e.target.value)}
             />
 
-            <button
-              onClick={handleLocalSubmit}
-              className="w-full px-4 py-6 font-bold text-white rounded bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+            <KnappFullWidth text="Bokför" onClick={gåVidare} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -145,8 +150,8 @@ export default function Pensionsforsakring(props: Props) {
       },
     ];
 
-    const totalDebet = round(rows.reduce((sum, r) => sum + r.debet, 0));
-    const totalKredit = round(rows.reduce((sum, r) => sum + r.kredit, 0));
+    const totalDebet = rows.reduce((sum, r) => sum + r.debet, 0);
+    const totalKredit = rows.reduce((sum, r) => sum + r.kredit, 0);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -189,13 +194,11 @@ export default function Pensionsforsakring(props: Props) {
             </table>
 
             <div className="mt-8">
-              <SubmitButton />
+              <KnappFullWidth text="Slutför bokföring" />
             </div>
           </form>
         </div>
       </main>
     );
   }
-
-  return null;
 }

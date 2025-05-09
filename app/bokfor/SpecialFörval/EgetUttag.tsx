@@ -6,26 +6,27 @@ import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
-import { formatSEK } from "../../_utils/format";
-import { sammanfattaExtrafalt } from "../../_utils/extrafalt";
-import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 import DatePicker from "react-datepicker";
+import { formatSEK } from "../../_utils/format";
+import { sammanfattaExtrafält } from "../../_utils/extrafalt";
+import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
+import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp?: (amount: number | null) => void;
+  setBelopp?: (val: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (date: string | null) => void;
+  setTransaktionsdatum?: (val: string | null) => void;
   kommentar?: string | null;
-  setKommentar?: (comment: string | null) => void;
-  setCurrentStep?: (step: number) => void;
+  setKommentar?: (val: string | null) => void;
+  setCurrentStep?: (val: number) => void;
   fil?: File | null;
-  setFil?: (file: File | null) => void;
+  setFil?: (val: File | null) => void;
   pdfUrl?: string | null;
-  setPdfUrl?: (url: string | null) => void;
+  setPdfUrl?: (val: string | null) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
-  setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
+  setExtrafält?: (val: Record<string, { label: string; debet: number; kredit: number }>) => void;
   formRef?: React.RefObject<HTMLFormElement>;
   handleSubmit?: (formData: FormData) => void;
 }
@@ -49,38 +50,40 @@ export default function EgetUttag({
   formRef,
   handleSubmit,
 }: Props) {
-  const [amount, setAmount] = useState<number>(belopp ?? 0);
-  const [date, setDate] = useState<string>(
-    transaktionsdatum ?? new Date().toISOString().split("T")[0]
-  );
-  const [comment, setComment] = useState<string>(kommentar ?? "");
+  const [lokaltBelopp, setLokaltBelopp] = useState<number | null>(belopp ?? null);
+  const [datum, setDatum] = useState(transaktionsdatum ?? "");
+  const [kommentarText, setKommentarText] = useState(kommentar ?? "");
 
   useAutofyllFrånPdf({
-    belopp,
-    beloppState: [amount, setAmount],
-    transaktionsdatum,
-    dateState: [date, setDate],
+    extractedBelopp: belopp,
+    currentBelopp: lokaltBelopp ?? 0,
+    setBelopp: setLokaltBelopp,
+    extractedDatum: transaktionsdatum,
+    currentDatum: datum,
+    setDatum,
   });
 
-  const valid = amount > 0;
+  const giltigt = (lokaltBelopp ?? 0) > 0;
 
-  const handleStep2 = () => {
-    setBelopp?.(amount);
-    setKommentar?.(comment);
-    setTransaktionsdatum?.(date);
+  function gåTillSteg3() {
+    const belopp = lokaltBelopp ?? 0;
+
+    setBelopp?.(belopp);
+    setKommentar?.(kommentarText);
+    setTransaktionsdatum?.(datum);
 
     setExtrafält?.({
-      "2013": { label: "Eget uttag", debet: amount, kredit: 0 },
-      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: amount },
+      "2013": { label: "Eget uttag", debet: belopp, kredit: 0 },
+      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: belopp },
     });
 
     setCurrentStep?.(3);
-  };
+  }
 
   if (mode === "steg2") {
     return (
       <section className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center">Steg 2: Eget Uttag</h1>
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Eget uttag</h1>
 
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
           <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
@@ -88,23 +91,23 @@ export default function EgetUttag({
               fil={fil ?? null}
               setFil={setFil ?? (() => {})}
               setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setDate}
-              setBelopp={setAmount}
+              setTransaktionsdatum={setDatum}
+              setBelopp={setLokaltBelopp}
             />
 
             <TextFält
               label="Belopp"
               name="belopp"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              value={lokaltBelopp ?? ""}
+              onChange={(e) => setLokaltBelopp(Number(e.target.value))}
               required
             />
 
             <label className="block text-sm font-medium text-white mb-2">Datum</label>
             <DatePicker
               className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
-              selected={new Date(`${date}T00:00:00`)}
-              onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+              selected={ÅÅÅÅMMDDTillDate(datum)}
+              onChange={(d) => setDatum(dateTillÅÅÅÅMMDD(d))}
               dateFormat="yyyy-MM-dd"
               locale="sv"
             />
@@ -112,12 +115,12 @@ export default function EgetUttag({
             <TextFält
               label="Kommentar"
               name="kommentar"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              value={kommentarText}
+              onChange={(e) => setKommentarText(e.target.value)}
               required={false}
             />
 
-            <KnappFullWidth text="Bokför" onClick={handleStep2} disabled={!valid} />
+            <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -127,15 +130,15 @@ export default function EgetUttag({
   }
 
   if (mode === "steg3") {
-    const { rows, totalDebet, totalKredit } = sammanfattaExtrafalt(extrafält);
+    const { rows, totalDebet, totalKredit } = sammanfattaExtrafält(extrafält);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
         <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
-          <p className="text-center font-bold text-xl mb-1">Eget Uttag</p>
+          <p className="text-center font-bold text-xl mb-1">Eget uttag</p>
           <p className="text-center text-gray-300 mb-8">
-            {date ? new Date(`${date}T00:00:00`).toLocaleDateString("sv-SE") : ""}
+            {datum ? new Date(`${datum}T00:00:00`).toLocaleDateString("sv-SE") : ""}
           </p>
 
           <table className="w-full text-left border-separate border-spacing-y-2">
