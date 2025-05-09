@@ -1,6 +1,8 @@
 import Historik from "./Historik";
 import { fetchTransaktioner } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
   await new Promise((r) => setTimeout(r, 400));
 

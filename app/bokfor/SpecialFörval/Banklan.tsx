@@ -8,7 +8,8 @@ import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import DatePicker from "react-datepicker";
 import { formatSEK } from "../../_utils/format";
-import { sammanfattaExtrafalt } from "../../_utils/extrafalt";
+import { sammanfattaExtrafält } from "../../_utils/extrafalt";
+import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
 import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
@@ -16,16 +17,16 @@ interface Props {
   belopp?: number | null;
   setBelopp?: (v: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (v: string | null) => void;
+  setTransaktionsdatum?: (v: string) => void;
   kommentar?: string | null;
   setKommentar?: (v: string | null) => void;
   setCurrentStep?: (v: number) => void;
-  fil?: File | null;
-  setFil?: (f: File | null) => void;
-  pdfUrl?: string | null;
-  setPdfUrl?: (u: string | null) => void;
+  fil: File | null;
+  setFil: (f: File | null) => void;
+  pdfUrl: string | null;
+  setPdfUrl: (u: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
-  setExtrafält?: (v: Record<string, { label: string; debet: number; kredit: number }>) => void;
+  setExtrafält?: (f: Record<string, { label: string; debet: number; kredit: number }>) => void;
   formRef?: React.RefObject<HTMLFormElement>;
   handleSubmit?: (fd: FormData) => void;
 }
@@ -49,41 +50,43 @@ export default function Banklan({
   formRef,
   handleSubmit,
 }: Props) {
-  const [amount, setAmount] = useState<number>(belopp ?? 0);
-  const [date, setDate] = useState<string>(
-    transaktionsdatum ?? new Date().toISOString().split("T")[0]
-  );
-  const [comment, setComment] = useState<string>(kommentar ?? "");
+  const [lokaltBelopp, setLokaltBelopp] = useState<number | null>(belopp ?? null);
+  const [datum, setDatum] = useState(transaktionsdatum ?? "");
+  const [kommentarText, setKommentarText] = useState(kommentar ?? "");
 
   useAutofyllFrånPdf({
-    belopp,
-    beloppState: [amount, setAmount],
-    transaktionsdatum,
-    dateState: [date, setDate],
+    extractedBelopp: belopp,
+    currentBelopp: lokaltBelopp ?? 0,
+    setBelopp: setLokaltBelopp,
+    extractedDatum: transaktionsdatum,
+    currentDatum: datum,
+    setDatum,
   });
 
-  const valid = amount > 0;
+  const valid = (lokaltBelopp ?? 0) > 0;
 
-  const handleSubmitStep2 = () => {
-    const extrafaltObj = {
+  function gåTillSteg3() {
+    const belopp = lokaltBelopp ?? 0;
+
+    const extrafältObj = {
       "1930": {
         label: "Företagskonto / affärskonto",
-        debet: amount,
+        debet: belopp,
         kredit: 0,
       },
       "2350": {
         label: "Lån från kreditinstitut",
         debet: 0,
-        kredit: amount,
+        kredit: belopp,
       },
     };
 
-    setExtrafält?.(extrafaltObj);
-    setBelopp?.(amount);
-    setTransaktionsdatum?.(date);
-    setKommentar?.(comment);
+    setExtrafält?.(extrafältObj);
+    setBelopp?.(belopp);
+    setTransaktionsdatum?.(datum);
+    setKommentar?.(kommentarText);
     setCurrentStep?.(3);
-  };
+  }
 
   if (mode === "steg2") {
     return (
@@ -92,18 +95,18 @@ export default function Banklan({
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
           <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
-              fil={fil ?? null}
-              setFil={setFil ?? (() => {})}
-              setPdfUrl={setPdfUrl ?? (() => {})}
-              setBelopp={setAmount}
-              setTransaktionsdatum={setDate}
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
+              setBelopp={setLokaltBelopp}
+              setTransaktionsdatum={setDatum}
             />
 
             <TextFält
               label="Totalt lånebelopp"
               name="total"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              value={lokaltBelopp ?? ""}
+              onChange={(e) => setLokaltBelopp(Number(e.target.value))}
               required
             />
 
@@ -112,8 +115,8 @@ export default function Banklan({
             </label>
             <DatePicker
               className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
-              selected={new Date(`${date}T00:00:00`)}
-              onChange={(d) => setDate(d ? d.toISOString().split("T")[0] : "")}
+              selected={ÅÅÅÅMMDDTillDate(datum)}
+              onChange={(date) => setDatum(dateTillÅÅÅÅMMDD(date))}
               dateFormat="yyyy-MM-dd"
               locale="sv"
               required
@@ -122,22 +125,22 @@ export default function Banklan({
             <TextFält
               label="Kommentar"
               name="kommentar"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              value={kommentarText}
+              onChange={(e) => setKommentarText(e.target.value)}
               required={false}
             />
 
-            <KnappFullWidth text="Gå vidare" onClick={handleSubmitStep2} disabled={!valid} />
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!valid} />
           </div>
 
-          <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
+          <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
       </section>
     );
   }
 
   if (mode === "steg3") {
-    const { rows, totalDebet, totalKredit } = sammanfattaExtrafalt(extrafält);
+    const { rows, totalDebet, totalKredit } = sammanfattaExtrafält(extrafält);
 
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
@@ -145,7 +148,7 @@ export default function Banklan({
           <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
           <p className="text-center font-bold text-xl mb-1">Banklån</p>
           <p className="text-center text-gray-300 mb-8">
-            {date ? new Date(date).toLocaleDateString("sv-SE") : ""}
+            {datum ? new Date(`${datum}T00:00:00`).toLocaleDateString("sv-SE") : ""}
           </p>
 
           <table className="w-full text-left border-separate border-spacing-y-2">

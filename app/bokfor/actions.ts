@@ -2,8 +2,8 @@
 
 import { Pool } from "pg";
 import { auth } from "@/auth";
-import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
+import { invalidateBokförCache } from "../_utils/invalidateBokförCache";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -292,9 +292,9 @@ export async function saveTransaction(formData: FormData) {
     }
 
     client.release();
-    revalidatePath("/grundbok");
+    // viktigt, så att vi inte får en "stale" cache
+    await invalidateBokförCache();
 
-    console.log("✅ Transaktion sparad & grundbok uppdaterad");
     return { success: true, id: transaktionsId };
   } catch (err) {
     client.release();
