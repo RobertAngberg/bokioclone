@@ -30,50 +30,46 @@ type Förval = {
 };
 
 interface Step3Props {
-  kontonummer: string;
-  kontobeskrivning: string;
+  kontonummer?: string;
+  kontobeskrivning?: string;
   fil?: File | null;
-  belopp: number;
+  belopp?: number;
   transaktionsdatum: string;
-  kommentar: string;
-  valtFörval: Förval | null;
-  setCurrentStep: (step: number) => void;
-  extrafält: Record<string, ExtrafältRad>;
+  kommentar?: string;
+  valtFörval?: Förval | null;
+  setCurrentStep?: (step: number) => void;
+  extrafält?: Record<string, ExtrafältRad>;
 }
 // #endregion
 
 export default function Steg3({
-  kontonummer,
-  kontobeskrivning,
+  kontonummer = "",
+  kontobeskrivning = "",
   fil,
-  belopp,
+  belopp = 0,
   transaktionsdatum,
-  kommentar,
-  valtFörval,
+  kommentar = "",
+  valtFörval = null,
   setCurrentStep,
-  extrafält,
+  extrafält = {},
 }: Step3Props) {
   const formRef = useRef<HTMLFormElement>(null);
   const [kontoklass, setKontoklass] = useState<"Intäkt" | "Kostnad" | "Tillgång" | "Skuld" | null>(
     null
   );
 
-  console.log("Step3 extrafält:", extrafält);
-  console.log("valtFörval.specialtyp:", valtFörval?.specialtyp);
-
   useEffect(() => {
-    if (!valtFörval || valtFörval.specialtyp) return;
-
+    if (!valtFörval || valtFörval.specialtyp || !kontonummer) return;
     getKontoklass(kontonummer).then((res) => {
       const typ = res?.toLowerCase();
       if (typ === "intäkter") setKontoklass("Intäkt");
       else if (typ === "kostnader") setKontoklass("Kostnad");
       else if (typ === "tillgångar") setKontoklass("Tillgång");
       else if (typ === "skulder") setKontoklass("Skuld");
-      else console.warn("🤷‍♂️ Okänd kontoklass:", res);
     });
   }, [valtFörval, kontonummer]);
 
+  // Moms- och beloppsberäkning (om tillämpligt)
   const momsSats = valtFörval?.momssats ?? 0;
   const moms = +(belopp * (momsSats / (1 + momsSats))).toFixed(2);
   const beloppUtanMoms = +(belopp - moms).toFixed(2);
@@ -82,7 +78,7 @@ export default function Steg3({
   const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
 
   const handleSubmit = async (formData: FormData) => {
-    if (!valtFörval) return;
+    if (!valtFörval || !setCurrentStep) return;
 
     if (fil) formData.set("fil", fil);
     formData.set("valtFörval", JSON.stringify(valtFörval));
@@ -103,13 +99,17 @@ export default function Steg3({
     return (
       <div className="min-h-screen p-10 text-center text-white bg-red-900">
         <p className="mb-4">⚠️ Saknar valt förval. Gå tillbaka till Steg 1.</p>
-        <button onClick={() => setCurrentStep(1)} className="px-4 py-2 bg-white text-black rounded">
+        <button
+          onClick={() => setCurrentStep?.(1)}
+          className="px-4 py-2 bg-white text-black rounded"
+        >
           Tillbaka
         </button>
       </div>
     );
   }
 
+  // Dynamisk radbyggnad beroende på specialtyp och extrafält
   const fallbackRows =
     valtFörval.specialtyp && Object.keys(extrafält).length > 0
       ? Object.entries(extrafält).map(([konto, val], i) => ({
@@ -147,8 +147,9 @@ export default function Steg3({
       <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
       <p className="text-center font-bold text-xl mb-1">{valtFörval.namn}</p>
       <p className="text-center text-gray-300 mb-8">
-        {new Date(transaktionsdatum).toLocaleDateString("sv-SE")}
+        {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
       </p>
+      {kommentar && <p className="text-center text-gray-400 mb-4 italic">{kommentar}</p>}
 
       <form ref={formRef} action={handleSubmit}>
         <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">

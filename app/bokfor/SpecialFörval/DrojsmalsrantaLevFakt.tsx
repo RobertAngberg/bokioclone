@@ -54,14 +54,14 @@ export default function DrojsmalsrantaLevFakt({
   const [datum, setDatum] = useState(transaktionsdatum ?? "");
   const [kommentarText, setKommentarText] = useState(kommentar ?? "");
 
-  useAutofyllFrånPdf({
-    extractedBelopp: belopp,
-    currentBelopp: lokaltBelopp ?? 0,
-    setBelopp: setLokaltBelopp,
-    extractedDatum: transaktionsdatum,
-    currentDatum: datum,
-    setDatum,
-  });
+  // useAutofyllFrånPdf({
+  //   extractedBelopp: belopp,
+  //   currentBelopp: lokaltBelopp ?? 0,
+  //   setBelopp: setLokaltBelopp,
+  //   extractedDatum: transaktionsdatum,
+  //   currentDatum: datum,
+  //   setDatum,
+  // });
 
   const giltigt = (lokaltBelopp ?? 0) > 0;
 

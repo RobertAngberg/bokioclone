@@ -1,4 +1,4 @@
-// #region Huvud
+// #region
 "use client";
 
 import { useState } from "react";
@@ -7,10 +7,6 @@ import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import DatePicker from "react-datepicker";
-import { formatSEK } from "../../_utils/format";
-import { sammanfattaExtrafält } from "../../_utils/extrafalt";
-import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
-import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -50,39 +46,30 @@ export default function AmorteringBanklan({
   formRef,
   handleSubmit,
 }: Props) {
-  const [amortering, setAmortering] = useState(0);
   const [ränta, setRänta] = useState(0);
 
-  useAutofyllFrånPdf({
-    extractedBelopp: belopp,
-    currentBelopp: amortering,
-    setBelopp: setAmortering,
-    extractedDatum: transaktionsdatum,
-    currentDatum: transaktionsdatum ?? "",
-    setDatum: setTransaktionsdatum,
-  });
+  const giltigt = !!belopp && !!transaktionsdatum;
+
+  function gåTillSteg3() {
+    const total = belopp ?? 0;
+    const interest = ränta;
+    const amort = total - interest;
+
+    const extrafältObj = {
+      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
+      "2350": {
+        label: "Andra långfristiga skulder till kreditinstitut",
+        debet: amort,
+        kredit: 0,
+      },
+      "8410": { label: "Räntekostnader för långfristiga skulder", debet: interest, kredit: 0 },
+    };
+
+    setExtrafält?.(extrafältObj);
+    setCurrentStep?.(3);
+  }
 
   if (mode === "steg2") {
-    function gåTillSteg3() {
-      const total = amortering;
-      const interest = ränta;
-      const amort = total - interest;
-
-      const extrafältObj = {
-        "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
-        "2350": {
-          label: "Andra långfristiga skulder till kreditinstitut",
-          debet: amort,
-          kredit: 0,
-        },
-        "8410": { label: "Räntekostnader för långfristiga skulder", debet: interest, kredit: 0 },
-      };
-
-      setExtrafält?.(extrafältObj);
-      setBelopp?.(amortering);
-      setCurrentStep?.(3);
-    }
-
     return (
       <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Amortering av banklån</h1>
@@ -99,9 +86,8 @@ export default function AmorteringBanklan({
             <TextFält
               label="Amorteringsbelopp"
               name="amortering"
-              value={amortering}
-              onChange={(e) => setAmortering(Number(e.target.value))}
-              required
+              value={belopp ?? 0}
+              onChange={(e) => setBelopp(Number(e.target.value))}
             />
 
             <TextFält
@@ -117,8 +103,9 @@ export default function AmorteringBanklan({
             </label>
             <DatePicker
               className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
-              selected={ÅÅÅÅMMDDTillDate(transaktionsdatum)}
-              onChange={(d) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(d))}
+              selected={transaktionsdatum ? new Date(transaktionsdatum) : null}
+              onChange={(d) => setTransaktionsdatum(d ? d.toISOString().split("T")[0] : "")}
+              dateFormat="yyyy-MM-dd"
               locale="sv"
               required
             />
@@ -131,7 +118,7 @@ export default function AmorteringBanklan({
               required={false}
             />
 
-            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} />
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -141,8 +128,6 @@ export default function AmorteringBanklan({
   }
 
   if (mode === "steg3") {
-    const { rows, totalDebet, totalKredit } = sammanfattaExtrafält(extrafält);
-
     return (
       <main className="min-h-screen text-white bg-slate-950 px-4">
         <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
@@ -161,25 +146,21 @@ export default function AmorteringBanklan({
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ konto, debet, kredit }) => (
+              {Object.entries(extrafält).map(([konto, { label, debet, kredit }]) => (
                 <tr key={konto} className="bg-slate-900 rounded">
-                  <td className="px-2 py-1">{konto}</td>
-                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
-                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
+                  <td className="px-2 py-1">{label}</td>
+                  <td className="px-2 py-1 text-right">{debet > 0 ? debet.toFixed(2) : ""}</td>
+                  <td className="px-2 py-1 text-right">{kredit > 0 ? kredit.toFixed(2) : ""}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="flex justify-end mt-4 text-lg font-bold">
-            <span className="mr-4">Totalt:</span>
-            <span className="w-28 text-right">{formatSEK(totalDebet)}</span>
-            <span className="w-28 text-right">{formatSEK(totalKredit)}</span>
-          </div>
-
-          <form ref={formRef} action={handleSubmit} className="mt-8">
-            <KnappFullWidth text="Slutför bokföring" />
-          </form>
+          <KnappFullWidth
+            text="Slutför bokföring"
+            type="button"
+            onClick={() => handleSubmit?.(new FormData(formRef?.current ?? undefined))}
+          />
         </div>
       </main>
     );

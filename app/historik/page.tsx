@@ -6,7 +6,12 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   await new Promise((r) => setTimeout(r, 400));
 
-  const result = await fetchTransaktioner("2025");
+  const currentYear = new Date().getFullYear();
+  const fromYear = currentYear - 4;
+
+  // Hämta ALLA transaktioner från senaste 5 åren
+  const result = await fetchTransaktioner(`${fromYear}`);
+
   const historyData =
     result.success && Array.isArray(result.data)
       ? result.data.map((item) => ({

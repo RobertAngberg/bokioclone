@@ -1,3 +1,4 @@
+// #region
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,6 +13,7 @@ interface FileUploadProps {
   setBelopp: (belopp: number) => void;
   fil: File | null;
 }
+// #endregion
 
 export default function LaddaUppFil({
   setFil,
@@ -22,6 +24,21 @@ export default function LaddaUppFil({
   const [recognizedText, setRecognizedText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [timeoutTriggered, setTimeoutTriggered] = useState(false);
+
+  useEffect(() => {
+    if (!recognizedText) return;
+
+    (async () => {
+      try {
+        const parsed = await extractDataFromOCR(recognizedText);
+        console.log("📄 Parsed data från OpenAI:", parsed);
+
+        if (!isNaN(parsed?.belopp)) setBelopp(Number(parsed.belopp));
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [recognizedText, setBelopp, setTransaktionsdatum]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

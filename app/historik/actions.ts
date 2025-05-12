@@ -6,31 +6,21 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-export async function fetchTransaktioner(year: string | null) {
+export async function fetchTransaktioner(fromYear: string | null) {
   try {
     const client = await pool.connect();
-    const parsedYear = parseInt(year || "");
-
-    console.log("🔍 fetchTransaktioner start:", { parsedYear });
+    const parsedYear = parseInt(fromYear || "");
 
     const result = await client.query(
       `
       SELECT * FROM transaktioner
-      WHERE EXTRACT(YEAR FROM transaktionsdatum) = $1
+      WHERE EXTRACT(YEAR FROM transaktionsdatum) >= $1
       ORDER BY transaktionsdatum DESC
-    `,
+      `,
       [parsedYear]
     );
 
     client.release();
-
-    if (result.rows.length > 0) {
-      console.log("✅ Transaktioner hämtade:", result.rows.length);
-      console.log("🔎 Exempel:", result.rows[0]);
-    } else {
-      console.warn("⚠️ Inga transaktioner hittades för", parsedYear);
-    }
-
     return { success: true, data: result.rows };
   } catch (err: any) {
     console.error("❌ fetchTransaktioner error:", err);

@@ -18,7 +18,7 @@ export async function extractDataFromOCR(text: string) {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-nano",
       messages: [
         {
           role: "system",

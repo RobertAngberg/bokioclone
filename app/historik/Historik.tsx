@@ -1,4 +1,4 @@
-// #region Huvud
+// #region
 "use client";
 
 import React, { useState } from "react";
@@ -38,6 +38,9 @@ export default function Historik({ initialData }: Props) {
   );
   const [detailsMap, setDetailsMap] = useState<Record<number, TransactionDetail[]>>({});
   const [activeId, setActiveId] = useState<number | null>(null);
+
+  // Filtrera data på valt år
+  const filteredData = historyData.filter((item) => item.transaktionsdatum.slice(0, 4) === year);
 
   const handleRowClick = (id: string | number) => {
     const numericId = typeof id === "string" ? parseInt(id) : id;
@@ -114,7 +117,7 @@ export default function Historik({ initialData }: Props) {
       </div>
 
       <Tabell
-        data={historyData}
+        data={filteredData}
         columns={columns}
         getRowId={(item: HistoryItem) => item.transaktions_id}
         activeId={activeId}
