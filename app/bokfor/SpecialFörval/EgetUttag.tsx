@@ -1,4 +1,4 @@
-// #region
+// #region Huvud
 "use client";
 
 import LaddaUppFil from "../LaddaUppFil";
@@ -11,30 +11,28 @@ import Steg3 from "../Steg3";
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp?: (val: number | null) => void;
+  setBelopp: (v: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (val: string | null) => void;
+  setTransaktionsdatum: (v: string) => void;
   kommentar?: string | null;
-  setKommentar?: (val: string | null) => void;
-  setCurrentStep?: (val: number) => void;
-  fil?: File | null;
-  setFil?: (val: File | null) => void;
-  pdfUrl?: string | null;
-  setPdfUrl?: (val: string) => void;
+  setKommentar?: (v: string | null) => void;
+  setCurrentStep?: (v: number) => void;
+  fil: File | null;
+  setFil: (f: File | null) => void;
+  pdfUrl: string | null;
+  setPdfUrl: (u: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
-  setExtrafält?: (val: Record<string, { label: string; debet: number; kredit: number }>) => void;
-  formRef?: React.RefObject<HTMLFormElement>;
-  handleSubmit?: (formData: FormData) => void;
+  setExtrafält?: (f: Record<string, { label: string; debet: number; kredit: number }>) => void;
 }
 // #endregion
 
 export default function EgetUttag({
   mode,
-  belopp,
+  belopp = null,
   setBelopp,
-  transaktionsdatum,
+  transaktionsdatum = "",
   setTransaktionsdatum,
-  kommentar,
+  kommentar = "",
   setKommentar,
   setCurrentStep,
   fil,
@@ -43,16 +41,16 @@ export default function EgetUttag({
   setPdfUrl,
   extrafält,
   setExtrafält,
-  formRef,
-  handleSubmit,
 }: Props) {
   const giltigt = !!belopp && !!transaktionsdatum;
 
   function gåTillSteg3() {
-    setExtrafält?.({
-      "2013": { label: "Eget uttag", debet: belopp ?? 0, kredit: 0 },
-      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: belopp ?? 0 },
-    });
+    const total = belopp ?? 0;
+    const extrafältObj = {
+      "2013": { label: "Eget uttag", debet: total, kredit: 0 },
+      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
+    };
+    setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }
 
@@ -63,25 +61,28 @@ export default function EgetUttag({
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
           <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
-              fil={fil ?? null}
-              setFil={setFil ?? (() => {})}
-              setPdfUrl={setPdfUrl ?? (() => {})}
-              setTransaktionsdatum={setTransaktionsdatum ?? (() => {})}
-              setBelopp={setBelopp ?? (() => {})}
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
+              setTransaktionsdatum={setTransaktionsdatum}
+              setBelopp={setBelopp}
             />
 
             <TextFält
               label="Belopp"
               name="belopp"
-              value={belopp ?? 0}
-              onChange={(e) => setBelopp?.(Number(e.target.value))}
+              value={belopp ?? ""}
+              onChange={(e) => setBelopp(Number(e.target.value))}
+              required
             />
 
-            <label className="block text-sm font-medium text-white mb-2">Datum (ÅÅÅÅ‑MM‑DD)</label>
+            <label className="block text-sm font-medium text-white mb-2">
+              Uttagsdatum (ÅÅÅÅ‑MM‑DD)
+            </label>
             <DatePicker
               className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
               selected={transaktionsdatum ? new Date(transaktionsdatum) : null}
-              onChange={(d) => setTransaktionsdatum?.(d ? d.toISOString().split("T")[0] : "")}
+              onChange={(d) => setTransaktionsdatum(d ? d.toISOString().split("T")[0] : "")}
               dateFormat="yyyy-MM-dd"
               locale="sv"
               required
@@ -95,12 +96,7 @@ export default function EgetUttag({
               required={false}
             />
 
-            <KnappFullWidth
-              text="Gå vidare"
-              type="button"
-              onClick={gåTillSteg3}
-              disabled={!giltigt}
-            />
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
@@ -125,9 +121,9 @@ export default function EgetUttag({
           kategori: "",
           konton: [],
           momssats: 0,
-          specialtyp: "egetuttag", // eller annan unik sträng för specialförval
+          specialtyp: "egetuttag",
         }}
-        setCurrentStep={setCurrentStep ?? (() => {})}
+        setCurrentStep={setCurrentStep}
         extrafält={extrafält}
       />
     );

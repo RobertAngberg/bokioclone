@@ -106,7 +106,7 @@ export default function LaddaUppFil({
         htmlFor="fileUpload"
         className="flex items-center justify-center px-4 py-2 mb-6 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
       >
-        Välj PDF eller bild
+        Ladda upp underlag
       </label>
 
       {isLoading && (

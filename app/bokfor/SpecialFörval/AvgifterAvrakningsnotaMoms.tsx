@@ -1,23 +1,19 @@
 // #region Huvud
 "use client";
 
-import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import DatePicker from "react-datepicker";
-import { formatSEK } from "../../_utils/format";
-import { sammanfattaExtrafält } from "../../_utils/extrafalt";
-import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
-import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
+import Steg3 from "../Steg3";
 
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp?: (v: number | null) => void;
+  setBelopp: (v: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum?: (v: string) => void;
+  setTransaktionsdatum: (v: string) => void;
   kommentar?: string | null;
   setKommentar?: (v: string | null) => void;
   setCurrentStep?: (v: number) => void;
@@ -34,11 +30,11 @@ interface Props {
 
 export default function AvgifterAvrakningsnotaMoms({
   mode,
-  belopp,
+  belopp = null,
   setBelopp,
-  transaktionsdatum,
+  transaktionsdatum = "",
   setTransaktionsdatum,
-  kommentar,
+  kommentar = "",
   setKommentar,
   setCurrentStep,
   fil,
@@ -50,24 +46,11 @@ export default function AvgifterAvrakningsnotaMoms({
   formRef,
   handleSubmit,
 }: Props) {
-  const [lokaltBelopp, setLokaltBelopp] = useState<number | null>(belopp ?? null);
-  const [datum, setDatum] = useState(transaktionsdatum ?? "");
-  const [comment, setComment] = useState(kommentar ?? "");
-
-  useAutofyllFrånPdf({
-    extractedBelopp: belopp,
-    currentBelopp: lokaltBelopp ?? 0,
-    setBelopp: setLokaltBelopp,
-    extractedDatum: transaktionsdatum,
-    currentDatum: datum,
-    setDatum,
-  });
-
   const momsSats = 0.25;
-  const valid = (lokaltBelopp ?? 0) > 0;
+  const giltigt = !!belopp && !!transaktionsdatum;
 
-  function gåVidare() {
-    const total = lokaltBelopp ?? 0;
+  function gåTillSteg3() {
+    const total = belopp ?? 0;
     const moms = (total * momsSats) / (1 + momsSats);
     const netto = total - moms;
 
@@ -78,15 +61,12 @@ export default function AvgifterAvrakningsnotaMoms({
     };
 
     setExtrafält?.(extrafältObj);
-    setBelopp?.(total);
-    setKommentar?.(comment);
-    setTransaktionsdatum?.(datum);
     setCurrentStep?.(3);
   }
 
   if (mode === "steg2") {
     return (
-      <section className="bg-cyan-950 text-white">
+      <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Avgifter avräkningsnota</h1>
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
           <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
@@ -94,15 +74,15 @@ export default function AvgifterAvrakningsnotaMoms({
               fil={fil}
               setFil={setFil}
               setPdfUrl={setPdfUrl}
-              setBelopp={setLokaltBelopp}
-              setTransaktionsdatum={setDatum}
+              setBelopp={setBelopp}
+              setTransaktionsdatum={setTransaktionsdatum}
             />
 
             <TextFält
               label="Totalbelopp (inkl. moms)"
               name="brutto"
-              value={lokaltBelopp ?? ""}
-              onChange={(e) => setLokaltBelopp(Number(e.target.value))}
+              value={belopp ?? ""}
+              onChange={(e) => setBelopp(Number(e.target.value))}
               required
             />
 
@@ -111,8 +91,9 @@ export default function AvgifterAvrakningsnotaMoms({
             </label>
             <DatePicker
               className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
-              selected={ÅÅÅÅMMDDTillDate(datum)}
-              onChange={(d) => setDatum(dateTillÅÅÅÅMMDD(d))}
+              selected={transaktionsdatum ? new Date(transaktionsdatum) : null}
+              onChange={(d) => setTransaktionsdatum(d ? d.toISOString().split("T")[0] : "")}
+              dateFormat="yyyy-MM-dd"
               locale="sv"
               required
             />
@@ -120,62 +101,41 @@ export default function AvgifterAvrakningsnotaMoms({
             <TextFält
               label="Kommentar"
               name="kommentar"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              value={kommentar ?? ""}
+              onChange={(e) => setKommentar?.(e.target.value)}
               required={false}
             />
 
-            <KnappFullWidth text="Gå vidare" onClick={gåVidare} disabled={!valid} />
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
         </div>
-      </section>
+      </div>
     );
   }
 
   if (mode === "steg3") {
-    const { rows, totalDebet, totalKredit } = sammanfattaExtrafält(extrafält);
-
     return (
-      <section className="min-h-screen text-white bg-slate-950 px-4">
-        <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
-          <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
-          <p className="text-center font-bold text-xl mb-1">Avgifter avräkningsnota 25 % moms</p>
-          <p className="text-center text-gray-300 mb-8">
-            {datum ? new Date(datum).toLocaleDateString("sv-SE") : ""}
-          </p>
-
-          <table className="w-full text-left border-separate border-spacing-y-2">
-            <thead>
-              <tr className="text-sm text-gray-300">
-                <th className="px-2">Konto</th>
-                <th className="px-2 text-right">Debet</th>
-                <th className="px-2 text-right">Kredit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ konto, debet, kredit }) => (
-                <tr key={konto} className="bg-slate-900 rounded">
-                  <td className="px-2 py-1">{konto}</td>
-                  <td className="px-2 py-1 text-right">{debet > 0 ? formatSEK(debet) : ""}</td>
-                  <td className="px-2 py-1 text-right">{kredit > 0 ? formatSEK(kredit) : ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="flex justify-end mt-4 text-lg font-bold">
-            <span className="mr-4">Totalt:</span>
-            <span className="w-28 text-right">{formatSEK(totalDebet)}</span>
-            <span className="w-28 text-right">{formatSEK(totalKredit)}</span>
-          </div>
-
-          <form ref={formRef} action={handleSubmit} className="mt-8">
-            <KnappFullWidth text="Slutför bokföring" />
-          </form>
-        </div>
-      </section>
+      <Steg3
+        kontonummer="6064"
+        kontobeskrivning="Avgifter avräkningsnota 25 % moms"
+        belopp={belopp ?? 0}
+        transaktionsdatum={transaktionsdatum ?? ""}
+        kommentar={kommentar ?? ""}
+        valtFörval={{
+          id: 0,
+          namn: "Avgifter avräkningsnota 25 % moms",
+          beskrivning: "",
+          typ: "",
+          kategori: "",
+          konton: [],
+          momssats: 0.25,
+          specialtyp: "avgifteravrakningsnota",
+        }}
+        setCurrentStep={setCurrentStep}
+        extrafält={extrafält}
+      />
     );
   }
 }
