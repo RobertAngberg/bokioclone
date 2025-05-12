@@ -7,6 +7,7 @@ import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import DatePicker from "react-datepicker";
+import Steg3 from "../Steg3";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -129,40 +130,25 @@ export default function AmorteringBanklan({
 
   if (mode === "steg3") {
     return (
-      <main className="min-h-screen text-white bg-slate-950 px-4">
-        <div className="max-w-5xl mx-auto bg-cyan-950 border border-cyan-800 rounded-2xl shadow-lg p-10">
-          <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
-          <p className="text-center font-bold text-xl mb-1">Amortering av banklån</p>
-          <p className="text-center text-gray-300 mb-8">
-            {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
-          </p>
-
-          <table className="w-full text-left border-separate border-spacing-y-2">
-            <thead>
-              <tr className="text-sm text-gray-300">
-                <th className="px-2">Konto</th>
-                <th className="px-2 text-right">Debet</th>
-                <th className="px-2 text-right">Kredit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(extrafält).map(([konto, { label, debet, kredit }]) => (
-                <tr key={konto} className="bg-slate-900 rounded">
-                  <td className="px-2 py-1">{label}</td>
-                  <td className="px-2 py-1 text-right">{debet > 0 ? debet.toFixed(2) : ""}</td>
-                  <td className="px-2 py-1 text-right">{kredit > 0 ? kredit.toFixed(2) : ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <KnappFullWidth
-            text="Slutför bokföring"
-            type="button"
-            onClick={() => handleSubmit?.(new FormData(formRef?.current ?? undefined))}
-          />
-        </div>
-      </main>
+      <Steg3
+        kontonummer="2350"
+        kontobeskrivning="Amortering av banklån"
+        belopp={belopp ?? 0}
+        transaktionsdatum={transaktionsdatum ?? ""}
+        kommentar={kommentar ?? ""}
+        valtFörval={{
+          id: 0,
+          namn: "Amortering av banklån",
+          beskrivning: "",
+          typ: "",
+          kategori: "",
+          konton: [],
+          momssats: 0,
+          specialtyp: "amorteringbanklan",
+        }}
+        setCurrentStep={setCurrentStep}
+        extrafält={extrafält}
+      />
     );
   }
 }

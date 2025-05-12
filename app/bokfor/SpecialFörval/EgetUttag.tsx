@@ -56,9 +56,6 @@ export default function EgetUttag({
     setCurrentStep?.(3);
   }
 
-  // -------------------- //
-  // Steg2
-  // -------------------- //
   if (mode === "steg2") {
     return (
       <div className="bg-cyan-950 text-white">
@@ -112,9 +109,6 @@ export default function EgetUttag({
     );
   }
 
-  // -------------------- //
-  // Steg3
-  // -------------------- //
   if (mode === "steg3") {
     return (
       <Steg3
