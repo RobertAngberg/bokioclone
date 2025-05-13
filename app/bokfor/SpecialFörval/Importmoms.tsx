@@ -53,10 +53,32 @@ export default function Importmoms({
   function gåTillSteg3() {
     const extrafältObj = {
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: belopp ?? 0 },
-      "2641": { label: "Debiterad ingående moms", debet: moms, kredit: 0 },
-      "4545": { label: "Inköp varor utanför EU", debet: parseFloat(tull || "0"), kredit: 0 },
-      "2645": { label: "Beräknad moms utland", debet: parseFloat(fiktiv || "0"), kredit: 0 },
-      "4799": { label: "Övriga avgifter", debet: parseFloat(ovrigt || "0"), kredit: 0 },
+      "2615": {
+        label: "Utgående moms import av varor, 25%",
+        debet: 0,
+        kredit: parseFloat(fiktiv || "0"),
+      },
+      "2640": { label: "Ingående moms", debet: parseFloat(tull || "0") * 0.2, kredit: 0 },
+      "2645": {
+        label: "Beräknad ingående moms på förvärv från utlandet",
+        debet: parseFloat(fiktiv || "0"),
+        kredit: 0,
+      },
+      "4545": {
+        label: "Import av varor, 25 % moms",
+        debet: parseFloat(fiktiv || "0") * 4,
+        kredit: 0,
+      },
+      "4549": {
+        label: "Motkonto beskattningsunderlag import",
+        debet: 0,
+        kredit: parseFloat(fiktiv || "0") * 4,
+      },
+      "5720": {
+        label: "Tull- och speditionskostnader m.m.",
+        debet: parseFloat(tull || "0") * 0.8,
+        kredit: 0,
+      },
     };
 
     setExtrafält?.(extrafältObj);
@@ -85,7 +107,7 @@ export default function Importmoms({
               required
             />
             <TextFält
-              label="Tull och spedition"
+              label="Tull och spedition m.m. inkl. svensk moms"
               name="tull"
               value={tull}
               onChange={(e) => setTull(e.target.value)}
@@ -98,14 +120,6 @@ export default function Importmoms({
               onChange={(e) => setFiktiv(e.target.value)}
               required
             />
-            <TextFält
-              label="Övriga skatter"
-              name="ovrigt"
-              value={ovrigt}
-              onChange={(e) => setOvrigt(e.target.value)}
-              required={false}
-            />
-
             <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
             <DatePicker
               className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"

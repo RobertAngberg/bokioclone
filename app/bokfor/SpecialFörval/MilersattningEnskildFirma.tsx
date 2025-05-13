@@ -45,30 +45,37 @@ export default function MilersattningEnskildFirma({
   extrafält,
   setExtrafält,
 }: Props) {
-  const [mil, setMil] = useState("50");
+  const [mil, setMil] = useState("1");
   const [ersPerMil, setErsPerMil] = useState("25");
   const [biltyp, setBiltyp] = useState("Egen bil");
 
   const giltigt = !!belopp && !!transaktionsdatum;
+
+  function getSkattefriPerMil(biltyp: string): number {
+    if (biltyp === "Egen bil") return 25;
+    if (biltyp === "Tjänstebil bensin el. diesel") return 12;
+    if (biltyp === "Tjänstebil Elbil") return 9.5;
+    return 0;
+  }
 
   function gåTillSteg3() {
     const milVal = parseNumber(mil);
     const ersVal = parseNumber(ersPerMil);
     const total = milVal * ersVal;
 
-    const skattefriPerMil = 25;
+    const skattefriPerMil = getSkattefriPerMil(biltyp);
     const skattefri = Math.min(ersVal, skattefriPerMil) * milVal;
     const skattepliktig = Math.max(0, ersVal - skattefriPerMil) * milVal;
 
     const extrafältData: Record<string, { label: string; debet: number; kredit: number }> = {
-      "7331": {
-        label: "Skattefri bilersättning",
+      "5841": {
+        label: "Milersättning, avdragsgill (Ägare enskild firma)",
         debet: skattefri,
         kredit: 0,
       },
       ...(skattepliktig > 0 && {
-        "7332": {
-          label: "Skattepliktiga bilersättningar",
+        "5842": {
+          label: "Milersättning, ej avdragsgill (Ägare enskild firma)",
           debet: skattepliktig,
           kredit: 0,
         },
@@ -81,6 +88,7 @@ export default function MilersattningEnskildFirma({
     };
 
     setExtrafält?.(extrafältData);
+    setBelopp(total);
     setCurrentStep?.(3);
   }
 
@@ -127,18 +135,6 @@ export default function MilersattningEnskildFirma({
               </select>
             </div>
 
-            <p className="text-sm text-gray-400 mb-4">
-              Total summa: {formatSEK(parseNumber(mil) * parseNumber(ersPerMil))} kr
-            </p>
-
-            <TextFält
-              name="kommentar"
-              label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={(e) => setKommentar?.(e.target.value)}
-            />
-
             <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
             <DatePicker
               className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
@@ -147,6 +143,14 @@ export default function MilersattningEnskildFirma({
               dateFormat="yyyy-MM-dd"
               locale="sv"
               required
+            />
+
+            <TextFält
+              name="kommentar"
+              label="Kommentar"
+              type="textarea"
+              value={kommentar ?? ""}
+              onChange={(e) => setKommentar?.(e.target.value)}
             />
 
             <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={!giltigt} />

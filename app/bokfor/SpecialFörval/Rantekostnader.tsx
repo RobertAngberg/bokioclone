@@ -44,21 +44,17 @@ export default function Rantekostnader({
   setExtrafält,
 }: Props) {
   const [amortering, setAmortering] = useState(0);
-  const [ranta, setRanta] = useState(0);
-
   const giltigt = !!belopp && !!transaktionsdatum;
 
   function gåTillSteg3() {
     const total = belopp ?? 0;
-    const amort = amortering;
-    const rantaVal = ranta;
 
     const extrafaltObj = {
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
-      "2310": { label: "Obligations- och förlagslån", debet: amort, kredit: 0 },
+      "2310": { label: "Obligations- och förlagslån", debet: amortering, kredit: 0 },
       "8410": {
         label: "Räntekostnader för långfristiga skulder",
-        debet: rantaVal,
+        debet: total - amortering,
         kredit: 0,
       },
     };
@@ -93,14 +89,6 @@ export default function Rantekostnader({
               name="amortering"
               value={amortering}
               onChange={(e) => setAmortering(Number(e.target.value))}
-            />
-
-            <TextFält
-              label="Varav ränta"
-              name="ranta"
-              value={ranta}
-              onChange={(e) => setRanta(Number(e.target.value))}
-              required
             />
 
             <label className="block text-sm font-medium text-white mb-2">
