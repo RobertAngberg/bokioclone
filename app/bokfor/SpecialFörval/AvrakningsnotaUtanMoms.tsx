@@ -48,7 +48,7 @@ export default function AvrakningsnotaUtanMoms({
     const total = belopp ?? 0;
 
     const extrafältObj = {
-      "6064": { label: "Factoringavgifter", debet: total, kredit: 0 },
+      "6570": { label: "Bankkostnader", debet: total, kredit: 0 },
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
     };
 

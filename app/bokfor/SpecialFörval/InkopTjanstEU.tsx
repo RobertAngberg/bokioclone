@@ -67,8 +67,6 @@ export default function InkopTjanstEU({
       },
     };
 
-    setKommentar?.(kommentar);
-    setBelopp(belopp ?? 0);
     setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }

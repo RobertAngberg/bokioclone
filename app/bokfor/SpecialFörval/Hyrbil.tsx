@@ -1,7 +1,6 @@
 // #region Huvud
 "use client";
 
-import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
@@ -10,7 +9,6 @@ import DatePicker from "react-datepicker";
 import Steg3 from "../Steg3";
 import { formatSEK } from "../../_utils/format";
 import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
-import { useAutofyllFrånPdf } from "../../_hooks/useAutofyllFrånPdf";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -34,11 +32,11 @@ interface Props {
 
 export default function Hyrbil({
   mode,
-  belopp = null,
+  belopp,
   setBelopp,
-  transaktionsdatum = "",
+  transaktionsdatum,
   setTransaktionsdatum,
-  kommentar = "",
+  kommentar,
   setKommentar,
   setCurrentStep,
   fil,
@@ -47,33 +45,14 @@ export default function Hyrbil({
   setPdfUrl,
   extrafält,
   setExtrafält,
-  formRef,
-  handleSubmit,
 }: Props) {
-  const [lokaltBelopp, setLokaltBelopp] = useState<number>(belopp ?? 0);
-  const [datum, setDatum] = useState(transaktionsdatum ?? new Date().toISOString().split("T")[0]);
-  const [kommentarText, setKommentarText] = useState(kommentar ?? "");
+  const moms = +(Number(belopp ?? 0) * 0.25 * 0.5).toFixed(2);
+  const netto = +(Number(belopp ?? 0) - moms).toFixed(2);
+  const giltigt = !!belopp && !!transaktionsdatum;
 
-  useAutofyllFrånPdf({
-    extractedBelopp: belopp,
-    currentBelopp: lokaltBelopp,
-    setBelopp: setLokaltBelopp,
-    extractedDatum: transaktionsdatum,
-    currentDatum: datum,
-    setDatum,
-  });
-
-  const moms = +(lokaltBelopp * 0.25 * 0.5).toFixed(2);
-  const netto = +(lokaltBelopp - moms).toFixed(2);
-  const giltigt = lokaltBelopp > 0 && !!datum;
-
-  function gåVidare() {
-    setBelopp(lokaltBelopp);
-    setTransaktionsdatum(datum);
-    setKommentar?.(kommentarText);
-
+  function gåTillSteg3() {
     setExtrafält?.({
-      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: lokaltBelopp },
+      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: belopp ?? 0 },
       "5820": { label: "Hyrbilskostnader", debet: netto, kredit: 0 },
       "2640": { label: "Ingående moms", debet: moms, kredit: 0 },
     });
@@ -92,14 +71,14 @@ export default function Hyrbil({
               setFil={setFil}
               setPdfUrl={setPdfUrl}
               setTransaktionsdatum={setTransaktionsdatum}
-              setBelopp={setLokaltBelopp}
+              setBelopp={setBelopp}
             />
 
             <TextFält
               label="Total kostnad inkl. moms"
               name="kostnad"
-              value={lokaltBelopp.toString()}
-              onChange={(e) => setLokaltBelopp(Number(e.target.value))}
+              value={belopp ?? ""}
+              onChange={(e) => setBelopp(Number(e.target.value))}
               required
             />
 
@@ -110,8 +89,8 @@ export default function Hyrbil({
             <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
             <DatePicker
               className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
-              selected={ÅÅÅÅMMDDTillDate(datum)}
-              onChange={(d) => setDatum(d ? dateTillÅÅÅÅMMDD(d) : "")}
+              selected={transaktionsdatum ? ÅÅÅÅMMDDTillDate(transaktionsdatum) : null}
+              onChange={(d) => setTransaktionsdatum(d ? dateTillÅÅÅÅMMDD(d) : "")}
               dateFormat="yyyy-MM-dd"
               locale="sv"
             />
@@ -119,12 +98,12 @@ export default function Hyrbil({
             <TextFält
               label="Kommentar"
               name="kommentar"
-              value={kommentarText}
-              onChange={(e) => setKommentarText(e.target.value)}
+              value={kommentar ?? ""}
+              onChange={(e) => setKommentar?.(e.target.value)}
               required={false}
             />
 
-            <KnappFullWidth text="Gå vidare" onClick={gåVidare} disabled={!giltigt} />
+            <KnappFullWidth text="Gå vidare" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
@@ -138,9 +117,9 @@ export default function Hyrbil({
       <Steg3
         kontonummer="5820"
         kontobeskrivning="Hyrbil"
-        belopp={lokaltBelopp}
-        transaktionsdatum={datum}
-        kommentar={kommentarText}
+        belopp={belopp ?? 0}
+        transaktionsdatum={transaktionsdatum ?? ""}
+        kommentar={kommentar ?? ""}
         valtFörval={{
           id: 0,
           namn: "Hyrbil",

@@ -49,7 +49,7 @@ export default function DrojsmalsrantaLevFakt({
     const total = belopp ?? 0;
 
     const extrafältObj = {
-      "8422": { label: "Dröjsmålsräntor", debet: total, kredit: 0 },
+      "8422": { label: "Dröjsmålsräntor för leverantörsskulder", debet: total, kredit: 0 },
       "1930": { label: "Företagskonto", debet: 0, kredit: total },
     };
 

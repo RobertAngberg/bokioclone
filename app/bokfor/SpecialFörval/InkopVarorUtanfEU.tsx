@@ -45,7 +45,7 @@ export default function InkopVarorUtanfEU({
 }: Props) {
   const giltigt = !!belopp && !!transaktionsdatum;
 
-  function gåVidare() {
+  function gåTillSteg3() {
     const extrafältObj = {
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: belopp ?? 0 },
       "4010": { label: "Inköp material och varor", debet: belopp ?? 0, kredit: 0 },
@@ -53,9 +53,6 @@ export default function InkopVarorUtanfEU({
       "4598": { label: "Justering, omvänd moms", debet: 0, kredit: belopp ?? 0 },
     };
 
-    setBelopp(belopp ?? 0);
-    setKommentar?.(kommentar ?? "");
-    setTransaktionsdatum(transaktionsdatum ?? "");
     setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }
@@ -100,7 +97,7 @@ export default function InkopVarorUtanfEU({
               required={false}
             />
 
-            <KnappFullWidth text="Bokför" type="button" onClick={gåVidare} disabled={!giltigt} />
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />

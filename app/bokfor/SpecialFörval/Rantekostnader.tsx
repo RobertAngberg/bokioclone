@@ -7,8 +7,6 @@ import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
 import DatePicker from "react-datepicker";
-import { formatSEK } from "../../_utils/format";
-import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
 import Steg3 from "../Steg3";
 
 interface Props {
@@ -31,11 +29,11 @@ interface Props {
 
 export default function Rantekostnader({
   mode,
-  belopp = null,
+  belopp,
   setBelopp,
-  transaktionsdatum = "",
+  transaktionsdatum,
   setTransaktionsdatum,
-  kommentar = "",
+  kommentar,
   setKommentar,
   setCurrentStep,
   fil,
@@ -45,19 +43,19 @@ export default function Rantekostnader({
   extrafält,
   setExtrafält,
 }: Props) {
-  const [total, setTotal] = useState<string>(belopp ? belopp.toString() : "");
-  const [amortering, setAmortering] = useState<string>("");
+  const [amortering, setAmortering] = useState(0);
+  const [ranta, setRanta] = useState(0);
 
-  const giltigt = !!total && !!transaktionsdatum && Number(total) > 0;
+  const giltigt = !!belopp && !!transaktionsdatum;
 
   function gåTillSteg3() {
-    const totalVal = Number(total || "0");
-    const amorteringVal = Number(amortering || "0");
-    const rantaVal = Math.max(totalVal - amorteringVal, 0);
+    const total = belopp ?? 0;
+    const amort = amortering;
+    const rantaVal = ranta;
 
     const extrafaltObj = {
-      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: totalVal },
-      "2310": { label: "Obligations- och förlagslån", debet: amorteringVal, kredit: 0 },
+      "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
+      "2310": { label: "Obligations- och förlagslån", debet: amort, kredit: 0 },
       "8410": {
         label: "Räntekostnader för långfristiga skulder",
         debet: rantaVal,
@@ -66,7 +64,6 @@ export default function Rantekostnader({
     };
 
     setExtrafält?.(extrafaltObj);
-    setBelopp(totalVal);
     setCurrentStep?.(3);
   }
 
@@ -74,50 +71,41 @@ export default function Rantekostnader({
     return (
       <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Räntekostnader</h1>
-        <div className="flex flex-col-reverse md:flex-row justify-between max-w-5xl mx-auto px-4">
-          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
+          <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
               fil={fil}
               setFil={setFil}
               setPdfUrl={setPdfUrl}
               setTransaktionsdatum={setTransaktionsdatum}
-              setBelopp={(v) => {
-                setBelopp(v);
-                setTotal(v ? v.toString() : "");
-              }}
+              setBelopp={setBelopp}
             />
 
             <TextFält
+              label="Totalt belopp (ränta + amortering)"
               name="total"
-              label="Summa ränta & amortering"
-              type="number"
-              value={total}
-              onChange={(e) => {
-                setTotal(e.target.value);
-                setBelopp(Number(e.target.value));
-              }}
+              value={belopp ?? 0}
+              onChange={(e) => setBelopp(Number(e.target.value))}
             />
+
             <TextFält
-              name="amortering"
               label="Varav amortering"
-              type="number"
+              name="amortering"
               value={amortering}
-              onChange={(e) => setAmortering(e.target.value)}
+              onChange={(e) => setAmortering(Number(e.target.value))}
             />
-
-            <p className="text-sm text-gray-400 mb-4">
-              Ränta: {formatSEK(Math.max(Number(total || 0) - Number(amortering || 0), 0))} kr
-            </p>
 
             <TextFält
-              name="kommentar"
-              label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={(e) => setKommentar?.(e.target.value)}
+              label="Varav ränta"
+              name="ranta"
+              value={ranta}
+              onChange={(e) => setRanta(Number(e.target.value))}
+              required
             />
 
-            <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+            <label className="block text-sm font-medium text-white mb-2">
+              Betaldatum (ÅÅÅÅ‑MM‑DD)
+            </label>
             <DatePicker
               className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
               selected={transaktionsdatum ? new Date(transaktionsdatum) : null}
@@ -127,9 +115,17 @@ export default function Rantekostnader({
               required
             />
 
-            <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={!giltigt} />
+            <TextFält
+              label="Kommentar"
+              name="kommentar"
+              value={kommentar ?? ""}
+              onChange={(e) => setKommentar?.(e.target.value)}
+              required={false}
+            />
+
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
-          <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
+          <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
         </div>
       </div>
     );

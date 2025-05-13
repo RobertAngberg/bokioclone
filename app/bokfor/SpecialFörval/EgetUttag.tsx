@@ -47,7 +47,7 @@ export default function EgetUttag({
   function gåTillSteg3() {
     const total = belopp ?? 0;
     const extrafältObj = {
-      "2013": { label: "Eget uttag", debet: total, kredit: 0 },
+      "2013": { label: "Övriga egna uttag", debet: total, kredit: 0 },
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
     };
     setExtrafält?.(extrafältObj);

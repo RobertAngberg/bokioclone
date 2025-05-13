@@ -45,7 +45,7 @@ export default function ITtjansterEU({
 }: Props) {
   const giltigt = !!belopp && !!transaktionsdatum;
 
-  function gåVidare() {
+  function gåTillSteg3() {
     const moms = (belopp ?? 0) * 0.25;
 
     const extrafältObj = {
@@ -73,9 +73,6 @@ export default function ITtjansterEU({
       },
     };
 
-    setBelopp(belopp ?? 0);
-    setKommentar?.(kommentar ?? "");
-    setTransaktionsdatum(transaktionsdatum ?? "");
     setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }
@@ -120,7 +117,7 @@ export default function ITtjansterEU({
               required={false}
             />
 
-            <KnappFullWidth text="Bokför" onClick={gåVidare} disabled={!giltigt} />
+            <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />

@@ -49,7 +49,7 @@ export default function MilersattningEnskildFirma({
   const [ersPerMil, setErsPerMil] = useState("25");
   const [biltyp, setBiltyp] = useState("Egen bil");
 
-  const giltigt = !!transaktionsdatum && parseNumber(mil) > 0 && parseNumber(ersPerMil) > 0;
+  const giltigt = !!belopp && !!transaktionsdatum;
 
   function gåTillSteg3() {
     const milVal = parseNumber(mil);
@@ -80,7 +80,6 @@ export default function MilersattningEnskildFirma({
       },
     };
 
-    setBelopp(total);
     setExtrafält?.(extrafältData);
     setCurrentStep?.(3);
   }
@@ -142,9 +141,9 @@ export default function MilersattningEnskildFirma({
 
             <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
             <DatePicker
-              className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
+              className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
               selected={ÅÅÅÅMMDDTillDate(transaktionsdatum ?? "")}
-              onChange={(d) => setTransaktionsdatum(d ? d.toISOString().split("T")[0] : "")}
+              onChange={(date) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(date))}
               dateFormat="yyyy-MM-dd"
               locale="sv"
               required

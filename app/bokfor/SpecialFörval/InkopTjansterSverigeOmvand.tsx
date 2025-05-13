@@ -62,13 +62,13 @@ export default function InkopTjansterSverigeOmvand({
       },
       "4400": {
         label: "Inköpta tjänster i Sverige, omvänd skattskyldighet",
-        debet: belopp ?? 0,
-        kredit: 0,
+        debet: 0,
+        kredit: belopp ?? 0,
       },
       "4425": {
         label: "Inköpta tjänster i Sverige, omvänd skattskyldighet, 25 %",
-        debet: 0,
-        kredit: belopp ?? 0,
+        debet: belopp ?? 0,
+        kredit: 0,
       },
       "4600": {
         label: "Legoarbeten och underentreprenader (gruppkonto)",
@@ -77,8 +77,6 @@ export default function InkopTjansterSverigeOmvand({
       },
     };
 
-    setKommentar?.(kommentar);
-    setBelopp(belopp ?? 0);
     setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }

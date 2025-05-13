@@ -44,8 +44,6 @@ export default function AmorteringBanklan({
   setKommentar,
   extrafält,
   setExtrafält,
-  formRef,
-  handleSubmit,
 }: Props) {
   const [ränta, setRänta] = useState(0);
 

@@ -1,7 +1,6 @@
-// #region Huvud
+// #region
 "use client";
 
-import { useState } from "react";
 import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
@@ -12,46 +11,44 @@ import Steg3 from "../Steg3";
 interface Props {
   mode: "steg2" | "steg3";
   belopp?: number | null;
-  setBelopp: (val: number | null) => void;
+  setBelopp: (v: number | null) => void;
   transaktionsdatum?: string | null;
-  setTransaktionsdatum: (val: string) => void;
+  setTransaktionsdatum: (v: string) => void;
   kommentar?: string | null;
-  setKommentar?: (val: string | null) => void;
-  setCurrentStep?: (val: number) => void;
+  setKommentar?: (v: string | null) => void;
+  setCurrentStep?: (v: number) => void;
   fil: File | null;
-  setFil: (val: File | null) => void;
+  setFil: (f: File | null) => void;
   pdfUrl: string | null;
-  setPdfUrl: (val: string) => void;
+  setPdfUrl: (u: string) => void;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
-  setExtrafält?: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
+  setExtrafält?: (f: Record<string, { label: string; debet: number; kredit: number }>) => void;
 }
 // #endregion
 
 export default function Pensionsforsakring({
   mode,
-  belopp = null,
+  belopp,
   setBelopp,
-  transaktionsdatum = "",
-  setTransaktionsdatum,
-  kommentar = "",
-  setKommentar,
   setCurrentStep,
   fil,
   setFil,
   pdfUrl,
   setPdfUrl,
+  transaktionsdatum,
+  setTransaktionsdatum,
+  kommentar,
+  setKommentar,
   extrafält,
   setExtrafält,
 }: Props) {
-  const [total, setTotal] = useState<string>(belopp ? belopp.toString() : "");
+  const giltigt = !!belopp && !!transaktionsdatum;
 
-  const giltigt = !!total && !!transaktionsdatum && Number(total) > 0;
-
-  function gåVidare() {
-    const val = Number(total);
+  function gåTillSteg3() {
+    const val = belopp ?? 0;
     const loneskatt = val * 0.2425;
 
-    const extrafaltObj = {
+    const extrafältObj = {
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: val },
       "2514": {
         label: "Beräknad särskild löneskatt på pensionskostnader",
@@ -70,8 +67,7 @@ export default function Pensionsforsakring({
       },
     };
 
-    setBelopp(val);
-    setExtrafält?.(extrafaltObj);
+    setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }
 
@@ -79,36 +75,22 @@ export default function Pensionsforsakring({
     return (
       <div className="bg-cyan-950 text-white">
         <h1 className="mb-6 text-3xl text-center">Steg 2: Pensionsförsäkring</h1>
-        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
-          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
+        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
+          <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
               fil={fil}
               setFil={setFil}
               setPdfUrl={setPdfUrl}
               setTransaktionsdatum={setTransaktionsdatum}
-              setBelopp={(v) => {
-                setBelopp(v);
-                setTotal(v ? v.toString() : "");
-              }}
+              setBelopp={setBelopp}
             />
 
             <TextFält
-              name="belopp"
               label="Totalt belopp"
+              name="belopp"
               type="number"
-              value={total}
-              onChange={(e) => {
-                setTotal(e.target.value);
-                setBelopp(Number(e.target.value));
-              }}
-            />
-
-            <TextFält
-              name="kommentar"
-              label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={(e) => setKommentar?.(e.target.value)}
+              value={belopp ?? ""}
+              onChange={(e) => setBelopp(Number(e.target.value))}
             />
 
             <label className="block text-sm font-medium text-white mb-2">
@@ -123,7 +105,15 @@ export default function Pensionsforsakring({
               required
             />
 
-            <KnappFullWidth text="Bokför" onClick={gåVidare} disabled={!giltigt} />
+            <TextFält
+              label="Kommentar"
+              name="kommentar"
+              value={kommentar ?? ""}
+              onChange={(e) => setKommentar?.(e.target.value)}
+              required={false}
+            />
+
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />

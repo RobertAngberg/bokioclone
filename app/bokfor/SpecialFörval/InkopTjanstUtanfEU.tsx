@@ -45,7 +45,7 @@ export default function InkopTjanstUtanfEU({
 }: Props) {
   const giltigt = !!belopp && !!transaktionsdatum;
 
-  function gåVidare() {
+  function gåTillSteg3() {
     const moms = (belopp ?? 0) * 0.25;
 
     const extrafältObj = {
@@ -67,8 +67,6 @@ export default function InkopTjanstUtanfEU({
       },
     };
 
-    setKommentar?.(kommentar);
-    setBelopp(belopp ?? 0);
     setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }
@@ -113,7 +111,7 @@ export default function InkopTjanstUtanfEU({
               required={false}
             />
 
-            <KnappFullWidth text="Bokför" type="button" onClick={gåVidare} disabled={!giltigt} />
+            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />

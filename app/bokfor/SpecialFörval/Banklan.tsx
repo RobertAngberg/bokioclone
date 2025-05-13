@@ -43,8 +43,6 @@ export default function Banklan({
   setPdfUrl,
   extrafält,
   setExtrafält,
-  formRef,
-  handleSubmit,
 }: Props) {
   const giltigt = !!belopp && !!transaktionsdatum;
 

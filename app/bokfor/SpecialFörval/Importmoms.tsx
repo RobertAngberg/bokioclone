@@ -6,7 +6,6 @@ import LaddaUppFil from "../LaddaUppFil";
 import Forhandsgranskning from "../Förhandsgranskning";
 import TextFält from "../../_components/TextFält";
 import KnappFullWidth from "../../_components/KnappFullWidth";
-import { formatSEK } from "../../_utils/format";
 import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
 import DatePicker from "react-datepicker";
 import Steg3 from "../Steg3";
@@ -48,12 +47,8 @@ export default function Importmoms({
   const [tull, setTull] = useState("");
   const [fiktiv, setFiktiv] = useState("");
   const [ovrigt, setOvrigt] = useState("");
-
-  const giltigt = (belopp ?? 0) > 0 && !!transaktionsdatum;
-
+  const giltigt = !!belopp && !!transaktionsdatum;
   const moms = parseFloat((parseFloat(tull || "0") * 0.25).toFixed(2));
-  const totalDebet =
-    parseFloat(tull || "0") + parseFloat(fiktiv || "0") + parseFloat(ovrigt || "0");
 
   function gåTillSteg3() {
     const extrafältObj = {

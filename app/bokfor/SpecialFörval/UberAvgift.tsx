@@ -49,19 +49,19 @@ export default function UberAvgift({
 
   function gåTillSteg3() {
     const total = belopp ?? 0;
-    const momsVal = Number((total * 0.25).toFixed(2));
-    setMoms(momsVal);
+    const moms = Number((total * 0.25).toFixed(2));
+    setMoms(moms);
 
     const extrafältObj = {
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
       "2614": {
         label: "Utgående moms omvänd skattskyldighet, 25 %",
         debet: 0,
-        kredit: momsVal,
+        kredit: moms,
       },
       "2645": {
         label: "Beräknad ingående moms på förvärv från utlandet",
-        debet: momsVal,
+        debet: moms,
         kredit: 0,
       },
       "4535": {

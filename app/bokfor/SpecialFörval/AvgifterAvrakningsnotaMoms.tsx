@@ -43,8 +43,6 @@ export default function AvgifterAvrakningsnotaMoms({
   setPdfUrl,
   extrafält,
   setExtrafält,
-  formRef,
-  handleSubmit,
 }: Props) {
   const momsSats = 0.25;
   const giltigt = !!belopp && !!transaktionsdatum;
@@ -67,7 +65,7 @@ export default function AvgifterAvrakningsnotaMoms({
   if (mode === "steg2") {
     return (
       <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center">Steg 2: Avgifter avräkningsnota</h1>
+        <h1 className="mb-6 text-3xl text-center">Steg 2: Avgifter avräkningsnota 25% moms</h1>
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto md:flex-row px-4">
           <div className="w-full mb-10 md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil

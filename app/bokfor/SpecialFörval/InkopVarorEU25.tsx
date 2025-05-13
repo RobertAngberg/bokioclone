@@ -44,12 +44,10 @@ export default function InkopVarorEU25({
   setPdfUrl,
   extrafält,
   setExtrafält,
-  formRef,
-  handleSubmit,
 }: Props) {
   const giltigt = !!belopp && !!transaktionsdatum;
 
-  function gåVidare() {
+  function gåTillSteg3() {
     const moms = (belopp ?? 0) * 0.25;
 
     const extrafältObj = {
@@ -69,9 +67,6 @@ export default function InkopVarorEU25({
       "4598": { label: "Justering, omvänd moms", debet: 0, kredit: belopp ?? 0 },
     };
 
-    setKommentar?.(kommentar);
-    setTransaktionsdatum(transaktionsdatum ?? "");
-    setBelopp(belopp ?? 0);
     setExtrafält?.(extrafältObj);
     setCurrentStep?.(3);
   }
@@ -116,7 +111,7 @@ export default function InkopVarorEU25({
               required={false}
             />
 
-            <KnappFullWidth text="Bokför" onClick={gåVidare} disabled={!giltigt} />
+            <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={!giltigt} />
           </div>
 
           <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />

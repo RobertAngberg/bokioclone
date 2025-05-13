@@ -66,7 +66,7 @@ export default function Direktpension({
   if (mode === "steg2") {
     return (
       <section className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center">Steg 2: Direktpension</h1>
+        <h1 className="mb-6 text-3xl text-center">Steg 2; Direktpension</h1>
         <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
           <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
             <LaddaUppFil
