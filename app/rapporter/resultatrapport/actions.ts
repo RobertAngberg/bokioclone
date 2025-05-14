@@ -25,7 +25,8 @@ export async function hamtaResultatrapport() {
       tp.kredit,
       k.kontonummer,
       k.beskrivning,
-      k.kontoklass
+      k.kontoklass,
+      k.kategori
     FROM transaktioner t
     JOIN transaktionsposter tp ON tp.transaktions_id = t.id
     JOIN konton k ON k.id = tp.konto_id
@@ -46,21 +47,18 @@ export async function hamtaResultatrapport() {
     const år = String(row.år);
     årsSet.add(år);
 
-    const { kontonummer, beskrivning, kontoklass, debet, kredit } = row;
+    const { kontonummer, beskrivning, kontoklass, kategori, debet, kredit } = row;
     const belopp = debet - kredit;
 
     let målMap: Map<string, Map<string, any>> | null = null;
-    let grupp = "";
+    let grupp = kategori || "Övrigt"; // Gruppnamn = kategori
 
     if (/^3/.test(kontonummer)) {
       målMap = intakterMap;
-      grupp = "Nettoomsättning";
     } else if (/^[4-7]/.test(kontonummer)) {
       målMap = rorelsensMap;
-      grupp = getGruppNamn(kontonummer, kontoklass);
     } else if (/^8/.test(kontonummer)) {
       målMap = finansiellaMap;
-      grupp = getGruppNamn(kontonummer, kontoklass);
     }
 
     if (!målMap) continue;
@@ -99,15 +97,4 @@ export async function hamtaResultatrapport() {
     rorelsensKostnader: formatData(rorelsensMap),
     finansiellaKostnader: formatData(finansiellaMap),
   };
-}
-
-// 🧠 Gruppnamn baserat på kontonummer
-function getGruppNamn(kontonummer: string, kontoklass: string): string {
-  if (/^4/.test(kontonummer)) return "Varukostnader";
-  if (/^5/.test(kontonummer)) return "Förbrukningsinventarier";
-  if (/^6/.test(kontonummer)) return "Försäljningskostnader";
-  if (/^7/.test(kontonummer)) return "Administrationskostnader";
-  if (/^8/.test(kontonummer)) return "Finansiella kostnader";
-
-  return kontoklass || "Övrigt";
 }

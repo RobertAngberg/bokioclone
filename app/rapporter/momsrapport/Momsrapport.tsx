@@ -1,10 +1,10 @@
-//#region: Huvud
+//#region
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Tabell, { ColumnDefinition } from "../../_components/Tabell";
 import { getMomsrapport } from "./actions";
-import Dropdown from "@/_components/Dropdown";
+import Dropdown from "../../_components/Dropdown";
 
 type MomsRad = {
   fält: string;
@@ -129,12 +129,14 @@ export default function Momsrapport() {
 
       <div className="flex justify-center gap-4 mb-8">
         <Dropdown
+          value={år}
           onChange={setÅr}
           placeholder="Välj år"
           options={årLista.map((y) => ({ label: y, value: y }))}
         />
 
         <Dropdown
+          value={kvartal}
           onChange={setKvartal}
           placeholder="Kvartal"
           options={kvartalLista.map((k) => ({ label: k, value: k }))}

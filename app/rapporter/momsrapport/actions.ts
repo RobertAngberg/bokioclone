@@ -48,15 +48,19 @@ export async function getMomsrapport(year: string, kvartal?: string) {
     console.log(`✅  +${belopp} kr till fält ${fält} (${beskrivning})`);
   };
 
-  /* hitta billeasing‑transaktioner (5615) */
-  const billeasing = new Set<number>();
-  rows.forEach((r) => {
-    if (r.kontonummer === "5615") billeasing.add(r.transaktions_id);
-  });
-
   /* ---- loopa rader ---- */
   for (const r of rows) {
-    const { kontonummer, debet, kredit, transaktions_id } = r;
+    const { kontonummer, debet, kredit } = r;
+
+    // Debugga alla möjliga ingående moms-konton
+    if (
+      ["2640", "2641", "2645", "2647", "2648", "2650", "210", "248", "250", "251"].includes(
+        kontonummer
+      )
+    ) {
+      console.log(`MOMSDEBUG: ${kontonummer} debet=${debet} kredit=${kredit}`);
+    }
+
     const netto = kredit - debet;
 
     /* A. Försäljning */
@@ -65,7 +69,6 @@ export async function getMomsrapport(year: string, kvartal?: string) {
 
     /* B. Utgående moms */
     if (["2610", "2611", "2612", "2613"].includes(kontonummer))
-      // 🔧 2610 tillagd
       add("10", "Utgående moms 25%", kredit);
     if (["2620", "2621", "2622", "2623"].includes(kontonummer))
       add("11", "Utgående moms 12%", kredit);
@@ -92,10 +95,13 @@ export async function getMomsrapport(year: string, kvartal?: string) {
     if (["2625"].includes(kontonummer)) add("61", "Utgående moms 12% (import)", kredit);
     if (["2635"].includes(kontonummer)) add("62", "Utgående moms 6% (import)", kredit);
 
-    /* F. Ingående moms (halvering vid billeasing) */
-    if (["2640", "2645", "210", "248", "250", "251"].includes(kontonummer)) {
-      const half = billeasing.has(transaktions_id) ? debet / 2 : debet;
-      add("48", "Ingående moms att dra av", half);
+    /* F. Ingående moms */
+    if (
+      ["2640", "2641", "2645", "2647", "2648", "2650", "210", "248", "250", "251"].includes(
+        kontonummer
+      )
+    ) {
+      add("48", "Ingående moms att dra av", debet);
     }
 
     /* E. Momsfri försäljning */
@@ -112,7 +118,6 @@ export async function getMomsrapport(year: string, kvartal?: string) {
   const utgående = sumFält("10", "11", "12", "30", "31", "32", "60", "61", "62");
   const ingående = fältMap["48"]?.belopp ?? 0;
 
-  //....................
   const moms49 = utgående - ingående;
 
   console.log(`📊 Utgående moms: ${utgående}`);

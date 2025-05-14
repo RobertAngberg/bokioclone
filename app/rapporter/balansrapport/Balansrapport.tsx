@@ -69,7 +69,7 @@ export default function Balansrapport({ initialData }: Props) {
     };
   }
 
-  const renderKategori = (titel: string, icon: string, konton: Konto[]) => {
+  const renderaKategori = (titel: string, icon: string, konton: Konto[]) => {
     const summa = konton.reduce((a, b) => a + b.saldo, 0);
     return (
       <AnimeradFlik title={titel} icon={icon}>
@@ -98,19 +98,19 @@ export default function Balansrapport({ initialData }: Props) {
         <h1 className="text-3xl text-center mb-10">Balansrapport</h1>
 
         <h2 className="text-xl mb-4 border-b border-gray-500 pb-1">Tillgångar</h2>
-        {renderKategori("Anläggningstillgångar", "🏗️", anläggningstillgångar)}
-        {renderKategori("Omsättningstillgångar", "💼", omsättningstillgångar)}
+        {renderaKategori("Anläggningstillgångar", "🏗️", anläggningstillgångar)}
+        {renderaKategori("Omsättningstillgångar", "💼", omsättningstillgångar)}
         <Totalrad label="Summa tillgångar" values={{ [year]: sumTillgangar }} />
 
         <h2 className="text-xl mt-12 mb-4 border-b border-gray-500 pb-1">
           Eget kapital och skulder
         </h2>
-        {renderKategori("Eget kapital", "💰", [
+        {renderaKategori("Eget kapital", "💰", [
           ...egetKapital,
           ...(beräknatResultat ? [beräknatResultat] : []),
         ])}
-        {renderKategori("Långfristiga skulder", "🏦", långfristigaSkulder)}
-        {renderKategori("Kortfristiga skulder", "⏳", kortfristigaSkulder)}
+        {renderaKategori("Långfristiga skulder", "🏦", långfristigaSkulder)}
+        {renderaKategori("Kortfristiga skulder", "⏳", kortfristigaSkulder)}
         <Totalrad label="Summa eget kapital och skulder" values={{ [year]: sumSkulderEK }} />
 
         <section className="mt-8">

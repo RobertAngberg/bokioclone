@@ -32,8 +32,9 @@ type Props = {
 
 export default function Resultatrapport({ initialData }: Props) {
   const data = initialData;
-  const year = data.ar[0]; // antar bara ett år i denna vy
+  const year = data.ar[0];
 
+  // Summera intäkter och kostnader utan att vända tecken
   const summering = (rader: KontoRad[]) => {
     const result: Record<string, number> = {};
     for (const rad of rader) {
@@ -45,32 +46,35 @@ export default function Resultatrapport({ initialData }: Props) {
     return result;
   };
 
-  const intaktsSum = summering(data.intakter);
+  // Intäkter är negativa i bokföringen, så vänd tecknet till positivt
+  const intaktsSumRaw = summering(data.intakter);
+  const intaktsSum: Record<string, number> = {};
+  for (const year of data.ar) {
+    intaktsSum[year] = -intaktsSumRaw[year] || 0;
+  }
+
+  // Kostnader och finansiella kostnader är redan positiva
   const rorelsensSum = summering(data.rorelsensKostnader);
   const finansiellaSum = summering(data.finansiellaKostnader);
 
   const resultat: Record<string, number> = {};
-  const resultatEfterFinansiella: Record<string, number> = {};
-
   data.ar.forEach((year) => {
     const intakt = intaktsSum[year] ?? 0;
     const kostnad = rorelsensSum[year] ?? 0;
     const finansiell = finansiellaSum[year] ?? 0;
-
-    resultat[year] = intakt + kostnad;
-    resultatEfterFinansiella[year] = resultat[year] + finansiell;
+    resultat[year] = intakt - kostnad - finansiell;
   });
 
-  const renderGrupper = (rader: KontoRad[], isCost = false, icon?: string) =>
+  const renderGrupper = (rader: KontoRad[], isIntakt = false, icon?: string) =>
     rader.map((grupp) => (
-      <AnimeradFlik key={grupp.namn} title={grupp.namn} icon={icon || (isCost ? "💸" : "💰")}>
+      <AnimeradFlik key={grupp.namn} title={grupp.namn} icon={icon || (isIntakt ? "💰" : "💸")}>
         <InreTabell
           rows={grupp.konton.map((konto) => ({
             label: `${konto.kontonummer} – ${konto.beskrivning}`,
-            value: konto[year] as number,
+            value: isIntakt ? -(konto[year] as number) : (konto[year] as number),
           }))}
           totalLabel={`Summa ${grupp.namn.toLowerCase()}`}
-          totalValue={grupp.summering[year] ?? 0}
+          totalValue={isIntakt ? -grupp.summering[year] : grupp.summering[year]}
         />
       </AnimeradFlik>
     ));
@@ -80,33 +84,22 @@ export default function Resultatrapport({ initialData }: Props) {
       <div className="max-w-2xl mx-auto px-4 text-white">
         <h1 className="text-3xl text-center mb-8">Resultatrapport</h1>
 
-        {renderGrupper(data.intakter, false, "💰")}
-        <Totalrad
-          label="Summa rörelsens intäkter"
-          values={{ [year]: Math.abs(intaktsSum[year] ?? 0) }}
-        />
+        {renderGrupper(data.intakter, true, "💰")}
+        <Totalrad label="Summa rörelsens intäkter" values={{ [year]: intaktsSum[year] ?? 0 }} />
 
         <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens kostnader</h2>
-        {renderGrupper(data.rorelsensKostnader, true, "💸")}
-        <Totalrad
-          label="Summa rörelsens kostnader"
-          values={{ [year]: Math.abs(rorelsensSum[year] ?? 0) }}
-        />
+        {renderGrupper(data.rorelsensKostnader, false, "💸")}
+        <Totalrad label="Summa rörelsens kostnader" values={{ [year]: rorelsensSum[year] ?? 0 }} />
 
         <h2 className="text-xl font-semibold mt-10 mb-4">Finansiella kostnader</h2>
-        {renderGrupper(data.finansiellaKostnader, true, "💸")}
+        {renderGrupper(data.finansiellaKostnader, false, "💸")}
         <Totalrad
           label="Summa finansiella kostnader"
-          values={{ [year]: Math.abs(finansiellaSum[year] ?? 0) }}
+          values={{ [year]: finansiellaSum[year] ?? 0 }}
         />
 
         <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>
-        <Totalrad label="Summa rörelsens resultat" values={{ [year]: resultat[year] }} />
-        <Totalrad
-          label="Resultat efter finansiella poster"
-          values={{ [year]: resultatEfterFinansiella[year] }}
-        />
-        <Totalrad label="Beräknat resultat" values={{ [year]: resultatEfterFinansiella[year] }} />
+        <Totalrad label="Beräknat resultat" values={{ [year]: resultat[year] }} />
       </div>
     </MainLayout>
   );

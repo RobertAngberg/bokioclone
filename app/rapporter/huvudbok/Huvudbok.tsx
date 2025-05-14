@@ -1,13 +1,14 @@
+// #region
 "use client";
 
 import React, { useEffect, useState } from "react";
-import MainLayout from "../_components/MainLayout";
-import AnimeradFlik from "../_components/AnimeradFlik";
-import InreTabell from "../_components/InreTabell";
+import MainLayout from "../../_components/MainLayout";
+import AnimeradFlik from "../../_components/AnimeradFlik";
+import InreTabell from "../../_components/InreTabell";
 
 type TransactionItem = {
   kontonummer: string;
-  beskrivning: string; // transaktionsbeskrivning
+  beskrivning: string;
   transaktionsdatum: string;
   fil: string;
   debet: number;
@@ -21,6 +22,7 @@ type GroupedTransactions = {
 type Props = {
   initialData: TransactionItem[];
 };
+// #endregion
 
 export default function Huvudbok({ initialData }: Props) {
   const [groupedData, setGroupedData] = useState<GroupedTransactions>({});
