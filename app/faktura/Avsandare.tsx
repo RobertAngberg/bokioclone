@@ -1,10 +1,10 @@
 //#region Huvud
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
-import TextFält from "../_components/TextFält"; // 👈 Importera din komponent
-import { hämtaFöretagsprofil, sparaFöretagsprofil } from "./actions"; // 👈 Importera actions
+import TextFält from "../_components/TextFält";
+import { hämtaFöretagsprofil, sparaFöretagsprofil } from "./actions";
 //#endregion
 
 export default function Avsandare() {
@@ -19,9 +19,15 @@ export default function Avsandare() {
     telefonnummer: "",
     bankinfo: "",
     webbplats: "",
+    logo: "",
+    logoWidth: 200,
   });
 
   const [sparat, setSparat] = useState(false);
+  const [logoSliderValue, setLogoSliderValue] = useState(
+    (100 * ((form.logoWidth ?? 200) - 50)) / 150
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Ladda företagsprofil när komponenten mountas
   useEffect(() => {
@@ -29,15 +35,41 @@ export default function Avsandare() {
       if (session?.user?.id) {
         const data = await hämtaFöretagsprofil(session.user.id);
         if (data) setForm(data);
+        // Hämta logotyp från localStorage om den finns
+        const logo = localStorage.getItem("bokioclone_logo");
+        if (logo) setForm((prev) => ({ ...prev, logo }));
+        const logoWidth = localStorage.getItem("bokioclone_logoWidth");
+        if (logoWidth) setForm((prev) => ({ ...prev, logoWidth: Number(logoWidth) }));
       }
     };
     ladda();
   }, [session]);
 
   // Hantera ändringar i formuläret
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Hantera logotyp-uppladdning
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const logoData = ev.target?.result as string;
+      setForm((prev) => ({ ...prev, logo: logoData }));
+      localStorage.setItem("bokioclone_logo", logoData); // <-- Spara i browsern
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Hantera logotypstorlek
+  const handleLogoSlider = (value: number) => {
+    setLogoSliderValue(value);
+    const width = 50 + (value / 100) * 150;
+    setForm((prev) => ({ ...prev, logoWidth: width }));
+    localStorage.setItem("bokioclone_logoWidth", width.toString());
   };
 
   const handleSubmit = async () => {
@@ -94,6 +126,55 @@ export default function Avsandare() {
           value={form.webbplats}
           onChange={handleChange}
         />
+      </div>
+
+      {/* Logotyp-uppladdning och förhandsgranskning */}
+      <div className="mt-8 flex flex-col items-start gap-4">
+        <label className="font-semibold">Logotyp</label>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            className="bg-cyan-700 hover:bg-cyan-800 px-4 py-2 rounded"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Ladda upp logotyp
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
+          {form.logo && (
+            <img
+              src={form.logo}
+              alt="Logotyp"
+              style={{
+                maxWidth: `${form.logoWidth}px`,
+                maxHeight: "120px",
+                objectFit: "contain",
+                background: "#fff",
+                borderRadius: 4,
+                padding: 2,
+              }}
+            />
+          )}
+        </div>
+        {/* Slider för logotypbredd */}
+        {form.logo && (
+          <div className="flex items-center gap-2 mt-2">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={logoSliderValue}
+              onChange={(e) => handleLogoSlider(Number(e.target.value))}
+              className="w-40"
+            />
+            <span className="text-xs text-gray-300">{Math.round(form.logoWidth)} px</span>
+          </div>
+        )}
       </div>
 
       {/* Spara-knapp */}

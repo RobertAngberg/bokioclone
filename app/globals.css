@@ -154,3 +154,9 @@
 .background-pulse {
     animation: backgroundPulse 0.6s ease-out;
 }
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}

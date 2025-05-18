@@ -29,13 +29,50 @@ export default function ExporteraPDFKnapp() {
 
     // Klona print-ytan
     const clone = element.cloneNode(true) as HTMLElement;
-    clone.style.display = "block"; // säkerställ att den är block och layoutas
-    cloneWrapper.appendChild(clone);
+    clone.style.display = "block";
+    console.log("Klonad print-area HTML:", clone.innerHTML); // <-- Här ser du om företagsuppgifterna finns med
 
+    // Hitta företagsdelen i klonen och sätt style direkt
+    const företagDiv = clone.querySelector(".faktura-företag") as HTMLElement;
+    if (företagDiv) {
+      // Byt ut <br> mot <div> för varje rad om det finns <br>
+      if (företagDiv.innerHTML.includes("<br")) {
+        const lines = företagDiv.innerHTML
+          .split(/<br\s*\/?>/i)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        företagDiv.innerHTML = lines.map((line) => `<div>${line}</div>`).join("");
+      }
+      företagDiv.style.lineHeight = "1";
+      företagDiv.style.marginBottom = "0";
+      Array.from(företagDiv.children).forEach((child) => {
+        if (child instanceof HTMLElement) {
+          child.style.margin = "0";
+          child.style.padding = "0";
+        }
+      });
+    }
+
+    // Lägg även till en <style> som backup
+    const style = document.createElement("style");
+    style.innerHTML = `
+      .faktura-företag {
+        line-height: 10 !important;
+        margin-bottom: 0 !important;
+      }
+      .faktura-företag p,
+      .faktura-företag div,
+      .faktura-företag span {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    `;
+    clone.prepend(style);
+
+    cloneWrapper.appendChild(clone);
     document.body.appendChild(cloneWrapper);
 
     try {
-      // Vänta lite så layouten hinner skapas
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(clone, {
@@ -60,7 +97,6 @@ export default function ExporteraPDFKnapp() {
     } catch (error) {
       console.error("❌ Error exporting PDF:", error);
     } finally {
-      // Ta bort wrapper och klon från DOM
       if (cloneWrapper.parentNode) {
         document.body.removeChild(cloneWrapper);
       }

@@ -51,40 +51,51 @@ export default function Billeasing({
 
   function gåTillSteg3() {
     const leasing = belopp ?? 0;
-    const momsLeasing = leasing * 0.25;
-    const momsAdmin = admin * 0.25;
-    const momsForhojd = forhojd * 0.25;
-    const nettoForhojd = forhojd - momsForhojd;
+    const adminAvg = admin ?? 0;
+    const forsakringBelopp = forsakring ?? 0;
+    const forhojdBelopp = forhojd ?? 0;
 
-    const total = leasing + admin + forsakring + forhojd + momsLeasing + momsAdmin;
+    // Moms på leasing och admin
+    const momsLeasing = leasing * 0.25;
+    const momsAdmin = adminAvg * 0.25;
+
+    // Avdragsgill moms (50%)
+    const momsLeasingAdminAvdr = (momsLeasing + momsAdmin) * 0.5;
+
+    // Ej avdragsgill moms (50%)
+    const momsLeasingAdminEjAvdr = (momsLeasing + momsAdmin) * 0.5;
+
+    // Förhöjd avgift: räkna ut exkl moms och momsdel
+    const forhojdExklMoms = forhojdBelopp / 1.25;
+    const momsForhojd = forhojdBelopp - forhojdExklMoms;
+    const momsForhojdAvdr = momsForhojd * 0.5;
+    const momsForhojdEjAvdr = momsForhojd * 0.5;
+
+    // 5615: Leasing exkl moms + ej avdragsgill moms på leasing/admin + ej avdragsgill moms på förhöjd avgift
+    const total5615 = leasing + momsLeasingAdminEjAvdr + momsForhojdEjAvdr;
+
+    // 6990: Admin exkl moms
+    const total6990 = adminAvg;
+
+    // 5612: Försäkring
+    const total5612 = forsakringBelopp;
+
+    // 1720: Förhöjd avgift exkl moms
+    const total1720 = forhojdExklMoms;
+
+    // 2640: Avdragsgill moms (leasing, admin, förhöjd)
+    const totalMoms = momsLeasingAdminAvdr + momsForhojdAvdr;
+
+    // 1930: Kredit, hela fakturan
+    const total = leasing + momsLeasing + adminAvg + momsAdmin + forsakringBelopp + forhojdBelopp;
 
     setExtrafält?.({
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: total },
-      "2640": {
-        label: "Ingående moms",
-        debet: momsLeasing + momsAdmin + momsForhojd,
-        kredit: 0,
-      },
-      "5612": {
-        label: "Försäkring och skatt för personbilar",
-        debet: forsakring,
-        kredit: 0,
-      },
-      "5615": {
-        label: "Leasing av personbilar",
-        debet: leasing,
-        kredit: 0,
-      },
-      "6990": {
-        label: "Övriga externa kostnader",
-        debet: admin,
-        kredit: 0,
-      },
-      "1720": {
-        label: "Förutbetalda leasingavgifter",
-        debet: nettoForhojd,
-        kredit: 0,
-      },
+      "2640": { label: "Ingående moms", debet: totalMoms, kredit: 0 },
+      "5612": { label: "Försäkring och skatt för personbilar", debet: total5612, kredit: 0 },
+      "5615": { label: "Leasing av personbilar", debet: total5615, kredit: 0 },
+      "6990": { label: "Övriga externa kostnader", debet: total6990, kredit: 0 },
+      "1720": { label: "Förutbetalda leasingavgifter", debet: total1720, kredit: 0 },
     });
 
     setBelopp(total);
