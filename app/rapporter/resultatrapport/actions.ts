@@ -1,5 +1,4 @@
 "use server";
-
 import { Pool } from "pg";
 import { auth } from "@/auth";
 
@@ -97,4 +96,22 @@ export async function hamtaResultatrapport() {
     rorelsensKostnader: formatData(rorelsensMap),
     finansiellaKostnader: formatData(finansiellaMap),
   };
+}
+
+export async function fetchFöretagsprofil(userId: number) {
+  try {
+    const client = await pool.connect();
+    const query = `
+      SELECT företagsnamn, organisationsnummer
+      FROM företagsprofil
+      WHERE id = $1
+      LIMIT 1
+    `;
+    const res = await client.query(query, [userId]);
+    client.release();
+    return res.rows[0] || null;
+  } catch (error) {
+    console.error("❌ fetchFöretagsprofil error:", error);
+    return null;
+  }
 }

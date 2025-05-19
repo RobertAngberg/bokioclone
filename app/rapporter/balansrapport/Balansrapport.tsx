@@ -222,15 +222,11 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
   return (
     <MainLayout>
       <div className="mx-auto px-4 text-white">
-        <div className="flex gap-4 mb-8">
+        <h1 className="text-3xl text-center mb-8">Balansrapport</h1>
+        <div className="flex gap-4 mb-8 justify-center">
           <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
           <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
         </div>
-        <h1 className="text-3xl text-center mb-2">Balansrapport</h1>
-        {företagsnamn && <div className="text-center text-white font-semibold">{företagsnamn}</div>}
-        {organisationsnummer && (
-          <div className="text-center text-white mb-8">{organisationsnummer}</div>
-        )}
 
         <h2 className="text-xl mb-4 border-b border-gray-500 pb-1">Tillgångar</h2>
         {renderaKategori("Anläggningstillgångar", "🏗️", anläggningstillgångar)}
