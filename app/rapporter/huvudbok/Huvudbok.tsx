@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import MainLayout from "../../_components/MainLayout";
 import AnimeradFlik from "../../_components/AnimeradFlik";
 import InreTabell from "../../_components/InreTabell";
+import Knapp from "../../_components/Knapp";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -184,19 +185,9 @@ export default function Huvudbok({ initialData, företagsnamn, organisationsnumm
   return (
     <MainLayout>
       <h1 className="mb-8 text-3xl text-center text-white">Huvudbok</h1>
-      <div className="flex mb-6">
-        <button
-          onClick={handleExportPDF}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-4"
-        >
-          Ladda ner PDF
-        </button>
-        <button
-          onClick={handleExportCSV}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-        >
-          Ladda ner CSV
-        </button>
+      <div className="flex mb-6 gap-4">
+        <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
+        <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
       </div>
       {/* Din vanliga UI */}
       <div>

@@ -1,13 +1,23 @@
-import { fetchBalansData } from "./actions";
 import Balansrapport from "./Balansrapport";
+import { fetchBalansData, fetchFöretagsprofil } from "./actions";
+import { auth } from "@/auth";
 
 export default async function Page() {
-  const year = "2025";
-  const data = await fetchBalansData(year);
+  const sessionPromise = auth();
+  const year = new Date().getFullYear().toString();
+  const balansPromise = fetchBalansData(year);
 
-  if (!data) {
-    return <div className="text-white p-8">❌ Ingen balansdata tillgänglig för {year}.</div>;
-  }
+  const session = await sessionPromise;
+  const userId = session?.user?.id;
+  const profilPromise = userId ? fetchFöretagsprofil(Number(userId)) : Promise.resolve(null);
 
-  return <Balansrapport initialData={data} />;
+  const [initialData, profil] = await Promise.all([balansPromise, profilPromise]);
+
+  return (
+    <Balansrapport
+      initialData={initialData}
+      företagsnamn={profil?.företagsnamn ?? ""}
+      organisationsnummer={profil?.organisationsnummer ?? ""}
+    />
+  );
 }
