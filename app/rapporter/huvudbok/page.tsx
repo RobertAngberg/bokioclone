@@ -1,10 +1,25 @@
 import Huvudbok from "./Huvudbok";
-import { fetchHuvudbok } from "./actions";
+import { fetchHuvudbok, fetchFöretagsprofil } from "./actions";
+import { auth } from "@/auth";
 
 export default async function Page() {
-  await new Promise((r) => setTimeout(r, 400));
+  const wait = new Promise((r) => setTimeout(r, 400));
 
-  const result = await fetchHuvudbok();
+  const sessionPromise = auth();
+  const huvudbokPromise = fetchHuvudbok();
 
-  return <Huvudbok initialData={result} />;
+  const session = await sessionPromise;
+  const userId = session?.user?.id;
+  const profilPromise = userId ? fetchFöretagsprofil(Number(userId)) : Promise.resolve(null);
+
+  // Vänta på både 400ms och all data parallellt
+  const [result, profil] = await Promise.all([huvudbokPromise, profilPromise, wait]);
+
+  return (
+    <Huvudbok
+      initialData={result}
+      företagsnamn={profil?.företagsnamn ?? ""}
+      organisationsnummer={profil?.organisationsnummer ?? ""}
+    />
+  );
 }

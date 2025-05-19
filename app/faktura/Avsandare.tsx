@@ -147,6 +147,7 @@ export default function Avsandare() {
             onChange={handleLogoUpload}
           />
           {form.logo && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={form.logo}
               alt="Logotyp"
