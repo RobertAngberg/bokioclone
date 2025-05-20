@@ -143,7 +143,28 @@ export default function Steg3({
   const totalKredit = fallbackRows.reduce((sum, r) => sum + r.kredit, 0);
 
   return (
-    <>
+    <div className="relative">
+      {/* Tillbakaknapp uppe till vänster */}
+      <button
+        type="button"
+        onClick={() => setCurrentStep?.(2)}
+        className="absolute left-0 top-0 flex items-center gap-2 text-white font-bold px-3 py-2 rounded hover:bg-gray-700 focus:outline-none"
+        aria-label="Tillbaka"
+        style={{ zIndex: 10 }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Tillbaka
+      </button>
+
       <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
       <p className="text-center font-bold text-xl mb-1">{valtFörval.namn}</p>
       <p className="text-center text-gray-300 mb-8">
@@ -186,6 +207,6 @@ export default function Steg3({
           <KnappFullWidth text="Bokför" />
         </div>
       </form>
-    </>
+    </div>
   );
 }
