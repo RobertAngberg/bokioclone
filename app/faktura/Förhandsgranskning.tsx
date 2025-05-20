@@ -1,3 +1,4 @@
+//#region
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
@@ -7,6 +8,7 @@ import { useState, useEffect } from "react";
 import { hämtaFöretagsprofil } from "./actions";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+//#endregion
 
 export default function Forhandsgranskning() {
   const { formData, setFormData } = useFakturaContext();
@@ -95,38 +97,6 @@ export default function Forhandsgranskning() {
 
   const totalSum = arbetskostnadInklMoms - rotRutAvdrag;
   const summaAttBetala = Math.max(totalSum, 0);
-
-  // PDF-exportfunktion
-  const exportToPDF = async () => {
-    const element = document.getElementById("print-area");
-    if (!element) return;
-
-    element.style.display = "block";
-    await new Promise((res) => setTimeout(res, 200)); // Vänta så DOM hinner uppdateras
-
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-      });
-
-      if (canvas.width === 0 || canvas.height === 0) {
-        console.error("❌ Canvas har ogiltiga dimensioner", canvas.width, canvas.height);
-        return;
-      }
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const width = 210;
-      const height = (canvas.height * width) / canvas.width;
-
-      pdf.addImage(imgData, "PNG", 0, 0, width, height);
-      pdf.save("faktura.pdf");
-    } catch (error) {
-      console.error("❌ Error exporting PDF:", error);
-    }
-  };
 
   // --- ROT/RUT-detaljer för förhandsgranskning ---
   const showRotRutDetails =
@@ -366,17 +336,6 @@ export default function Forhandsgranskning() {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* PDF-exportknapp */}
-      <div className="mt-8">
-        <button
-          type="button"
-          onClick={exportToPDF}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Exportera PDF
-        </button>
       </div>
     </>
   );

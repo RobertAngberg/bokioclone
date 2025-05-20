@@ -1,3 +1,4 @@
+//#region
 "use server";
 
 import { auth } from "@/auth";
@@ -18,6 +19,7 @@ export type Artikel = {
   avdragProcent?: number;
   arbetskostnadExMoms?: number;
 };
+//#endregion
 
 export async function saveInvoice(formData: FormData) {
   const session = await auth();
@@ -644,6 +646,23 @@ export async function hämtaFakturaMedRader(id: number) {
     const rotRut = rotRutRes.rows[0] || {};
 
     return { faktura, artiklar, rotRut };
+  } finally {
+    client.release();
+  }
+}
+
+export async function hämtaNästaFakturanummer() {
+  const session = await auth();
+  if (!session?.user?.id) return 1;
+  const userId = parseInt(session.user.id);
+
+  const client = await pool.connect();
+  try {
+    const latest = await client.query(
+      `SELECT MAX(CAST(fakturanummer AS INTEGER)) AS max FROM fakturor WHERE "userId" = $1`,
+      [userId]
+    );
+    return (latest.rows[0].max || 0) + 1;
   } finally {
     client.release();
   }

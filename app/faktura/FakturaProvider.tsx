@@ -1,7 +1,8 @@
 //#region Huvud
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { hämtaNästaFakturanummer } from "./actions"; // Se till att denna finns i actions.ts
 
 export type FakturaFormData = {
   id: string;
@@ -129,6 +130,18 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [kundStatus, setKundStatus] = useState<KundStatus>("none");
+
+  // Hämta nästa fakturanummer när det är en ny faktura (dvs ingen id och inget fakturanummer)
+  useEffect(() => {
+    if (!formData.id && !formData.fakturanummer) {
+      hämtaNästaFakturanummer().then((nummer) => {
+        setFormData((prev) => ({
+          ...prev,
+          fakturanummer: nummer.toString(),
+        }));
+      });
+    }
+  }, [formData.id, formData.fakturanummer]);
 
   const resetKund = () => {
     setFormData((prev) => ({
