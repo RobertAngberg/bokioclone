@@ -12,7 +12,11 @@ export type Artikel = {
   prisPerEnhet: number;
   moms: number;
   valuta: string;
-  typ: "vara" | "tjänst"; // ✅ RÄTT stavning för "tjänst"
+  typ: "vara" | "tjänst";
+  rotRutTyp?: "ROT" | "RUT";
+  rotRutKategori?: string;
+  avdragProcent?: number;
+  arbetskostnadExMoms?: number;
 };
 
 export async function saveInvoice(formData: FormData) {
@@ -30,6 +34,8 @@ export async function saveInvoice(formData: FormData) {
       .padStart(2, "0")}`;
   };
 
+  console.log("FITTLOGG: saveInvoice formData", Object.fromEntries(formData.entries()));
+
   try {
     const artiklarRaw = formData.get("artiklar") as string;
     const artiklar = JSON.parse(artiklarRaw || "[]") as Artikel[];
@@ -41,7 +47,7 @@ export async function saveInvoice(formData: FormData) {
     const fakturaId = isUpdate ? parseInt(fakturaIdRaw!.toString(), 10) : undefined;
 
     if (isUpdate && fakturaId) {
-      await client.query(`DELETE FROM fakturarader WHERE faktura_id = $1`, [fakturaId]);
+      await client.query(`DELETE FROM faktura_artiklar WHERE faktura_id = $1`, [fakturaId]);
       await client.query(`DELETE FROM rot_rut WHERE faktura_id = $1`, [fakturaId]); // Viktigt: ta bort gammal ROT/RUT
 
       await client.query(
@@ -71,9 +77,24 @@ export async function saveInvoice(formData: FormData) {
 
       for (const rad of artiklar) {
         await client.query(
-          `INSERT INTO fakturarader (faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [fakturaId, rad.beskrivning, rad.antal, rad.prisPerEnhet, rad.moms, rad.valuta, rad.typ]
+          `INSERT INTO faktura_artiklar (
+            faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ,
+            rot_rut_typ, rot_rut_kategori, avdrag_procent, arbetskostnad_ex_moms
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [
+            fakturaId,
+            rad.beskrivning,
+            rad.antal,
+            rad.prisPerEnhet,
+            rad.moms,
+            rad.valuta,
+            rad.typ,
+            rad.rotRutTyp ?? null,
+            rad.rotRutKategori ?? null,
+            rad.avdragProcent ?? null,
+            rad.arbetskostnadExMoms ?? null,
+          ]
         );
       }
 
@@ -138,9 +159,24 @@ export async function saveInvoice(formData: FormData) {
 
       for (const rad of artiklar) {
         await client.query(
-          `INSERT INTO fakturarader (faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [newId, rad.beskrivning, rad.antal, rad.prisPerEnhet, rad.moms, rad.valuta, rad.typ]
+          `INSERT INTO faktura_artiklar (
+            faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ,
+            rot_rut_typ, rot_rut_kategori, avdrag_procent, arbetskostnad_ex_moms
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [
+            newId,
+            rad.beskrivning,
+            rad.antal,
+            rad.prisPerEnhet,
+            rad.moms,
+            rad.valuta,
+            rad.typ,
+            rad.rotRutTyp ?? null,
+            rad.rotRutKategori ?? null,
+            rad.avdragProcent ?? null,
+            rad.arbetskostnadExMoms ?? null,
+          ]
         );
       }
 
@@ -180,57 +216,10 @@ export async function saveInvoice(formData: FormData) {
   }
 }
 
-export async function sparaFavoritArtikel(artikel: Artikel) {
-  try {
-    const existing = await pool.query(
-      `SELECT id FROM fakturarader
-       WHERE faktura_id IS NULL
-         AND beskrivning = $1
-         AND antal = $2
-         AND pris_per_enhet = $3
-         AND moms = $4
-         AND valuta = $5
-         AND typ = $6
-       LIMIT 1`,
-      [
-        artikel.beskrivning,
-        artikel.antal.toString(),
-        artikel.prisPerEnhet.toString(),
-        artikel.moms.toString(),
-        artikel.valuta,
-        artikel.typ,
-      ]
-    );
-
-    if (existing.rows.length > 0) {
-      console.log("ℹ️ Artikeln finns redan som favorit, sparas inte igen.");
-      return { success: true, alreadyExists: true };
-    }
-
-    await pool.query(
-      `INSERT INTO fakturarader (faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ)
-       VALUES (NULL, $1, $2, $3, $4, $5, $6)`,
-      [
-        artikel.beskrivning,
-        artikel.antal.toString(),
-        artikel.prisPerEnhet.toString(),
-        artikel.moms.toString(),
-        artikel.valuta,
-        artikel.typ,
-      ]
-    );
-
-    return { success: true };
-  } catch (err) {
-    console.error("❌ Kunde inte spara favoritartikel:", err);
-    return { success: false };
-  }
-}
-
 export async function deleteFaktura(id: number) {
   const client = await pool.connect();
   try {
-    await client.query(`DELETE FROM fakturarader WHERE faktura_id = $1`, [id]);
+    await client.query(`DELETE FROM faktura_artiklar WHERE faktura_id = $1`, [id]);
     await client.query(`DELETE FROM fakturor WHERE id = $1`, [id]);
     return { success: true };
   } catch (err) {
@@ -304,7 +293,7 @@ export async function hämtaSparadeFakturor() {
 export async function deleteFavoritArtikel(id: number) {
   const client = await pool.connect();
   try {
-    await client.query(`DELETE FROM fakturarader WHERE id = $1 AND faktura_id IS NULL`, [id]);
+    await client.query(`DELETE FROM faktura_artiklar WHERE id = $1 AND faktura_id IS NULL`, [id]);
     return { success: true };
   } catch (err) {
     console.error("❌ deleteFavoritArtikel error:", err);
@@ -327,7 +316,7 @@ export async function getAllInvoices() {
     const fakturor = res.rows;
 
     for (const f of fakturor) {
-      const r = await client.query(`SELECT * FROM fakturarader WHERE faktura_id = $1`, [f.id]);
+      const r = await client.query(`SELECT * FROM faktura_artiklar WHERE faktura_id = $1`, [f.id]);
       f.artiklar = r.rows.map((rad) => ({
         ...rad,
         prisPerEnhet: Number(rad.pris_per_enhet),
@@ -376,7 +365,16 @@ export async function hämtaFakturaMedRader(id: number) {
 
     const faktura = faktRes.rows[0];
 
-    const radRes = await client.query(`SELECT * FROM fakturarader WHERE faktura_id = $1`, [id]);
+    // LOGG: Hämta artiklar med alla RUT/ROT-fält
+    const radRes = await client.query(
+      `
+      SELECT beskrivning, antal, pris_per_enhet, moms, valuta, typ,
+        rot_rut_typ, rot_rut_kategori, avdrag_procent, arbetskostnad_ex_moms
+      FROM faktura_artiklar
+      WHERE faktura_id = $1
+    `,
+      [id]
+    );
 
     const artiklar = radRes.rows.map((r) => ({
       beskrivning: r.beskrivning,
@@ -384,8 +382,17 @@ export async function hämtaFakturaMedRader(id: number) {
       prisPerEnhet: Number(r.pris_per_enhet),
       moms: Number(r.moms),
       valuta: r.valuta,
-      typ: r.typ === "tjänst" ? "tjanst" : "vara",
+      typ: r.typ,
+      rotRutTyp: r.rot_rut_typ,
+      rotRutKategori: r.rot_rut_kategori,
+      avdragProcent: r.avdrag_procent,
+      arbetskostnadExMoms: r.arbetskostnad_ex_moms,
     }));
+
+    // eslint-disable-next-line no-console
+    console.log("FITTLOGG: hämtaFakturaMedRader -> faktura", faktura);
+    // eslint-disable-next-line no-console
+    console.log("FITTLOGG: hämtaFakturaMedRader -> artiklar", artiklar);
 
     return { faktura, artiklar };
   } catch (err) {
@@ -393,30 +400,6 @@ export async function hämtaFakturaMedRader(id: number) {
     return null;
   } finally {
     client.release();
-  }
-}
-
-export async function hämtaSparadeArtiklar(): Promise<Artikel[]> {
-  try {
-    const res = await pool.query(`
-      SELECT id, beskrivning, antal, pris_per_enhet, moms, valuta, typ
-      FROM fakturarader
-      WHERE faktura_id IS NULL
-      ORDER BY beskrivning ASC
-    `);
-
-    return res.rows.map((row) => ({
-      id: row.id,
-      beskrivning: row.beskrivning,
-      antal: Number(row.antal),
-      prisPerEnhet: Number(row.pris_per_enhet),
-      moms: Number(row.moms),
-      valuta: row.valuta,
-      typ: row.typ,
-    }));
-  } catch (err) {
-    console.error("❌ Kunde inte hämta sparade artiklar:", err);
-    return [];
   }
 }
 
@@ -587,5 +570,96 @@ export async function sparaFöretagsprofil(
   } catch (error) {
     console.error("Fel vid sparande av företagsprofil:", error);
     return { success: false };
+  }
+}
+
+export async function sparaFavoritArtikel(artikel: Artikel) {
+  try {
+    const existing = await pool.query(
+      `SELECT id FROM faktura_artiklar
+       WHERE faktura_id IS NULL
+         AND beskrivning = $1
+         AND antal = $2
+         AND pris_per_enhet = $3
+         AND moms = $4
+         AND valuta = $5
+         AND typ = $6
+         AND (rot_rut_typ IS NOT DISTINCT FROM $7)
+         AND (rot_rut_kategori IS NOT DISTINCT FROM $8)
+         AND (avdrag_procent IS NOT DISTINCT FROM $9)
+         AND (arbetskostnad_ex_moms IS NOT DISTINCT FROM $10)
+       LIMIT 1`,
+      [
+        artikel.beskrivning,
+        artikel.antal.toString(),
+        artikel.prisPerEnhet.toString(),
+        artikel.moms.toString(),
+        artikel.valuta,
+        artikel.typ,
+        artikel.rotRutTyp ?? null,
+        artikel.rotRutKategori ?? null,
+        artikel.avdragProcent ?? null,
+        artikel.arbetskostnadExMoms ?? null,
+      ]
+    );
+
+    if (existing.rows.length > 0) {
+      console.log("ℹ️ Artikeln finns redan som favorit, sparas inte igen.");
+      return { success: true, alreadyExists: true };
+    }
+
+    await pool.query(
+      `INSERT INTO faktura_artiklar (
+        faktura_id, beskrivning, antal, pris_per_enhet, moms, valuta, typ,
+        rot_rut_typ, rot_rut_kategori, avdrag_procent, arbetskostnad_ex_moms
+      )
+      VALUES (NULL, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        artikel.beskrivning,
+        artikel.antal.toString(),
+        artikel.prisPerEnhet.toString(),
+        artikel.moms.toString(),
+        artikel.valuta,
+        artikel.typ,
+        artikel.rotRutTyp ?? null,
+        artikel.rotRutKategori ?? null,
+        artikel.avdragProcent ?? null,
+        artikel.arbetskostnadExMoms ?? null,
+      ]
+    );
+
+    return { success: true };
+  } catch (err) {
+    console.error("❌ Kunde inte spara favoritartikel:", err);
+    return { success: false };
+  }
+}
+
+export async function hämtaSparadeArtiklar(): Promise<Artikel[]> {
+  try {
+    const res = await pool.query(`
+      SELECT id, beskrivning, antal, pris_per_enhet, moms, valuta, typ,
+        rot_rut_typ, rot_rut_kategori, avdrag_procent, arbetskostnad_ex_moms
+      FROM faktura_artiklar
+      WHERE faktura_id IS NULL
+      ORDER BY beskrivning ASC
+    `);
+
+    return res.rows.map((row) => ({
+      id: row.id,
+      beskrivning: row.beskrivning,
+      antal: Number(row.antal),
+      prisPerEnhet: Number(row.pris_per_enhet),
+      moms: Number(row.moms),
+      valuta: row.valuta,
+      typ: row.typ,
+      rotRutTyp: row.rot_rut_typ,
+      rotRutKategori: row.rot_rut_kategori,
+      avdragProcent: row.avdrag_procent,
+      arbetskostnadExMoms: row.arbetskostnad_ex_moms,
+    }));
+  } catch (err) {
+    console.error("❌ Kunde inte hämta sparade artiklar:", err);
+    return [];
   }
 }

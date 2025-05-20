@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import TextFält from "../_components/TextFält";
 import { hämtaFöretagsprofil, sparaFöretagsprofil } from "./actions";
+import Knapp from "../_components/Knapp";
 //#endregion
 
 export default function Avsandare() {
@@ -24,9 +25,6 @@ export default function Avsandare() {
   });
 
   const [sparat, setSparat] = useState(false);
-  const [logoSliderValue, setLogoSliderValue] = useState(
-    (100 * ((form.logoWidth ?? 200) - 50)) / 150
-  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Ladda företagsprofil när komponenten mountas
@@ -64,12 +62,13 @@ export default function Avsandare() {
     reader.readAsDataURL(file);
   };
 
-  // Hantera logotypstorlek
-  const handleLogoSlider = (value: number) => {
-    setLogoSliderValue(value);
-    const width = 50 + (value / 100) * 150;
-    setForm((prev) => ({ ...prev, logoWidth: width }));
-    localStorage.setItem("bokioclone_logoWidth", width.toString());
+  // Ta bort logotyp
+  const handleRemoveLogo = () => {
+    setForm((prev) => ({ ...prev, logo: "" }));
+    localStorage.removeItem("bokioclone_logo");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // Nollställ inputen!
+    }
   };
 
   const handleSubmit = async () => {
@@ -86,7 +85,7 @@ export default function Avsandare() {
 
   return (
     <div className="max-w-4xl mx-auto bg-slate-900 text-white rounded-lg">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <TextFält
           label="Företagsnamn"
           name="företagsnamn"
@@ -128,17 +127,11 @@ export default function Avsandare() {
         />
       </div>
 
-      {/* Logotyp-uppladdning och förhandsgranskning */}
-      <div className="mt-8 flex flex-col items-start gap-4">
+      <div className="mt-8 flex flex-col items-start gap-4 mb-6">
         <label className="font-semibold">Logotyp</label>
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            className="bg-cyan-700 hover:bg-cyan-800 px-4 py-2 rounded"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Ladda upp logotyp
-          </button>
+          <Knapp onClick={() => fileInputRef.current?.click()} text="Ladda upp logotyp" />
+
           <input
             ref={fileInputRef}
             type="file"
@@ -146,6 +139,7 @@ export default function Avsandare() {
             className="hidden"
             onChange={handleLogoUpload}
           />
+
           {form.logo && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -162,31 +156,12 @@ export default function Avsandare() {
             />
           )}
         </div>
-        {/* Slider för logotypbredd */}
-        {form.logo && (
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={logoSliderValue}
-              onChange={(e) => handleLogoSlider(Number(e.target.value))}
-              className="w-40"
-            />
-            <span className="text-xs text-gray-300">{Math.round(form.logoWidth)} px</span>
-          </div>
-        )}
+
+        {form.logo && <Knapp onClick={handleRemoveLogo} text="❌ Ta bort logotyp" />}
       </div>
 
-      {/* Spara-knapp */}
-      <button
-        onClick={handleSubmit}
-        className="mt-8 bg-cyan-700 hover:bg-cyan-800 px-5 py-2 rounded"
-      >
-        💾 Spara uppgifter
-      </button>
+      <Knapp onClick={handleSubmit} text="💾 Spara uppgifter" />
 
-      {/* Sparat-meddelande */}
       {sparat && <p className="text-green-400 mt-4">✅ Uppgifterna sparades!</p>}
     </div>
   );

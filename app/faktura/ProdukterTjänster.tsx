@@ -1,13 +1,33 @@
-//#region Huvud
 "use client";
 
 import { useEffect, useState } from "react";
 import { useFakturaContext } from "./FakturaProvider";
-import { saveInvoice, sparaFavoritArtikel, hämtaSparadeArtiklar } from "./actions";
+import {
+  saveInvoice,
+  sparaFavoritArtikel,
+  hämtaSparadeArtiklar,
+  deleteFavoritArtikel,
+} from "./actions";
 import Knapp from "../_components/Knapp";
 import TextFält from "../_components/TextFält";
 import RotRutForm from "./RotRutForm";
-//#endregion
+
+type Artikel = {
+  beskrivning: string;
+  antal: number;
+  prisPerEnhet: number;
+  moms: number;
+  valuta: string;
+  typ: "vara" | "tjänst";
+  rotRutTyp?: "ROT" | "RUT";
+  rotRutKategori?: string;
+  avdragProcent?: number;
+  arbetskostnadExMoms?: number;
+};
+type FavoritArtikel = Omit<Artikel, "arbetskostnadExMoms"> & {
+  arbetskostnadExMoms?: number | string;
+  id?: number;
+};
 
 export default function ProdukterTjanster() {
   const { formData, setFormData } = useFakturaContext();
@@ -19,17 +39,24 @@ export default function ProdukterTjanster() {
   const [typ, setTyp] = useState<"vara" | "tjänst">("vara");
   const [loading, setLoading] = useState(false);
   const [saveAsFavorite, setSaveAsFavorite] = useState(false);
-  const [favoritArtiklar, setFavoritArtiklar] = useState<any[]>([]);
+  const [favoritArtiklar, setFavoritArtiklar] = useState<FavoritArtikel[]>([]);
   const [showFavoritArtiklar, setShowFavoritArtiklar] = useState(false);
   const [blinkIndex, setBlinkIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const laddaFavoriter = async () => {
       const artiklar = await hämtaSparadeArtiklar();
-      setFavoritArtiklar(artiklar);
+      setFavoritArtiklar(artiklar as FavoritArtikel[]);
     };
     laddaFavoriter();
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("FITTLOGG: formData", JSON.stringify(formData, null, 2));
+    // eslint-disable-next-line no-console
+    console.log("FITTLOGG: favoritArtiklar", favoritArtiklar);
+  }, [formData, favoritArtiklar]);
 
   const handleAdd = async () => {
     if (!beskrivning.trim()) {
@@ -37,7 +64,28 @@ export default function ProdukterTjanster() {
       return;
     }
 
-    const newArtikel = { beskrivning, antal, prisPerEnhet, moms, valuta, typ };
+    const newArtikel: Artikel = {
+      beskrivning,
+      antal,
+      prisPerEnhet,
+      moms,
+      valuta,
+      typ,
+      ...(formData.rotRutAktiverat
+        ? {
+            rotRutTyp: formData.rotRutTyp as "ROT" | "RUT",
+            rotRutKategori: formData.rotRutKategori,
+            avdragProcent: formData.avdragProcent,
+            arbetskostnadExMoms:
+              typeof formData.arbetskostnadExMoms === "string"
+                ? Number(formData.arbetskostnadExMoms)
+                : formData.arbetskostnadExMoms,
+          }
+        : {}),
+    };
+
+    // eslint-disable-next-line no-console
+    console.log("FITTLOGG: handleAdd -> newArtikel", newArtikel);
 
     setFormData((prev) => ({
       ...prev,
@@ -51,19 +99,35 @@ export default function ProdukterTjanster() {
       Object.entries(formData).forEach(([k, v]) => {
         if (k !== "artiklar" && v != null) fd.append(k, String(v));
       });
+      // eslint-disable-next-line no-console
+      console.log(
+        "FITTLOGG: handleAdd -> saveInvoice skickas med",
+        Object.fromEntries(fd.entries())
+      );
       const res = await saveInvoice(fd);
       if (!res.success) {
         alert("❌ Kunde inte spara faktura efter tillägg");
       }
     } catch (err) {
-      console.error(err);
+      console.error("FITTLOGG: Fel vid sparande", err);
       alert("❌ Fel vid sparande");
     } finally {
       setLoading(false);
     }
 
     if (saveAsFavorite) {
-      const res = await sparaFavoritArtikel(newArtikel);
+      const favArtikel: FavoritArtikel = { ...newArtikel };
+      // Konvertera arbetskostnadExMoms till number om det finns
+      if (favArtikel.arbetskostnadExMoms !== undefined) {
+        favArtikel.arbetskostnadExMoms = Number(favArtikel.arbetskostnadExMoms);
+        if (isNaN(favArtikel.arbetskostnadExMoms)) favArtikel.arbetskostnadExMoms = undefined;
+      }
+      // eslint-disable-next-line no-console
+      console.log("FITTLOGG: handleAdd -> Spara favoritartikel", favArtikel);
+      const res = await sparaFavoritArtikel({
+        ...favArtikel,
+        arbetskostnadExMoms: favArtikel.arbetskostnadExMoms as number | undefined,
+      });
       if (!res.success) {
         alert("❌ Kunde inte spara favoritartikel");
       }
@@ -85,16 +149,47 @@ export default function ProdukterTjanster() {
 
   const handleRemove = (index: number) => {
     const nyaArtiklar = (formData.artiklar ?? []).filter((_, i) => i !== index);
+    // eslint-disable-next-line no-console
+    console.log("FITTLOGG: handleRemove -> index", index, nyaArtiklar);
     setFormData((prev) => ({
       ...prev,
       artiklar: nyaArtiklar,
     }));
   };
 
-  const handleSelectFavorit = (artikel: any) => {
+  const handleSelectFavorit = (artikel: FavoritArtikel) => {
+    const { id, rotRutTyp, rotRutKategori, avdragProcent, arbetskostnadExMoms, ...artikelUtanId } =
+      artikel;
+
+    const artikelMedRutRot = {
+      ...artikelUtanId,
+      ...(rotRutTyp
+        ? {
+            rotRutTyp,
+            rotRutKategori,
+            avdragProcent,
+            arbetskostnadExMoms:
+              typeof arbetskostnadExMoms === "string"
+                ? Number(arbetskostnadExMoms)
+                : arbetskostnadExMoms,
+          }
+        : {}),
+    };
+
+    // eslint-disable-next-line no-console
+    console.log("FITTLOGG: handleSelectFavorit -> artikelMedRutRot", artikelMedRutRot);
+
     setFormData((prev) => ({
       ...prev,
-      artiklar: [...(prev.artiklar ?? []), artikel],
+      artiklar: [...(prev.artiklar ?? []), artikelMedRutRot],
+      rotRutAktiverat: rotRutTyp === "ROT" || rotRutTyp === "RUT" ? true : false,
+      rotRutTyp: rotRutTyp as "ROT" | "RUT" | undefined,
+      rotRutKategori,
+      avdragProcent,
+      arbetskostnadExMoms:
+        arbetskostnadExMoms !== undefined && arbetskostnadExMoms !== null
+          ? Number(arbetskostnadExMoms)
+          : undefined,
     }));
 
     setTimeout(() => {
@@ -103,9 +198,19 @@ export default function ProdukterTjanster() {
     }, 50);
   };
 
+  const handleDeleteFavorit = async (id?: number) => {
+    if (!id) return;
+    if (!window.confirm("Ta bort denna favoritartikel?")) return;
+    const res = await deleteFavoritArtikel(id);
+    if (res.success) {
+      setFavoritArtiklar((prev) => prev.filter((a) => a.id !== id));
+    } else {
+      alert("❌ Kunde inte ta bort favoritartikel");
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* 📂 Favoritartiklar */}
       {favoritArtiklar.length > 0 && (
         <div className="space-y-4">
           <Knapp
@@ -118,12 +223,21 @@ export default function ProdukterTjanster() {
               {favoritArtiklar.map((a) => (
                 <div
                   key={a.id}
-                  onClick={() => handleSelectFavorit(a)}
-                  className="bg-slate-800 hover:bg-slate-700 cursor-pointer p-3 rounded border border-slate-600 flex flex-col justify-between"
+                  className="bg-slate-800 hover:bg-slate-700 cursor-pointer p-3 rounded border border-slate-600 flex flex-col justify-between relative"
                 >
-                  <div className="text-white font-semibold">📌 {a.beskrivning}</div>
-                  <div className="text-gray-400 text-sm mt-1">
-                    {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
+                  <button
+                    onClick={() => handleDeleteFavorit(a.id)}
+                    className="absolute top-2 right-2 text-red-400 hover:text-red-600"
+                    title="Ta bort favoritartikel"
+                  >
+                    🗑️
+                  </button>
+                  <div onClick={() => handleSelectFavorit(a)} className="flex-1">
+                    <div className="text-white font-semibold">📌 {a.beskrivning}</div>
+                    <div className="text-gray-400 text-sm mt-1">
+                      {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
+                      {a.rotRutTyp ? ` — ${a.rotRutTyp}` : ""}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -132,10 +246,9 @@ export default function ProdukterTjanster() {
         </div>
       )}
 
-      {/* ➕ Visa tillagda artiklar */}
       <div>
         <ul className="space-y-3">
-          {formData.artiklar.map((a, idx) => (
+          {(formData.artiklar as Artikel[]).map((a, idx) => (
             <li
               key={idx}
               className={`flex justify-between items-center p-3 bg-slate-900 border border-slate-700 rounded ${
@@ -146,6 +259,7 @@ export default function ProdukterTjanster() {
                 <div className="text-white font-semibold">{a.beskrivning}</div>
                 <div className="text-gray-400 text-sm">
                   {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
+                  {a.rotRutTyp ? ` — ${a.rotRutTyp}` : ""}
                 </div>
               </div>
               <button onClick={() => handleRemove(idx)} className="text-red-400 hover:text-red-600">
@@ -156,7 +270,6 @@ export default function ProdukterTjanster() {
         </ul>
       </div>
 
-      {/* 📝 Lägg till ny artikel manuellt */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <TextFält
           label="Beskrivning"
@@ -214,7 +327,6 @@ export default function ProdukterTjanster() {
 
       <RotRutForm />
 
-      {/* 📌 Lägg till som favorit */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <input

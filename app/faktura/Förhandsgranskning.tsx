@@ -22,7 +22,6 @@ export default function Forhandsgranskning() {
       setProfil(data);
     };
     fetchProfil();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id]);
 
   // Synka profil till formData när profil laddas
@@ -84,8 +83,17 @@ export default function Forhandsgranskning() {
     return acc + antal * pris * (moms / 100);
   }, 0);
 
-  const rotRutAvdrag = formData.avdragBelopp ?? 0;
-  const totalSum = sumExkl + totalMoms - rotRutAvdrag;
+  // ROT/RUT-avdrag enligt Skatteverket: 30% av arbetskostnad inkl moms
+  // (justera procentsats och villkor om du har RUT eller annan procentsats)
+  const arbetskostnadInklMoms = sumExkl + totalMoms;
+  const rotRutAvdrag =
+    formData.rotRutAktiverat && formData.rotRutTyp === "ROT"
+      ? 0.3 * arbetskostnadInklMoms
+      : formData.rotRutAktiverat && formData.rotRutTyp === "RUT"
+        ? 0.5 * arbetskostnadInklMoms
+        : 0;
+
+  const totalSum = arbetskostnadInklMoms - rotRutAvdrag;
   const summaAttBetala = Math.max(totalSum, 0);
 
   // PDF-exportfunktion
@@ -119,10 +127,6 @@ export default function Forhandsgranskning() {
       console.error("❌ Error exporting PDF:", error);
     }
   };
-
-  // Debug-loggar
-  // console.log("formData:", formData);
-  // console.log("profil:", profil);
 
   return (
     <>
@@ -249,6 +253,12 @@ export default function Forhandsgranskning() {
             <p>
               <strong>Moms totalt:</strong> {totalMoms.toFixed(2)} {rows[0]?.valuta ?? "SEK"}
             </p>
+            {rotRutAvdrag > 0 && (
+              <p className="font-bold">
+                {formData.rotRutTyp === "ROT" ? "ROT-avdrag: –" : "RUT-avdrag: –"}
+                {rotRutAvdrag.toLocaleString("sv-SE", { style: "currency", currency: "SEK" })}
+              </p>
+            )}
             <p className="text-lg font-bold mt-2">
               Summa att betala:{" "}
               {summaAttBetala.toLocaleString("sv-SE", { style: "currency", currency: "SEK" })}

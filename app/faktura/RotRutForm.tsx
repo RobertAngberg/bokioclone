@@ -2,12 +2,13 @@
 "use client";
 
 import { useFakturaContext } from "./FakturaProvider";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 //#endregion
 
 export default function RotRutForm() {
   const { formData, setFormData, nyArtikel } = useFakturaContext();
-  const artiklar = formData.artiklar || [];
+  // Använd useMemo för artiklar för att slippa eslint-varning
+  const artiklar = useMemo(() => formData.artiklar || [], [formData.artiklar]);
 
   const rutKategorier = [
     "Passa barn",
@@ -87,14 +88,30 @@ export default function RotRutForm() {
         typeof formData.arbetskostnadExMoms === "string"
           ? parseFloat(formData.arbetskostnadExMoms)
           : formData.arbetskostnadExMoms;
-      const belopp = arbetskostnad * (formData.avdragProcent / 100);
+
+      // Hämta momssats från första tjänsteartikel, annars 25%
+      let moms = 25;
+      const tjänsteArtiklar = artiklar.filter((a) => a.typ === "tjänst");
+      if (tjänsteArtiklar.length > 0 && tjänsteArtiklar[0].moms !== undefined) {
+        moms = Number(tjänsteArtiklar[0].moms);
+      }
+
+      // Räkna ut arbetskostnad inkl moms
+      const arbetskostnadInklMoms = arbetskostnad * (1 + moms / 100);
+      const belopp = arbetskostnadInklMoms * (formData.avdragProcent / 100);
 
       setFormData((prev) => ({
         ...prev,
         avdragBelopp: Math.round(belopp * 100) / 100,
       }));
     }
-  }, [formData.arbetskostnadExMoms, formData.avdragProcent, formData.rotRutAktiverat, setFormData]);
+  }, [
+    formData.arbetskostnadExMoms,
+    formData.avdragProcent,
+    formData.rotRutAktiverat,
+    artiklar,
+    setFormData,
+  ]);
 
   // 🔥 Automatisk ifyllning av arbetskostnad från nyArtikel eller artikel
   useEffect(() => {

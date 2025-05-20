@@ -66,6 +66,8 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
     }
 
     const { faktura, artiklar } = data;
+    const förstaArtikel = artiklar[0] as any;
+
     setFormData({
       id: faktura.id,
       fakturanummer: faktura.fakturanummer ?? "",
@@ -102,7 +104,17 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
         moms: Number(rad.moms),
         valuta: rad.valuta ?? "SEK",
         typ: rad.typ === "tjänst" ? "tjänst" : "vara",
+        rotRutTyp: rad.rotRutTyp,
+        rotRutKategori: rad.rotRutKategori,
+        avdragProcent: rad.avdragProcent,
+        arbetskostnadExMoms: rad.arbetskostnadExMoms,
       })),
+      // Lägg till RUT/ROT-fält från första artikel
+      rotRutAktiverat: förstaArtikel?.rotRutTyp === "ROT" || förstaArtikel?.rotRutTyp === "RUT",
+      rotRutTyp: förstaArtikel?.rotRutTyp,
+      rotRutKategori: förstaArtikel?.rotRutKategori,
+      avdragProcent: förstaArtikel?.avdragProcent,
+      arbetskostnadExMoms: förstaArtikel?.arbetskostnadExMoms,
     });
 
     setKundStatus("loaded");
