@@ -5,6 +5,7 @@ import LaddaUppFil from "./LaddaUppFil";
 import Information from "./Information";
 import Kommentar from "./Kommentar";
 import Forhandsgranskning from "./Förhandsgranskning";
+import BakåtPil from "../_components/BakåtPil";
 
 type KontoRad = {
   beskrivning: string;
@@ -42,14 +43,45 @@ type Step2Props = {
 };
 // #endregion
 
-export default function Steg2(props: Step2Props) {
-  const { valtFörval } = props;
-
+export default function Steg2({
+  setCurrentStep,
+  fil,
+  setFil,
+  pdfUrl,
+  setPdfUrl,
+  belopp,
+  setBelopp,
+  transaktionsdatum,
+  setTransaktionsdatum,
+  kommentar,
+  setKommentar,
+  valtFörval,
+  extrafält,
+  setExtrafält,
+}: Step2Props) {
   // Rendera specialförval om sådant finns
   if (valtFörval?.specialtyp) {
     try {
       const SpecialComponent = require(`./SpecialFörval/${valtFörval.specialtyp}`).default;
-      return <SpecialComponent mode="steg2" {...props} />;
+      return (
+        <SpecialComponent
+          mode="steg2"
+          setCurrentStep={setCurrentStep}
+          fil={fil}
+          setFil={setFil}
+          pdfUrl={pdfUrl}
+          setPdfUrl={setPdfUrl}
+          belopp={belopp}
+          setBelopp={setBelopp}
+          transaktionsdatum={transaktionsdatum}
+          setTransaktionsdatum={setTransaktionsdatum}
+          kommentar={kommentar}
+          setKommentar={setKommentar}
+          valtFörval={valtFörval}
+          extrafält={extrafält}
+          setExtrafält={setExtrafält}
+        />
+      );
     } catch (err) {
       return (
         <div className="p-10 text-white bg-red-900 text-center">
@@ -59,59 +91,40 @@ export default function Steg2(props: Step2Props) {
     }
   }
 
-  // Standardformulär
   return (
     <>
       <div className="max-w-5xl mx-auto px-4 relative">
-        {/* Tillbakaknapp uppe till vänster */}
-        <button
-          type="button"
-          onClick={() => props.setCurrentStep(1)}
-          className="absolute left-0 top-0 flex items-center gap-2 text-white font-bold px-3 py-2 rounded hover:bg-gray-700 focus:outline-none"
-          aria-label="Tillbaka"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 mr-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Tillbaka
-        </button>
+        <BakåtPil onClick={() => setCurrentStep(1)} />
+
         <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Fyll i uppgifter</h1>
         <div className="flex flex-col-reverse justify-between h-auto md:flex-row">
           {/* Formulärsektion */}
           <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
             <LaddaUppFil
-              fil={props.fil}
-              setFil={props.setFil}
-              setPdfUrl={props.setPdfUrl}
-              setBelopp={props.setBelopp}
-              setTransaktionsdatum={props.setTransaktionsdatum}
+              fil={fil}
+              setFil={setFil}
+              setPdfUrl={setPdfUrl}
+              setBelopp={setBelopp}
+              setTransaktionsdatum={setTransaktionsdatum}
             />
             <Information
-              belopp={props.belopp ?? 0}
-              setBelopp={props.setBelopp}
-              transaktionsdatum={props.transaktionsdatum}
-              setTransaktionsdatum={props.setTransaktionsdatum}
+              belopp={belopp ?? 0}
+              setBelopp={setBelopp}
+              transaktionsdatum={transaktionsdatum}
+              setTransaktionsdatum={setTransaktionsdatum}
             />
 
-            <Kommentar kommentar={props.kommentar ?? ""} setKommentar={props.setKommentar} />
+            <Kommentar kommentar={kommentar ?? ""} setKommentar={setKommentar} />
             <button
               type="button"
-              onClick={() => props.setCurrentStep(3)}
+              onClick={() => setCurrentStep(3)}
               className="w-full flex items-center justify-center px-4 py-4 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
             >
               Bokför
             </button>
           </div>
 
-          {/* Förhandsgranskning */}
-          <Forhandsgranskning fil={props.fil} pdfUrl={props.pdfUrl} />
+          <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
       </div>
     </>

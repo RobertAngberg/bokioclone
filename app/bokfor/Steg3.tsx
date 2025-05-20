@@ -1,9 +1,10 @@
-// #region Huvud
+// #region Imports och types
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { saveTransaction, getKontoklass } from "./actions";
+import { saveTransaction } from "./actions";
 import KnappFullWidth from "../_components/KnappFullWidth";
+import BakåtPil from "../_components/BakåtPil";
+import { formatSEK, round } from "../_utils/format";
 
 type KontoRad = {
   kontonummer?: string;
@@ -53,30 +54,13 @@ export default function Steg3({
   setCurrentStep,
   extrafält = {},
 }: Step3Props) {
-  const formRef = useRef<HTMLFormElement>(null);
-  const [kontoklass, setKontoklass] = useState<"Intäkt" | "Kostnad" | "Tillgång" | "Skuld" | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (!valtFörval || valtFörval.specialtyp || !kontonummer) return;
-    getKontoklass(kontonummer).then((res) => {
-      const typ = res?.toLowerCase();
-      if (typ === "intäkter") setKontoklass("Intäkt");
-      else if (typ === "kostnader") setKontoklass("Kostnad");
-      else if (typ === "tillgångar") setKontoklass("Tillgång");
-      else if (typ === "skulder") setKontoklass("Skuld");
-    });
-  }, [valtFörval, kontonummer]);
-
-  // Moms- och beloppsberäkning (om tillämpligt)
+  // #region Moms- och beloppsberäkning
   const momsSats = valtFörval?.momssats ?? 0;
   const moms = +(belopp * (momsSats / (1 + momsSats))).toFixed(2);
   const beloppUtanMoms = +(belopp - moms).toFixed(2);
+  // #endregion
 
-  const round = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-  const formatSEK = (val: number) => val.toLocaleString("sv-SE", { minimumFractionDigits: 2 });
-
+  // #region Submitta form
   const handleSubmit = async (formData: FormData) => {
     if (!valtFörval || !setCurrentStep) return;
 
@@ -94,85 +78,56 @@ export default function Steg3({
     const result = await saveTransaction(formData);
     if (result.success) setCurrentStep(4);
   };
+  // #endregion
 
-  if (!valtFörval) {
-    return (
-      <div className="min-h-screen p-10 text-center text-white bg-red-900">
-        <p className="mb-4">⚠️ Saknar valt förval. Gå tillbaka till Steg 1.</p>
-        <button
-          onClick={() => setCurrentStep?.(1)}
-          className="px-4 py-2 bg-white text-black rounded"
-        >
-          Tillbaka
-        </button>
-      </div>
-    );
-  }
-
-  // Dynamisk radbyggnad beroende på specialtyp och extrafält
+  // #region Bygg tabellrader
   const fallbackRows =
-    valtFörval.specialtyp && Object.keys(extrafält).length > 0
+    valtFörval && valtFörval.specialtyp && Object.keys(extrafält).length > 0
       ? Object.entries(extrafält).map(([konto, val], i) => ({
           key: i,
           konto: konto + " " + (val.label ?? ""),
           debet: round(val.debet),
           kredit: round(val.kredit),
         }))
-      : valtFörval.konton.map((rad, i) => {
-          const kontoNr = rad.kontonummer?.toString().trim();
-          const namn = `${kontoNr} ${rad.beskrivning ?? ""}`;
-          let beloppAttVisa = 0;
+      : valtFörval
+        ? valtFörval.konton.map((rad, i) => {
+            const kontoNr = rad.kontonummer?.toString().trim();
+            const namn = `${kontoNr} ${rad.beskrivning ?? ""}`;
+            let beloppAttVisa = 0;
 
-          if (kontoNr?.startsWith("26")) {
-            beloppAttVisa = moms;
-          } else if (kontoNr === "1930") {
-            beloppAttVisa = belopp;
-          } else {
-            beloppAttVisa = beloppUtanMoms;
-          }
+            if (kontoNr?.startsWith("26")) {
+              beloppAttVisa = moms;
+            } else if (kontoNr === "1930") {
+              beloppAttVisa = belopp;
+            } else {
+              beloppAttVisa = beloppUtanMoms;
+            }
 
-          return {
-            key: i,
-            konto: namn,
-            debet: rad.debet ? round(beloppAttVisa) : 0,
-            kredit: rad.kredit ? round(beloppAttVisa) : 0,
-          };
-        });
+            return {
+              key: i,
+              konto: namn,
+              debet: rad.debet ? round(beloppAttVisa) : 0,
+              kredit: rad.kredit ? round(beloppAttVisa) : 0,
+            };
+          })
+        : [];
 
   const totalDebet = fallbackRows.reduce((sum, r) => sum + r.debet, 0);
   const totalKredit = fallbackRows.reduce((sum, r) => sum + r.kredit, 0);
+  // #endregion
 
   return (
     <div className="relative">
-      {/* Tillbakaknapp uppe till vänster */}
-      <button
-        type="button"
-        onClick={() => setCurrentStep?.(2)}
-        className="absolute left-0 top-0 flex items-center gap-2 text-white font-bold px-3 py-2 rounded hover:bg-gray-700 focus:outline-none"
-        aria-label="Tillbaka"
-        style={{ zIndex: 10 }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 mr-1"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        Tillbaka
-      </button>
+      <BakåtPil onClick={() => setCurrentStep?.(2)} />
 
       <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
-      <p className="text-center font-bold text-xl mb-1">{valtFörval.namn}</p>
+      <p className="text-center font-bold text-xl mb-1">{valtFörval ? valtFörval.namn : ""}</p>
       <p className="text-center text-gray-300 mb-8">
         {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
       </p>
       {kommentar && <p className="text-center text-gray-400 mb-4 italic">{kommentar}</p>}
 
-      <form ref={formRef} action={handleSubmit}>
+      <form action={handleSubmit}>
         <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">
           <thead className="bg-slate-800 text-white">
             <tr>

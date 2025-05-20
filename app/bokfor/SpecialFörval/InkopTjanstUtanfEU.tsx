@@ -8,6 +8,7 @@ import KnappFullWidth from "../../_components/KnappFullWidth";
 import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
 import DatePicker from "react-datepicker";
 import Steg3 from "../Steg3";
+import BakåtPil from "../../_components/BakåtPil";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -73,74 +74,88 @@ export default function InkopTjanstUtanfEU({
 
   if (mode === "steg2") {
     return (
-      <section className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center">Steg 2: Inköp tjänster utanför EU</h1>
-        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
-          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
-            <LaddaUppFil
-              fil={fil}
-              setFil={setFil}
-              setPdfUrl={setPdfUrl}
-              setTransaktionsdatum={setTransaktionsdatum}
-              setBelopp={setBelopp}
-            />
+      <>
+        <div className="max-w-5xl mx-auto px-4 relative">
+          <BakåtPil onClick={() => setCurrentStep?.(1)} />
 
-            <TextFält
-              label="Totalt belopp"
-              name="belopp"
-              value={belopp ?? ""}
-              onChange={(e) => setBelopp(Number(e.target.value))}
-              required
-            />
+          <h1 className="mb-6 text-3xl text-center">Steg 2: Inköp tjänster utanför EU</h1>
+          <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
+            <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
+              <LaddaUppFil
+                fil={fil}
+                setFil={setFil}
+                setPdfUrl={setPdfUrl}
+                setTransaktionsdatum={setTransaktionsdatum}
+                setBelopp={setBelopp}
+              />
 
-            <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
-            <DatePicker
-              className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
-              selected={ÅÅÅÅMMDDTillDate(transaktionsdatum ?? "")}
-              onChange={(date) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(date))}
-              dateFormat="yyyy-MM-dd"
-              locale="sv"
-              required
-            />
+              <TextFält
+                label="Totalt belopp"
+                name="belopp"
+                value={belopp ?? ""}
+                onChange={(e) => setBelopp(Number(e.target.value))}
+                required
+              />
 
-            <TextFält
-              label="Kommentar"
-              name="kommentar"
-              value={kommentar ?? ""}
-              onChange={(e) => setKommentar?.(e.target.value)}
-              required={false}
-            />
+              <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+              <DatePicker
+                className="w-full p-2 mb-4 rounded text-white bg-slate-900 border border-gray-700"
+                selected={ÅÅÅÅMMDDTillDate(transaktionsdatum ?? "")}
+                onChange={(date) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(date))}
+                dateFormat="yyyy-MM-dd"
+                locale="sv"
+                required
+              />
 
-            <KnappFullWidth text="Bokför" type="button" onClick={gåTillSteg3} disabled={!giltigt} />
+              <TextFält
+                label="Kommentar"
+                name="kommentar"
+                value={kommentar ?? ""}
+                onChange={(e) => setKommentar?.(e.target.value)}
+                required={false}
+              />
+
+              <KnappFullWidth
+                text="Bokför"
+                type="button"
+                onClick={gåTillSteg3}
+                disabled={!giltigt}
+              />
+            </div>
+
+            <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
           </div>
-
-          <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
-      </section>
+      </>
     );
   }
 
   if (mode === "steg3") {
     return (
-      <Steg3
-        kontonummer="4531"
-        kontobeskrivning="Inköp tjänster utanför EU"
-        belopp={belopp ?? 0}
-        transaktionsdatum={transaktionsdatum ?? ""}
-        kommentar={kommentar ?? ""}
-        valtFörval={{
-          id: 0,
-          namn: "Inköp tjänster utanför EU",
-          beskrivning: "",
-          typ: "",
-          kategori: "",
-          konton: [],
-          momssats: 0.25,
-          specialtyp: "inkoptjanstutanfEU",
-        }}
-        setCurrentStep={setCurrentStep}
-        extrafält={extrafält}
-      />
+      <>
+        <div className="max-w-5xl mx-auto px-4 relative">
+          <BakåtPil onClick={() => setCurrentStep?.(2)} />
+          <Steg3
+            kontonummer="4531"
+            kontobeskrivning="Inköp tjänster utanför EU"
+            belopp={belopp ?? 0}
+            transaktionsdatum={transaktionsdatum ?? ""}
+            kommentar={kommentar ?? ""}
+            valtFörval={{
+              id: 0,
+              namn: "Inköp tjänster utanför EU",
+              beskrivning: "",
+              typ: "",
+              kategori: "",
+              konton: [],
+              momssats: 0.25,
+              specialtyp: "inkoptjanstutanfEU",
+            }}
+            setCurrentStep={setCurrentStep}
+            extrafält={extrafält}
+          />
+        </div>
+      </>
     );
   }
 }

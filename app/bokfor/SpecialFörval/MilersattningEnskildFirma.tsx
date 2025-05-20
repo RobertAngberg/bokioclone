@@ -10,6 +10,7 @@ import { formatSEK, parseNumber } from "../../_utils/format";
 import DatePicker from "react-datepicker";
 import Steg3 from "../Steg3";
 import { ÅÅÅÅMMDDTillDate, dateTillÅÅÅÅMMDD } from "../../_utils/datum";
+import BakåtPil from "../../_components/BakåtPil";
 
 interface Props {
   mode: "steg2" | "steg3";
@@ -94,95 +95,104 @@ export default function MilersattningEnskildFirma({
 
   if (mode === "steg2") {
     return (
-      <div className="bg-cyan-950 text-white">
-        <h1 className="mb-6 text-3xl text-center">Steg 2: Milersättning</h1>
-        <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
-          <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
-            <LaddaUppFil
-              fil={fil}
-              setFil={setFil}
-              setPdfUrl={setPdfUrl}
-              setTransaktionsdatum={setTransaktionsdatum}
-              setBelopp={setBelopp}
-            />
+      <>
+        <div className="max-w-5xl mx-auto px-4 relative">
+          <BakåtPil onClick={() => setCurrentStep?.(1)} />
 
-            <TextFält
-              name="mil"
-              label="Antal mil"
-              type="number"
-              value={mil}
-              onChange={(e) => setMil(e.target.value)}
-            />
+          <h1 className="mb-6 text-3xl text-center">Steg 2: Milersättning</h1>
+          <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
+            <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
+              <LaddaUppFil
+                fil={fil}
+                setFil={setFil}
+                setPdfUrl={setPdfUrl}
+                setTransaktionsdatum={setTransaktionsdatum}
+                setBelopp={setBelopp}
+              />
 
-            <TextFält
-              name="ersPerMil"
-              label="Ersättning per mil"
-              type="number"
-              value={ersPerMil}
-              onChange={(e) => setErsPerMil(e.target.value)}
-            />
+              <TextFält
+                name="mil"
+                label="Antal mil"
+                type="number"
+                value={mil}
+                onChange={(e) => setMil(e.target.value)}
+              />
 
-            <div className="mb-4">
-              <label className="block mb-1 text-sm text-gray-400">Biltyp</label>
-              <select
-                value={biltyp}
-                onChange={(e) => setBiltyp(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-800 text-white border border-gray-600 rounded"
-              >
-                <option>Egen bil</option>
-                <option>Tjänstebil bensin el. diesel</option>
-                <option>Tjänstebil Elbil</option>
-              </select>
+              <TextFält
+                name="ersPerMil"
+                label="Ersättning per mil"
+                type="number"
+                value={ersPerMil}
+                onChange={(e) => setErsPerMil(e.target.value)}
+              />
+
+              <div className="mb-4">
+                <label className="block mb-1 text-sm text-gray-400">Biltyp</label>
+                <select
+                  value={biltyp}
+                  onChange={(e) => setBiltyp(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800 text-white border border-gray-600 rounded"
+                >
+                  <option>Egen bil</option>
+                  <option>Tjänstebil bensin el. diesel</option>
+                  <option>Tjänstebil Elbil</option>
+                </select>
+              </div>
+
+              <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
+              <DatePicker
+                className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
+                selected={ÅÅÅÅMMDDTillDate(transaktionsdatum ?? "")}
+                onChange={(date) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(date))}
+                dateFormat="yyyy-MM-dd"
+                locale="sv"
+                required
+              />
+
+              <TextFält
+                name="kommentar"
+                label="Kommentar"
+                type="textarea"
+                value={kommentar ?? ""}
+                onChange={(e) => setKommentar?.(e.target.value)}
+              />
+
+              <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={!giltigt} />
             </div>
 
-            <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
-            <DatePicker
-              className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
-              selected={ÅÅÅÅMMDDTillDate(transaktionsdatum ?? "")}
-              onChange={(date) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(date))}
-              dateFormat="yyyy-MM-dd"
-              locale="sv"
-              required
-            />
-
-            <TextFält
-              name="kommentar"
-              label="Kommentar"
-              type="textarea"
-              value={kommentar ?? ""}
-              onChange={(e) => setKommentar?.(e.target.value)}
-            />
-
-            <KnappFullWidth text="Bokför" onClick={gåTillSteg3} disabled={!giltigt} />
+            <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
           </div>
-
-          <Forhandsgranskning fil={fil ?? null} pdfUrl={pdfUrl ?? null} />
         </div>
-      </div>
+      </>
     );
   }
 
   if (mode === "steg3") {
     return (
-      <Steg3
-        kontonummer="7331"
-        kontobeskrivning="Milersättning"
-        belopp={belopp ?? 0}
-        transaktionsdatum={transaktionsdatum ?? ""}
-        kommentar={kommentar ?? ""}
-        valtFörval={{
-          id: 0,
-          namn: "Milersättning",
-          beskrivning: "",
-          typ: "",
-          kategori: "",
-          konton: [],
-          momssats: 0,
-          specialtyp: "milersattningenskildfirma",
-        }}
-        setCurrentStep={setCurrentStep}
-        extrafält={extrafält}
-      />
+      <>
+        <div className="max-w-5xl mx-auto px-4 relative">
+          <BakåtPil onClick={() => setCurrentStep?.(2)} />
+          <Steg3
+            kontonummer="7331"
+            kontobeskrivning="Milersättning"
+            belopp={belopp ?? 0}
+            transaktionsdatum={transaktionsdatum ?? ""}
+            kommentar={kommentar ?? ""}
+            valtFörval={{
+              id: 0,
+              namn: "Milersättning",
+              beskrivning: "",
+              typ: "",
+              kategori: "",
+              konton: [],
+              momssats: 0,
+              specialtyp: "milersattningenskildfirma",
+            }}
+            setCurrentStep={setCurrentStep}
+            extrafält={extrafält}
+          />
+        </div>
+      </>
     );
   }
 }
