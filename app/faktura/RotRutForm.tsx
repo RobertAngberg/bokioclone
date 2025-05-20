@@ -3,6 +3,7 @@
 
 import { useFakturaContext } from "./FakturaProvider";
 import { useEffect, useMemo } from "react";
+import TextFält from "../_components/TextFält";
 //#endregion
 
 export default function RotRutForm() {
@@ -39,7 +40,9 @@ export default function RotRutForm() {
     "VVS",
   ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     let finalValue: string | boolean = value;
 
@@ -56,6 +59,11 @@ export default function RotRutForm() {
         avdragProcent: undefined,
         arbetskostnadExMoms: undefined,
         avdragBelopp: undefined,
+        personnummer: undefined,
+        fastighetsbeteckning: undefined,
+        rotBoendeTyp: undefined,
+        brfOrganisationsnummer: undefined,
+        brfLagenhetsnummer: undefined,
       }));
       return;
     }
@@ -113,7 +121,7 @@ export default function RotRutForm() {
     setFormData,
   ]);
 
-  // 🔥 Automatisk ifyllning av arbetskostnad från nyArtikel eller artikel
+  // Automatisk ifyllning av arbetskostnad från nyArtikel eller artikel
   useEffect(() => {
     if (formData.rotRutAktiverat) {
       let arbetskostnad: number | undefined = undefined;
@@ -155,6 +163,15 @@ export default function RotRutForm() {
 
       {formData.rotRutAktiverat && (
         <>
+          {/* ROT infotext */}
+          {formData.rotRutTyp === "ROT" && (
+            <div className="bg-yellow-100 text-yellow-900 rounded px-4 py-2 mb-2 text-sm">
+              <strong>OBS!</strong> Bara arbetskostnaden (inkl. moms) får ligga till grund för
+              ROT-avdrag. För andra kostnader såsom materialkostnad, skapa en ny artikel utan
+              ROT-avdrag.
+            </div>
+          )}
+
           <div className="text-white">
             <label className="block mb-1">Typ av avdrag</label>
             <select
@@ -188,20 +205,112 @@ export default function RotRutForm() {
             </div>
           )}
 
-          <div className="text-white">
-            <label className="block mb-1">Arbetskostnad exkl. moms</label>
-            <input
+          {/* Två kolumner för alla fält */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TextFält
+              label="Arbetskostnad exkl. moms"
               name="arbetskostnadExMoms"
               type="number"
-              step="0.01"
               value={formData.arbetskostnadExMoms ?? ""}
               onChange={handleChange}
-              className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
+              required={true}
             />
+
+            {formData.rotRutTyp === "ROT" && (
+              <TextFält
+                label="Personnummer (den som får avdraget)"
+                name="personnummer"
+                type="text"
+                value={formData.personnummer ?? ""}
+                onChange={handleChange}
+                required={true}
+              />
+            )}
+
+            {/* Fastighetsbeteckning eller BRF */}
+            {formData.rotRutTyp === "ROT" && (
+              <div className="md:col-span-2">
+                <label className="block text-white font-semibold mb-1">Typ av boende</label>
+                <div className="flex gap-4 mb-2">
+                  <label className="flex items-center text-white">
+                    <input
+                      type="radio"
+                      name="rotBoendeTyp"
+                      value="fastighet"
+                      checked={formData.rotBoendeTyp !== "brf"}
+                      onChange={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          rotBoendeTyp: "fastighet",
+                          fastighetsbeteckning: "",
+                          brfOrganisationsnummer: "",
+                          brfLagenhetsnummer: "",
+                        }))
+                      }
+                      className="mr-2"
+                    />
+                    Fastighetsbeteckning
+                  </label>
+                  <label className="flex items-center text-white">
+                    <input
+                      type="radio"
+                      name="rotBoendeTyp"
+                      value="brf"
+                      checked={formData.rotBoendeTyp === "brf"}
+                      onChange={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          rotBoendeTyp: "brf",
+                          fastighetsbeteckning: "",
+                          brfOrganisationsnummer: "",
+                          brfLagenhetsnummer: "",
+                        }))
+                      }
+                      className="mr-2"
+                    />
+                    Bostadsrättsförening
+                  </label>
+                </div>
+                {/* Fastighetsbeteckning */}
+                {formData.rotBoendeTyp !== "brf" && (
+                  <TextFält
+                    label="Fastighetsbeteckning"
+                    name="fastighetsbeteckning"
+                    type="text"
+                    value={formData.fastighetsbeteckning ?? ""}
+                    onChange={handleChange}
+                    required={true}
+                  />
+                )}
+                {/* Bostadsrättsförening */}
+                {formData.rotBoendeTyp === "brf" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <TextFält
+                      label="Organisationsnummer (BRF)"
+                      name="brfOrganisationsnummer"
+                      type="text"
+                      value={formData.brfOrganisationsnummer ?? ""}
+                      onChange={handleChange}
+                      required={true}
+                    />
+                    <TextFält
+                      label="Lägenhetsnummer"
+                      name="brfLagenhetsnummer"
+                      type="text"
+                      value={formData.brfLagenhetsnummer ?? ""}
+                      onChange={handleChange}
+                      required={true}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* RUT har inga extra fält */}
           </div>
 
           {formData.avdragBelopp !== undefined && (
-            <div className="text-white font-semibold">
+            <div className="text-white font-semibold mt-4">
               Beräknat avdrag:{" "}
               {formData.avdragBelopp.toLocaleString("sv-SE", {
                 style: "currency",

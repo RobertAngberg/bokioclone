@@ -65,14 +65,18 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
       return;
     }
 
-    const { faktura, artiklar } = data;
-    const förstaArtikel = artiklar[0] as any;
+    const { faktura, artiklar, rotRut } = data;
 
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       id: faktura.id,
       fakturanummer: faktura.fakturanummer ?? "",
-      fakturadatum: faktura.fakturadatum?.toISOString().slice(0, 10) ?? "",
-      forfallodatum: faktura.forfallodatum?.toISOString().slice(0, 10) ?? "",
+      fakturadatum: faktura.fakturadatum?.toISOString
+        ? faktura.fakturadatum.toISOString().slice(0, 10)
+        : (faktura.fakturadatum ?? ""),
+      forfallodatum: faktura.forfallodatum?.toISOString
+        ? faktura.forfallodatum.toISOString().slice(0, 10)
+        : (faktura.forfallodatum ?? ""),
       betalningsmetod: faktura.betalningsmetod ?? "",
       betalningsvillkor: faktura.betalningsvillkor ?? "",
       drojsmalsranta: faktura.drojsmalsranta ?? "",
@@ -86,36 +90,43 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
       kundpostnummer: faktura.kundpostnummer ?? "",
       kundstad: faktura.kundstad ?? "",
       kundemail: faktura.kundemail ?? "",
-      företagsnamn: "",
-      email: "",
-      adress: "",
-      postnummer: "",
-      stad: "",
-      organisationsnummer: "",
-      momsregistreringsnummer: "",
-      telefonnummer: "",
-      bankinfo: "",
-      webbplats: "",
-      logo: "",
-      artiklar: artiklar.map((rad) => ({
+      företagsnamn: faktura.företagsnamn ?? "",
+      email: faktura.email ?? "",
+      adress: faktura.adress ?? "",
+      postnummer: faktura.postnummer ?? "",
+      stad: faktura.stad ?? "",
+      organisationsnummer: faktura.organisationsnummer ?? "",
+      momsregistreringsnummer: faktura.momsregistreringsnummer ?? "",
+      telefonnummer: faktura.telefonnummer ?? "",
+      bankinfo: faktura.bankinfo ?? "",
+      webbplats: faktura.webbplats ?? "",
+      logo: faktura.logo ?? "",
+      logoWidth: faktura.logoWidth ?? 200,
+      artiklar: artiklar.map((rad: any) => ({
         beskrivning: rad.beskrivning,
         antal: Number(rad.antal),
-        prisPerEnhet: Number(rad.prisPerEnhet),
+        prisPerEnhet: Number(rad.pris_per_enhet ?? rad.prisPerEnhet),
         moms: Number(rad.moms),
         valuta: rad.valuta ?? "SEK",
         typ: rad.typ === "tjänst" ? "tjänst" : "vara",
-        rotRutTyp: rad.rotRutTyp,
-        rotRutKategori: rad.rotRutKategori,
-        avdragProcent: rad.avdragProcent,
-        arbetskostnadExMoms: rad.arbetskostnadExMoms,
+        rotRutTyp: rad.rot_rut_typ ?? rad.rotRutTyp,
+        rotRutKategori: rad.rot_rut_kategori ?? rad.rotRutKategori,
+        avdragProcent: rad.avdrag_procent ?? rad.avdragProcent,
+        arbetskostnadExMoms: rad.arbetskostnad_ex_moms ?? rad.arbetskostnadExMoms,
       })),
-      // Lägg till RUT/ROT-fält från första artikel
-      rotRutAktiverat: förstaArtikel?.rotRutTyp === "ROT" || förstaArtikel?.rotRutTyp === "RUT",
-      rotRutTyp: förstaArtikel?.rotRutTyp,
-      rotRutKategori: förstaArtikel?.rotRutKategori,
-      avdragProcent: förstaArtikel?.avdragProcent,
-      arbetskostnadExMoms: förstaArtikel?.arbetskostnadExMoms,
-    });
+      // ROT/RUT-fält från rot_rut-tabellen
+      rotRutAktiverat: !!rotRut.typ,
+      rotRutTyp: rotRut.typ ?? "",
+      rotRutKategori: rotRut.rot_rut_kategori ?? "",
+      avdragProcent: rotRut.avdrag_procent ?? "",
+      arbetskostnadExMoms: rotRut.arbetskostnad_ex_moms ?? "",
+      avdragBelopp: rotRut.avdrag_belopp ?? "",
+      personnummer: rotRut.personnummer ?? "",
+      fastighetsbeteckning: rotRut.fastighetsbeteckning ?? "",
+      rotBoendeTyp: rotRut.rot_boende_typ ?? "",
+      brfOrganisationsnummer: rotRut.brf_organisationsnummer ?? "",
+      brfLagenhetsnummer: rotRut.brf_lagenhetsnummer ?? "",
+    }));
 
     setKundStatus("loaded");
   };

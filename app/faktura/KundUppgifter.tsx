@@ -29,7 +29,7 @@ export default function KundUppgifter() {
     laddaKunder();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
     if (kundStatus === "loaded") setKundStatus("editing");

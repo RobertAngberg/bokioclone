@@ -101,8 +101,11 @@ export async function saveInvoice(formData: FormData) {
       // ➡️ Lägg in ROT/RUT om aktiverat
       if (formData.get("rotRutAktiverat") === "true") {
         await client.query(
-          `INSERT INTO rot_rut (faktura_id, typ, arbetskostnad_ex_moms, materialkostnad_ex_moms, avdrag_procent, avdrag_belopp, personnummer, fastighetsbeteckning)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          `INSERT INTO rot_rut (
+            faktura_id, typ, arbetskostnad_ex_moms, materialkostnad_ex_moms, avdrag_procent, avdrag_belopp,
+            personnummer, fastighetsbeteckning, rot_boende_typ, brf_organisationsnummer, brf_lagenhetsnummer
+          )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
             fakturaId,
             formData.get("rotRutTyp"),
@@ -120,6 +123,9 @@ export async function saveInvoice(formData: FormData) {
               : null,
             formData.get("personnummer"),
             formData.get("fastighetsbeteckning"),
+            formData.get("rotBoendeTyp"),
+            formData.get("brfOrganisationsnummer"),
+            formData.get("brfLagenhetsnummer"),
           ]
         );
       }
@@ -183,8 +189,11 @@ export async function saveInvoice(formData: FormData) {
       // ➡️ Lägg in ROT/RUT om aktiverat
       if (formData.get("rotRutAktiverat") === "true") {
         await client.query(
-          `INSERT INTO rot_rut (faktura_id, typ, arbetskostnad_ex_moms, materialkostnad_ex_moms, avdrag_procent, avdrag_belopp, personnummer, fastighetsbeteckning)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          `INSERT INTO rot_rut (
+            faktura_id, typ, arbetskostnad_ex_moms, materialkostnad_ex_moms, avdrag_procent, avdrag_belopp,
+            personnummer, fastighetsbeteckning, rot_boende_typ, brf_organisationsnummer, brf_lagenhetsnummer
+          )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
             newId,
             formData.get("rotRutTyp"),
@@ -202,6 +211,9 @@ export async function saveInvoice(formData: FormData) {
               : null,
             formData.get("personnummer"),
             formData.get("fastighetsbeteckning"),
+            formData.get("rotBoendeTyp"),
+            formData.get("brfOrganisationsnummer"),
+            formData.get("brfLagenhetsnummer"),
           ]
         );
       }
@@ -327,77 +339,6 @@ export async function getAllInvoices() {
   } catch (err) {
     console.error("❌ getAllInvoices error:", err);
     return { success: false, invoices: [] };
-  } finally {
-    client.release();
-  }
-}
-
-export async function hämtaFakturaMedRader(id: number) {
-  const client = await pool.connect();
-  try {
-    const faktRes = await client.query(
-      `
-      SELECT
-        f.id, f."userId", f.fakturanummer, f.fakturadatum, f.forfallodatum,
-        f.betalningsmetod, f.betalningsvillkor, f.drojsmalsranta,
-        f."kundId", f.nummer,
-
-        k.kundnamn,
-        k.kundnummer,
-        k.kundorgnummer AS kundorganisationsnummer,
-        k.kundmomsnummer,
-        k.kundadress1 AS kundadress,
-        k.kundpostnummer,
-        k.kundstad,
-        k.kundemail
-
-      FROM fakturor f
-      LEFT JOIN kunder k ON f."kundId" = k.id
-      WHERE f.id = $1
-      `,
-      [id]
-    );
-
-    if (!faktRes.rows[0]) {
-      console.log("❌ Ingen faktura hittades med ID:", id);
-      return null;
-    }
-
-    const faktura = faktRes.rows[0];
-
-    // LOGG: Hämta artiklar med alla RUT/ROT-fält
-    const radRes = await client.query(
-      `
-      SELECT beskrivning, antal, pris_per_enhet, moms, valuta, typ,
-        rot_rut_typ, rot_rut_kategori, avdrag_procent, arbetskostnad_ex_moms
-      FROM faktura_artiklar
-      WHERE faktura_id = $1
-    `,
-      [id]
-    );
-
-    const artiklar = radRes.rows.map((r) => ({
-      beskrivning: r.beskrivning,
-      antal: Number(r.antal),
-      prisPerEnhet: Number(r.pris_per_enhet),
-      moms: Number(r.moms),
-      valuta: r.valuta,
-      typ: r.typ,
-      rotRutTyp: r.rot_rut_typ,
-      rotRutKategori: r.rot_rut_kategori,
-      avdragProcent: r.avdrag_procent,
-      arbetskostnadExMoms: r.arbetskostnad_ex_moms,
-    }));
-
-    // eslint-disable-next-line no-console
-    console.log("FITTLOGG: hämtaFakturaMedRader -> faktura", faktura);
-    // eslint-disable-next-line no-console
-    console.log("FITTLOGG: hämtaFakturaMedRader -> artiklar", artiklar);
-
-    return { faktura, artiklar };
-  } catch (err) {
-    console.error("❌ hämtaFakturaMedRader error:", err);
-    return null;
   } finally {
     client.release();
   }
@@ -661,5 +602,49 @@ export async function hämtaSparadeArtiklar(): Promise<Artikel[]> {
   } catch (err) {
     console.error("❌ Kunde inte hämta sparade artiklar:", err);
     return [];
+  }
+}
+
+export async function hämtaFakturaMedRader(id: number) {
+  const client = await pool.connect();
+  try {
+    // Hämta faktura + kunduppgifter
+    const fakturaRes = await client.query(
+      `
+      SELECT 
+        f.*, 
+        k.kundnamn, 
+        k.kundnummer, 
+        k.kundorgnummer as kundorganisationsnummer, 
+        k.kundmomsnummer, 
+        k.kundadress1 as kundadress, 
+        k.kundpostnummer, 
+        k.kundstad, 
+        k.kundemail
+      FROM fakturor f
+      LEFT JOIN kunder k ON f."kundId" = k.id
+      WHERE f.id = $1
+      LIMIT 1
+      `,
+      [id]
+    );
+    const faktura = fakturaRes.rows[0];
+
+    // Hämta artiklar
+    const artiklarRes = await client.query(
+      `SELECT * FROM faktura_artiklar WHERE faktura_id = $1 ORDER BY id ASC`,
+      [id]
+    );
+    const artiklar = artiklarRes.rows;
+
+    // Hämta rot_rut-data
+    const rotRutRes = await client.query(`SELECT * FROM rot_rut WHERE faktura_id = $1 LIMIT 1`, [
+      id,
+    ]);
+    const rotRut = rotRutRes.rows[0] || {};
+
+    return { faktura, artiklar, rotRut };
+  } finally {
+    client.release();
   }
 }

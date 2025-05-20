@@ -89,7 +89,8 @@ export default function Betalning() {
       [field]: d ? d.toISOString().slice(0, 10) : "",
     }));
 
-  const onText = (e: React.ChangeEvent<HTMLInputElement>) =>
+  // FIX: Acceptera både input och textarea för TextFält
+  const onText = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const onSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -148,6 +149,7 @@ export default function Betalning() {
             onChange={onSelectChange}
             className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
           >
+            <option value="">Välj betalningsmetod</option>
             <option value="Bankgiro">Bankgiro</option>
             <option value="Plusgiro">Plusgiro</option>
             <option value="Bankkonto">Bankkonto</option>

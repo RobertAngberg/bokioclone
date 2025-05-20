@@ -13,6 +13,11 @@ export type FakturaFormData = {
   drojsmalsranta: string;
   kundId: string;
   nummer: string;
+  personnummer?: string;
+  fastighetsbeteckning?: string;
+  rotBoendeTyp?: "fastighet" | "brf";
+  brfOrganisationsnummer?: string;
+  brfLagenhetsnummer?: string;
 
   // Kunduppgifter
   kundnamn: string;
