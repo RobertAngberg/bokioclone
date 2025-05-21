@@ -4,9 +4,13 @@
 import { useFakturaContext } from "./FakturaProvider";
 import { useEffect, useMemo } from "react";
 import TextFält from "../_components/TextFält";
+
+type RotRutFormProps = {
+  showCheckbox?: boolean;
+};
 //#endregion
 
-export default function RotRutForm() {
+export default function RotRutForm({}: RotRutFormProps) {
   const { formData, setFormData, nyArtikel } = useFakturaContext();
   // Använd useMemo för artiklar för att slippa eslint-varning
   const artiklar = useMemo(() => formData.artiklar || [], [formData.artiklar]);

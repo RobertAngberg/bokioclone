@@ -1,3 +1,4 @@
+//#region
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,8 +10,10 @@ import {
   deleteFavoritArtikel,
 } from "./actions";
 import Knapp from "../_components/Knapp";
-import TextFält from "../_components/TextFält";
 import RotRutForm from "./RotRutForm";
+import FavoritArtiklarList from "./FavoritArtiklarList";
+import ArtiklarList from "./ArtiklarList";
+import ArtikelForm from "./ArtikelForm";
 
 type Artikel = {
   beskrivning: string;
@@ -24,12 +27,15 @@ type Artikel = {
   avdragProcent?: number;
   arbetskostnadExMoms?: number;
 };
+
 type FavoritArtikel = Omit<Artikel, "arbetskostnadExMoms"> & {
   arbetskostnadExMoms?: number | string;
   id?: number;
 };
+//#endregion
 
 export default function ProdukterTjanster() {
+  //#region State
   const { formData, setFormData } = useFakturaContext();
   const [beskrivning, setBeskrivning] = useState("");
   const [antal, setAntal] = useState(1);
@@ -42,7 +48,10 @@ export default function ProdukterTjanster() {
   const [favoritArtiklar, setFavoritArtiklar] = useState<FavoritArtikel[]>([]);
   const [showFavoritArtiklar, setShowFavoritArtiklar] = useState(false);
   const [blinkIndex, setBlinkIndex] = useState<number | null>(null);
+  const [visaRotRutForm, setVisaRotRutForm] = useState(false);
+  //#endregion
 
+  //#region Ladda favoritartiklar
   useEffect(() => {
     const laddaFavoriter = async () => {
       const artiklar = await hämtaSparadeArtiklar();
@@ -50,14 +59,9 @@ export default function ProdukterTjanster() {
     };
     laddaFavoriter();
   }, []);
+  //#endregion
 
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log("FITTLOGG: formData", JSON.stringify(formData, null, 2));
-    // eslint-disable-next-line no-console
-    console.log("FITTLOGG: favoritArtiklar", favoritArtiklar);
-  }, [formData, favoritArtiklar]);
-
+  //#region Event handlers
   const handleAdd = async () => {
     if (!beskrivning.trim()) {
       alert("❌ Beskrivning krävs");
@@ -84,9 +88,6 @@ export default function ProdukterTjanster() {
         : {}),
     };
 
-    // eslint-disable-next-line no-console
-    console.log("FITTLOGG: handleAdd -> newArtikel", newArtikel);
-
     setFormData((prev) => ({
       ...prev,
       artiklar: [...(prev.artiklar ?? []), newArtikel],
@@ -99,17 +100,8 @@ export default function ProdukterTjanster() {
       Object.entries(formData).forEach(([k, v]) => {
         if (k !== "artiklar" && v != null) fd.append(k, String(v));
       });
-      // eslint-disable-next-line no-console
-      console.log(
-        "FITTLOGG: handleAdd -> saveInvoice skickas med",
-        Object.fromEntries(fd.entries())
-      );
-      const res = await saveInvoice(fd);
-      if (!res.success) {
-        alert("❌ Kunde inte spara faktura efter tillägg");
-      }
+      await saveInvoice(fd);
     } catch (err) {
-      console.error("FITTLOGG: Fel vid sparande", err);
       alert("❌ Fel vid sparande");
     } finally {
       setLoading(false);
@@ -117,20 +109,14 @@ export default function ProdukterTjanster() {
 
     if (saveAsFavorite) {
       const favArtikel: FavoritArtikel = { ...newArtikel };
-      // Konvertera arbetskostnadExMoms till number om det finns
       if (favArtikel.arbetskostnadExMoms !== undefined) {
         favArtikel.arbetskostnadExMoms = Number(favArtikel.arbetskostnadExMoms);
         if (isNaN(favArtikel.arbetskostnadExMoms)) favArtikel.arbetskostnadExMoms = undefined;
       }
-      // eslint-disable-next-line no-console
-      console.log("FITTLOGG: handleAdd -> Spara favoritartikel", favArtikel);
-      const res = await sparaFavoritArtikel({
+      await sparaFavoritArtikel({
         ...favArtikel,
         arbetskostnadExMoms: favArtikel.arbetskostnadExMoms as number | undefined,
       });
-      if (!res.success) {
-        alert("❌ Kunde inte spara favoritartikel");
-      }
     }
 
     setBeskrivning("");
@@ -149,14 +135,13 @@ export default function ProdukterTjanster() {
 
   const handleRemove = (index: number) => {
     const nyaArtiklar = (formData.artiklar ?? []).filter((_, i) => i !== index);
-    // eslint-disable-next-line no-console
-    console.log("FITTLOGG: handleRemove -> index", index, nyaArtiklar);
     setFormData((prev) => ({
       ...prev,
       artiklar: nyaArtiklar,
     }));
   };
 
+  // När man väljer en favoritartikel: sätt ROT/RUT-data men visa INTE formuläret och toggla INTE checkboxen
   const handleSelectFavorit = (artikel: FavoritArtikel) => {
     const { id, rotRutTyp, rotRutKategori, avdragProcent, arbetskostnadExMoms, ...artikelUtanId } =
       artikel;
@@ -176,21 +161,26 @@ export default function ProdukterTjanster() {
         : {}),
     };
 
-    // eslint-disable-next-line no-console
-    console.log("FITTLOGG: handleSelectFavorit -> artikelMedRutRot", artikelMedRutRot);
-
     setFormData((prev) => ({
       ...prev,
       artiklar: [...(prev.artiklar ?? []), artikelMedRutRot],
-      rotRutAktiverat: rotRutTyp === "ROT" || rotRutTyp === "RUT" ? true : false,
-      rotRutTyp: rotRutTyp as "ROT" | "RUT" | undefined,
-      rotRutKategori,
-      avdragProcent,
-      arbetskostnadExMoms:
-        arbetskostnadExMoms !== undefined && arbetskostnadExMoms !== null
-          ? Number(arbetskostnadExMoms)
-          : undefined,
+      // Sätt bara ROT/RUT-data om det finns, men toggla INTE visaRotRutForm eller rotRutAktiverat!
+      ...(rotRutTyp
+        ? {
+            rotRutAktiverat: true,
+            rotRutTyp: rotRutTyp as "ROT" | "RUT" | undefined,
+            rotRutKategori,
+            avdragProcent,
+            arbetskostnadExMoms:
+              arbetskostnadExMoms !== undefined && arbetskostnadExMoms !== null
+                ? Number(arbetskostnadExMoms)
+                : undefined,
+          }
+        : {}),
     }));
+
+    // Visa INTE formuläret automatiskt!
+    // setVisaRotRutForm(false); // Ta bort denna rad!
 
     setTimeout(() => {
       setBlinkIndex(formData.artiklar?.length ?? 0);
@@ -208,135 +198,89 @@ export default function ProdukterTjanster() {
       alert("❌ Kunde inte ta bort favoritartikel");
     }
   };
+  //#endregion
+
+  // Gemensam storlek för checkbox och label
+  const checkboxSize = "w-6 h-6";
+  const labelSize = "text-base";
 
   return (
     <div className="space-y-6">
-      {favoritArtiklar.length > 0 && (
-        <div className="space-y-4">
-          <Knapp
-            onClick={() => setShowFavoritArtiklar(!showFavoritArtiklar)}
-            text={showFavoritArtiklar ? "🔼 Dölj sparade artiklar" : "📂 Ladda in sparade artiklar"}
-          />
+      <FavoritArtiklarList
+        favoritArtiklar={favoritArtiklar}
+        showFavoritArtiklar={showFavoritArtiklar}
+        onToggle={setShowFavoritArtiklar}
+        onSelect={handleSelectFavorit}
+        onDelete={handleDeleteFavorit}
+      />
 
-          {showFavoritArtiklar && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
-              {favoritArtiklar.map((a) => (
-                <div
-                  key={a.id}
-                  className="bg-slate-800 hover:bg-slate-700 cursor-pointer p-3 rounded border border-slate-600 flex flex-col justify-between relative"
-                >
-                  <button
-                    onClick={() => handleDeleteFavorit(a.id)}
-                    className="absolute top-2 right-2 text-red-400 hover:text-red-600"
-                    title="Ta bort favoritartikel"
-                  >
-                    🗑️
-                  </button>
-                  <div onClick={() => handleSelectFavorit(a)} className="flex-1">
-                    <div className="text-white font-semibold">📌 {a.beskrivning}</div>
-                    <div className="text-gray-400 text-sm mt-1">
-                      {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
-                      {a.rotRutTyp ? ` — ${a.rotRutTyp}` : ""}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <ArtiklarList
+        artiklar={formData.artiklar as Artikel[]}
+        blinkIndex={blinkIndex}
+        onRemove={handleRemove}
+      />
 
+      <ArtikelForm
+        beskrivning={beskrivning}
+        antal={antal}
+        prisPerEnhet={prisPerEnhet}
+        moms={moms}
+        valuta={valuta}
+        typ={typ}
+        onChangeBeskrivning={setBeskrivning}
+        onChangeAntal={setAntal}
+        onChangePrisPerEnhet={setPrisPerEnhet}
+        onChangeMoms={setMoms}
+        onChangeValuta={setValuta}
+        onChangeTyp={setTyp}
+      />
+
+      {/* Visa RotRutForm endast om användaren själv aktiverat det */}
+      {visaRotRutForm && <RotRutForm showCheckbox={false} />}
+
+      {/* Checkbox för att aktivera ROT/RUT */}
       <div>
-        <ul className="space-y-3">
-          {(formData.artiklar as Artikel[]).map((a, idx) => (
-            <li
-              key={idx}
-              className={`flex justify-between items-center p-3 bg-slate-900 border border-slate-700 rounded ${
-                blinkIndex === idx ? "background-pulse" : ""
-              }`}
-            >
-              <div>
-                <div className="text-white font-semibold">{a.beskrivning}</div>
-                <div className="text-gray-400 text-sm">
-                  {a.antal} × {a.prisPerEnhet} {a.valuta} ({a.moms}% moms) — {a.typ}
-                  {a.rotRutTyp ? ` — ${a.rotRutTyp}` : ""}
-                </div>
-              </div>
-              <button onClick={() => handleRemove(idx)} className="text-red-400 hover:text-red-600">
-                🗑️
-              </button>
-            </li>
-          ))}
-        </ul>
+        <label className={`flex items-center gap-2 text-white ${labelSize}`}>
+          <input
+            type="checkbox"
+            checked={visaRotRutForm}
+            onChange={(e) => {
+              setVisaRotRutForm(e.target.checked);
+              setFormData((prev) => ({
+                ...prev,
+                rotRutAktiverat: e.target.checked,
+                ...(e.target.checked
+                  ? {}
+                  : {
+                      rotRutTyp: undefined,
+                      rotRutKategori: undefined,
+                      avdragProcent: undefined,
+                      arbetskostnadExMoms: undefined,
+                      avdragBelopp: undefined,
+                      personnummer: undefined,
+                      fastighetsbeteckning: undefined,
+                      rotBoendeTyp: undefined,
+                      brfOrganisationsnummer: undefined,
+                      brfLagenhetsnummer: undefined,
+                    }),
+              }));
+            }}
+            className={checkboxSize}
+          />
+          🛠️ Aktivera ROT/RUT-avdrag
+        </label>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <TextFält
-          label="Beskrivning"
-          name="beskrivning"
-          value={beskrivning}
-          onChange={(e) => setBeskrivning(e.target.value)}
-        />
-        <TextFält
-          label="Antal"
-          name="antal"
-          value={antal.toString()}
-          onChange={(e) => setAntal(parseFloat(e.target.value))}
-        />
-        <TextFält
-          label="Pris per enhet"
-          name="prisPerEnhet"
-          value={prisPerEnhet.toString()}
-          onChange={(e) => setPrisPerEnhet(parseFloat(e.target.value))}
-        />
-        <TextFält
-          label="Moms (%)"
-          name="moms"
-          value={moms.toString()}
-          onChange={(e) => setMoms(parseFloat(e.target.value))}
-        />
-        <div>
-          <label htmlFor="valuta" className="block text-sm font-medium text-white mb-2">
-            Valuta
-          </label>
-          <select
-            id="valuta"
-            value={valuta}
-            onChange={(e) => setValuta(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
-          >
-            <option value="SEK">SEK</option>
-            <option value="EUR">EUR</option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="typ" className="block text-sm font-medium text-white mb-2">
-            Typ
-          </label>
-          <select
-            id="typ"
-            value={typ}
-            onChange={(e) => setTyp(e.target.value as "vara" | "tjänst")}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
-          >
-            <option value="vara">Vara</option>
-            <option value="tjänst">Tjänst</option>
-          </select>
-        </div>
-      </div>
-
-      <RotRutForm />
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2`}>
           <input
             type="checkbox"
             id="saveAsFavorite"
             checked={saveAsFavorite}
             onChange={() => setSaveAsFavorite(!saveAsFavorite)}
-            className="w-5 h-5"
+            className={checkboxSize}
           />
-          <label htmlFor="saveAsFavorite" className="text-white text-sm cursor-pointer">
+          <label htmlFor="saveAsFavorite" className={`text-white cursor-pointer ${labelSize}`}>
             📌 Lägg till som favoritartikel
           </label>
         </div>
