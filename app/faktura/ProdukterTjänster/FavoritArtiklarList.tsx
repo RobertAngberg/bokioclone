@@ -1,4 +1,4 @@
-import Knapp from "../_components/Knapp";
+import Knapp from "../../_components/Knapp";
 
 type FavoritArtikel = {
   beskrivning: string;

@@ -1,4 +1,4 @@
-import TextFält from "../_components/TextFält";
+import TextFält from "../../_components/TextFält";
 
 interface ArtikelFormProps {
   beskrivning: string;

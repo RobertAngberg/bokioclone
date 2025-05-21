@@ -2,18 +2,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useFakturaContext } from "./FakturaProvider";
+import { useFakturaContext } from "../FakturaProvider";
 import {
   saveInvoice,
   sparaFavoritArtikel,
   hämtaSparadeArtiklar,
   deleteFavoritArtikel,
-} from "./actions";
-import Knapp from "../_components/Knapp";
-import RotRutForm from "./RotRutForm";
+} from "../actions";
+import Knapp from "../../_components/Knapp";
+import RotRutForm from "../RotRutForm";
 import FavoritArtiklarList from "./FavoritArtiklarList";
 import ArtiklarList from "./ArtiklarList";
 import ArtikelForm from "./ArtikelForm";
+import RotRutCheckbox from "./RotRutCheckbox";
+import LäggTillFavoritartikel from "./LäggTillFavoritartikel";
 
 type Artikel = {
   beskrivning: string;
@@ -164,7 +166,6 @@ export default function ProdukterTjanster() {
     setFormData((prev) => ({
       ...prev,
       artiklar: [...(prev.artiklar ?? []), artikelMedRutRot],
-      // Sätt bara ROT/RUT-data om det finns, men toggla INTE visaRotRutForm eller rotRutAktiverat!
       ...(rotRutTyp
         ? {
             rotRutAktiverat: true,
@@ -178,9 +179,6 @@ export default function ProdukterTjanster() {
           }
         : {}),
     }));
-
-    // Visa INTE formuläret automatiskt!
-    // setVisaRotRutForm(false); // Ta bort denna rad!
 
     setTimeout(() => {
       setBlinkIndex(formData.artiklar?.length ?? 0);
@@ -200,9 +198,10 @@ export default function ProdukterTjanster() {
   };
   //#endregion
 
-  // Gemensam storlek för checkbox och label
+  //#region Vars: Gemensam storlek för checkbox och label
   const checkboxSize = "w-6 h-6";
   const labelSize = "text-base";
+  //#endregion
 
   return (
     <div className="space-y-6">
@@ -238,53 +237,40 @@ export default function ProdukterTjanster() {
       {/* Visa RotRutForm endast om användaren själv aktiverat det */}
       {visaRotRutForm && <RotRutForm showCheckbox={false} />}
 
-      {/* Checkbox för att aktivera ROT/RUT */}
-      <div>
-        <label className={`flex items-center gap-2 text-white ${labelSize}`}>
-          <input
-            type="checkbox"
-            checked={visaRotRutForm}
-            onChange={(e) => {
-              setVisaRotRutForm(e.target.checked);
-              setFormData((prev) => ({
-                ...prev,
-                rotRutAktiverat: e.target.checked,
-                ...(e.target.checked
-                  ? {}
-                  : {
-                      rotRutTyp: undefined,
-                      rotRutKategori: undefined,
-                      avdragProcent: undefined,
-                      arbetskostnadExMoms: undefined,
-                      avdragBelopp: undefined,
-                      personnummer: undefined,
-                      fastighetsbeteckning: undefined,
-                      rotBoendeTyp: undefined,
-                      brfOrganisationsnummer: undefined,
-                      brfLagenhetsnummer: undefined,
-                    }),
-              }));
-            }}
-            className={checkboxSize}
-          />
-          🛠️ Aktivera ROT/RUT-avdrag
-        </label>
-      </div>
+      <RotRutCheckbox
+        checked={visaRotRutForm}
+        onChange={(checked) => {
+          setVisaRotRutForm(checked);
+          setFormData((prev) => ({
+            ...prev,
+            rotRutAktiverat: checked,
+            ...(checked
+              ? {}
+              : {
+                  rotRutTyp: undefined,
+                  rotRutKategori: undefined,
+                  avdragProcent: undefined,
+                  arbetskostnadExMoms: undefined,
+                  avdragBelopp: undefined,
+                  personnummer: undefined,
+                  fastighetsbeteckning: undefined,
+                  rotBoendeTyp: undefined,
+                  brfOrganisationsnummer: undefined,
+                  brfLagenhetsnummer: undefined,
+                }),
+          }));
+        }}
+        className={checkboxSize}
+        labelClassName={labelSize + " text-white"}
+      />
 
-      {/* Lägg till som favoritartikel */}
       <div className="flex items-center justify-between">
-        <div className={`flex items-center gap-2`}>
-          <input
-            type="checkbox"
-            id="saveAsFavorite"
-            checked={saveAsFavorite}
-            onChange={() => setSaveAsFavorite(!saveAsFavorite)}
-            className={checkboxSize}
-          />
-          <label htmlFor="saveAsFavorite" className={`text-white cursor-pointer ${labelSize}`}>
-            📌 Lägg till som favoritartikel
-          </label>
-        </div>
+        <LäggTillFavoritartikel
+          checked={saveAsFavorite}
+          onChange={setSaveAsFavorite}
+          className={checkboxSize}
+          labelClassName={`text-white cursor-pointer ${labelSize}`}
+        />
         <Knapp onClick={handleAdd} text={loading ? "✚ Sparar…" : "✚ Lägg till och spara"} />
       </div>
     </div>
