@@ -1,8 +1,8 @@
 //#region Huvud
 "use client";
 
-import Knapp from "../_components/Knapp";
-import ExportPdfButton from "./ExporteraPDFKnapp";
+import Knapp from "../../_components/Knapp";
+import ExporteraPDFKnapp from "./ExporteraPDFKnapp";
 
 type AlternativProps = {
   onSave: () => void;
@@ -18,7 +18,7 @@ export default function Alternativ({ onSave, onReload, onPrint, onPreview }: Alt
       {/* Vänster sida: Spara, Exportera, Skriv ut, Börja om */}
       <div className="flex flex-wrap gap-2">
         <Knapp onClick={onSave} text="💾 Spara" />
-        <ExportPdfButton />
+        <ExporteraPDFKnapp />
       </div>
 
       {/* Höger sida: Förhandsgranska */}

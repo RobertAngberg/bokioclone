@@ -16,7 +16,6 @@ type KundSaveResponse = {
 
 export default function KundUppgifter() {
   const { formData, setFormData, kundStatus, setKundStatus, resetKund } = useFakturaContext();
-  const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const [kunder, setKunder] = useState<any[]>([]);
@@ -36,7 +35,6 @@ export default function KundUppgifter() {
   };
 
   const handleSave = async () => {
-    setLoading(true);
     const fd = new FormData();
     fd.append("kundnamn", formData.kundnamn);
     fd.append("kundorgnummer", formData.kundorganisationsnummer);
@@ -50,8 +48,6 @@ export default function KundUppgifter() {
     const res: KundSaveResponse = formData.kundId
       ? await uppdateraKund(parseInt(formData.kundId, 10), fd)
       : await sparaNyKund(fd);
-
-    setLoading(false);
 
     if (res.success) {
       if (!formData.kundId && res.id) {

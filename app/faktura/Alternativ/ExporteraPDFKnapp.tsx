@@ -3,7 +3,7 @@
 
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import Knapp from "../_components/Knapp";
+import Knapp from "../../_components/Knapp";
 //#endregion
 
 export default function ExporteraPDFKnapp() {
@@ -103,5 +103,5 @@ export default function ExporteraPDFKnapp() {
     }
   };
 
-  return <Knapp onClick={handleExport} text="💾 Exportera PDF" />;
+  return <Knapp onClick={handleExport} text="📤 Exportera PDF" />;
 }

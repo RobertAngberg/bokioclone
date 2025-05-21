@@ -5,9 +5,9 @@ import { hämtaSparadeKunder, hämtaSparadeFakturor, hämtaSparadeArtiklar } fro
 //#endregion
 
 export default async function Page() {
-  await new Promise((r) => setTimeout(r, 400));
-
-  const [kunder, fakturor, artiklar] = await Promise.all([
+  // _ = det här värdet används inte
+  const [_, kunder, fakturor, artiklar] = await Promise.all([
+    new Promise((r) => setTimeout(r, 400)),
     hämtaSparadeKunder(),
     hämtaSparadeFakturor(),
     hämtaSparadeArtiklar(),

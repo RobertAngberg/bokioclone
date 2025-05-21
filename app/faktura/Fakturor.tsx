@@ -10,7 +10,7 @@ import SparadeFakturor from "./SparadeFakturor";
 import AnimeradFlik from "../_components/AnimeradFlik";
 import Knapp from "../_components/Knapp";
 import MainLayout from "../_components/MainLayout";
-import Alternativ from "./Alternativ";
+import Alternativ from "./Alternativ/Alternativ";
 import Betalning from "./Betalning";
 import Avsandare from "./Avsandare";
 import type { Artikel } from "./actions";

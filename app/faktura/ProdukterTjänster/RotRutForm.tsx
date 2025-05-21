@@ -1,9 +1,9 @@
 //#region Huvud
 "use client";
 
-import { useFakturaContext } from "./FakturaProvider";
+import { useFakturaContext } from "../FakturaProvider";
 import { useEffect, useMemo } from "react";
-import TextFält from "../_components/TextFält";
+import TextFält from "../../_components/TextFält";
 
 type RotRutFormProps = {
   showCheckbox?: boolean;

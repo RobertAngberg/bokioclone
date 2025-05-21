@@ -10,6 +10,7 @@ import Knapp from "../_components/Knapp";
 
 export default function Avsandare() {
   const { data: session } = useSession();
+
   const [form, setForm] = useState({
     företagsnamn: "",
     adress: "",

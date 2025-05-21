@@ -10,7 +10,7 @@ import {
   deleteFavoritArtikel,
 } from "../actions";
 import Knapp from "../../_components/Knapp";
-import RotRutForm from "../RotRutForm";
+import RotRutForm from "./RotRutForm";
 import FavoritArtiklarList from "./FavoritArtiklarList";
 import ArtiklarList from "./ArtiklarList";
 import ArtikelForm from "./ArtikelForm";
