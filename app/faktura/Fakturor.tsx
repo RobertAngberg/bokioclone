@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useFakturaContext } from "./FakturaProvider";
 import KundUppgifter from "./KundUppgifter";
 import ProdukterTjanster from "./ProdukterTjänster";
-import Förhandsgranskning from "./Förhandsgranskning";
+import Förhandsgranskning from "./Förhandsgranskning/Förhandsgranskning";
 import SparadeFakturor from "./SparadeFakturor";
 import AnimeradFlik from "../_components/AnimeradFlik";
 import Knapp from "../_components/Knapp";
