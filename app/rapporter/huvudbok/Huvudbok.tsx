@@ -19,6 +19,7 @@ type TransactionItem = {
   debet: number;
   kredit: number;
   transaktion_id?: number;
+  verifikatNummer?: string;
 };
 
 type GroupedTransactions = {
@@ -271,14 +272,15 @@ export default function Huvudbok({ initialData, företagsnamn, organisationsnumm
                                     : "text-gray-500 cursor-not-allowed"
                                 }`}
                                 onClick={() => {
-                                  console.log("Klick på verifikat, ID:", item.transaktion_id);
                                   if (item.transaktion_id) {
                                     setVerifikatId(item.transaktion_id);
                                   }
                                 }}
                                 disabled={!item.transaktion_id}
                               >
-                                {item.transaktion_id ? "Visa verifikat" : "Inget verifikat"}
+                                {item.verifikatNummer ||
+                                  `V${item.transaktion_id}` ||
+                                  "Inget verifikat"}
                               </button>
                             </div>
                           ),

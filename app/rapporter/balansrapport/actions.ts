@@ -1,3 +1,4 @@
+// balansrapport/actions.ts
 "use server";
 import { Pool } from "pg";
 
@@ -23,7 +24,9 @@ export async function fetchBalansData(year: string) {
           'id', CONCAT('ID', t.id),
           'datum', t.transaktionsdatum,
           'belopp', COALESCE(tp.debet, 0) - COALESCE(tp.kredit, 0),
-          'beskrivning', t.kontobeskrivning
+          'beskrivning', t.kontobeskrivning,
+          'transaktion_id', t.id,
+          'verifikatNummer', CONCAT('V', t.id)
         ) ORDER BY t.transaktionsdatum
       ) AS transaktioner
     FROM transaktionsposter tp
@@ -49,7 +52,9 @@ export async function fetchBalansData(year: string) {
           'id', CONCAT('ID', t.id),
           'datum', t.transaktionsdatum,
           'belopp', COALESCE(tp.kredit, 0) - COALESCE(tp.debet, 0),
-          'beskrivning', t.kontobeskrivning
+          'beskrivning', t.kontobeskrivning,
+          'transaktion_id', t.id,
+          'verifikatNummer', CONCAT('V', t.id)
         ) ORDER BY t.transaktionsdatum
       ) AS transaktioner
     FROM transaktionsposter tp

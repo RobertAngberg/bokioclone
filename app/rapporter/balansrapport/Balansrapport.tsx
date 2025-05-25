@@ -1,11 +1,13 @@
 // #region
 "use client";
 
+import { useState } from "react";
 import MainLayout from "../../_components/MainLayout";
 import AnimeradFlik from "../../_components/AnimeradFlik";
 import Totalrad from "../../_components/Totalrad";
 import InreTabell from "../../_components/InreTabell";
 import Knapp from "../../_components/Knapp";
+import VerifikatModal from "../resultatrapport/VerifikatModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -14,6 +16,8 @@ type Transaktion = {
   datum: string | Date;
   belopp: number;
   beskrivning?: string;
+  transaktion_id?: number;
+  verifikatNummer?: string;
 };
 
 type Konto = {
@@ -37,13 +41,22 @@ type Props = {
 // #endregion
 
 export default function Balansrapport({ initialData, företagsnamn, organisationsnummer }: Props) {
-  // Samma formatSEK som i huvudbok!
-  const formatSEK = (val: number) =>
-    val
+  //#region State & Variables
+  const [verifikatId, setVerifikatId] = useState<number | null>(null);
+  //#endregion
+
+  //#region Helper Functions
+  // Formatering för SEK med behållet minustecken
+  const formatSEK = (val: number) => {
+    const formatted = val
       .toLocaleString("sv-SE", { style: "currency", currency: "SEK" })
-      .replace(/[^0-9a-zA-Z,.\- ]/g, "")
+      .replace(/[^0-9a-zA-Z,.\-\s]/g, "")
       .replace(/\s+/g, " ")
       .trim();
+
+    // Behåll minustecknet för negativa värden
+    return val < 0 && !formatted.startsWith("-") ? `-${formatted}` : formatted;
+  };
 
   function skapaBalansSammanställning(data: BalansData) {
     const { year, tillgangar, skulderOchEgetKapital } = data;
@@ -64,10 +77,12 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
       differens,
     };
   }
+  //#endregion
 
   const { year, tillgangar, skulderOchEgetKapital, sumTillgangar, sumSkulderEK, differens } =
     skapaBalansSammanställning(initialData);
 
+  //#region Export Functions
   const handleExportPDF = () => {
     const doc = new jsPDF({
       orientation: "portrait",
@@ -195,29 +210,136 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+  //#endregion
 
+  //#region Render Functions
   const renderaKategori = (titel: string, icon: string, konton: Konto[]) => {
     const summa = konton.reduce((a, b) => a + b.saldo, 0);
+
+    if (konton.length === 0) {
+      return (
+        <AnimeradFlik title={titel} icon={icon}>
+          <InreTabell rows={[]} totalLabel={`Summa ${titel.toLowerCase()}`} totalValue={summa} />
+        </AnimeradFlik>
+      );
+    }
+
     return (
       <AnimeradFlik title={titel} icon={icon}>
-        <InreTabell
-          rows={konton.map((konto) => ({
-            label: `${konto.kontonummer} – ${konto.beskrivning}`,
-            value: konto.saldo,
-          }))}
-          totalLabel={`Summa ${titel.toLowerCase()}`}
-          totalValue={summa}
-        />
+        <div className="space-y-4">
+          {konton.map((konto) => (
+            <AnimeradFlik
+              key={konto.kontonummer}
+              title={`${konto.kontonummer} – ${konto.beskrivning}`}
+              icon=""
+              forceOpen={false}
+            >
+              {(() => {
+                // Skapa rader för transaktioner
+                const rows = konto.transaktioner.map((transaktion) => {
+                  let belopp = transaktion.belopp;
+
+                  // För kortfristiga skulder: olika logik för olika konton
+                  if (titel === "Kortfristiga skulder") {
+                    if (konto.kontonummer === "2640" || konto.kontonummer === "2645") {
+                      // För 2640 och 2645: invertera så negativa blir positiva
+                      belopp = -belopp;
+                    } else {
+                      // För andra konton (2610, 2614): sätt minus framför positiva värden
+                      belopp = -belopp;
+                    }
+                  }
+
+                  return {
+                    Datum: `${new Date(transaktion.datum).toISOString().slice(0, 10)}     ${transaktion.beskrivning || ""}`,
+                    Verifikat: (
+                      <div className="text-left pl-2">
+                        <button
+                          className={`underline transition-colors ${
+                            transaktion.transaktion_id
+                              ? "text-blue-400 hover:text-blue-300 cursor-pointer"
+                              : "text-gray-500 cursor-not-allowed"
+                          }`}
+                          onClick={() => {
+                            if (transaktion.transaktion_id) {
+                              setVerifikatId(transaktion.transaktion_id);
+                            }
+                          }}
+                          disabled={!transaktion.transaktion_id}
+                        >
+                          {transaktion.verifikatNummer || "Inget verifikat"}
+                        </button>
+                      </div>
+                    ),
+                    Belopp: formatSEK(belopp),
+                  };
+                });
+
+                return (
+                  <div className="space-y-2">
+                    <InreTabell rows={rows} />
+                  </div>
+                );
+              })()}
+            </AnimeradFlik>
+          ))}
+          <div className="text-sm text-white font-semibold mt-4 text-right bg-gray-800 p-2 rounded">
+            Summa {titel.toLowerCase()}: {formatSEK(summa)}
+          </div>
+        </div>
       </AnimeradFlik>
     );
   };
 
-  const omsättningstillgångar = tillgangar.filter((k) => /^19|^16|^17/.test(k.kontonummer));
-  const anläggningstillgångar = tillgangar.filter((k) => /^1(0|1)/.test(k.kontonummer));
-  const egetKapital = skulderOchEgetKapital.filter((k) => /^2(0|1)/.test(k.kontonummer));
-  const kortfristigaSkulder = skulderOchEgetKapital.filter((k) => /^2(4|6)/.test(k.kontonummer));
-  const långfristigaSkulder = skulderOchEgetKapital.filter((k) => /^2(3)/.test(k.kontonummer));
-  const beräknatResultat = skulderOchEgetKapital.find((k) => k.kontonummer === "9999");
+  // Speciell renderare för Eget kapital (ej expanderbart)
+  const renderaEgetKapital = (
+    titel: string,
+    icon: string,
+    konton: Konto[],
+    beraknatResultat: number
+  ) => {
+    const egetKapitalSumma = konton.reduce((a, b) => a + b.saldo, 0);
+    const totalSumma = egetKapitalSumma + beraknatResultat;
+
+    const rows = [
+      ...konton.map((konto) => ({
+        Konto: `${konto.kontonummer} – ${konto.beskrivning}`,
+        Beskrivning: "",
+        Belopp: formatSEK(konto.saldo),
+      })),
+      {
+        Konto: "Beräknat resultat",
+        Beskrivning: "",
+        Belopp: formatSEK(-beraknatResultat), // Minus för negativt resultat
+      },
+    ];
+
+    return (
+      <AnimeradFlik title={titel} icon={icon}>
+        <div className="space-y-2">
+          <InreTabell rows={rows} />
+          <div className="text-sm text-white font-semibold mt-4 text-right bg-gray-800 p-2 rounded">
+            Summa {titel.toLowerCase()}: {formatSEK(totalSumma)}
+          </div>
+        </div>
+      </AnimeradFlik>
+    );
+  };
+  //#endregion
+
+  //#region Data Filtering - Dynamisk kategorisering baserat på svensk kontoplan
+  const anläggningstillgångar = tillgangar.filter((k) => /^1[0-5]/.test(k.kontonummer));
+  const omsättningstillgångar = tillgangar.filter((k) => /^1[6-9]/.test(k.kontonummer));
+
+  const egetKapital = skulderOchEgetKapital.filter((k) => /^20/.test(k.kontonummer));
+  const avsättningar = skulderOchEgetKapital.filter((k) => /^21/.test(k.kontonummer));
+  const långfristigaSkulder = skulderOchEgetKapital.filter((k) => /^2[2-3]/.test(k.kontonummer));
+  const kortfristigaSkulder = skulderOchEgetKapital.filter((k) => /^2[4-9]/.test(k.kontonummer));
+
+  // Beräknat resultat från 99xx-konton
+  const beräknatResultat = skulderOchEgetKapital.filter((k) => /^99/.test(k.kontonummer));
+  const beräknatResultatSaldo = beräknatResultat.reduce((sum, k) => sum + k.saldo, 0);
+  //#endregion
 
   return (
     <MainLayout>
@@ -236,10 +358,8 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
         <h2 className="text-xl mt-12 mb-4 border-b border-gray-500 pb-1">
           Eget kapital och skulder
         </h2>
-        {renderaKategori("Eget kapital", "💰", [
-          ...egetKapital,
-          ...(beräknatResultat ? [beräknatResultat] : []),
-        ])}
+        {renderaEgetKapital("Eget kapital", "💰", egetKapital, beräknatResultatSaldo)}
+        {avsättningar.length > 0 && renderaKategori("Avsättningar", "📊", avsättningar)}
         {renderaKategori("Långfristiga skulder", "🏦", långfristigaSkulder)}
         {renderaKategori("Kortfristiga skulder", "⏳", kortfristigaSkulder)}
         <Totalrad label="Summa eget kapital och skulder" values={{ [year]: sumSkulderEK }} />
@@ -254,6 +374,11 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
           )}
         </section>
       </div>
+
+      {/* Modal för verifikat */}
+      {verifikatId && (
+        <VerifikatModal transaktionsId={verifikatId} onClose={() => setVerifikatId(null)} />
+      )}
     </MainLayout>
   );
 }

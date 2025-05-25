@@ -9,10 +9,11 @@ type Props = {
   rows: Row[];
   totalLabel?: string;
   totalValue?: number;
+  hideHeader?: boolean;
 };
 // #endregion
 
-export default function InreTabell({ rows, totalLabel, totalValue }: Props) {
+export default function InreTabell({ rows, totalLabel, totalValue, hideHeader = false }: Props) {
   if (rows.length === 0) return null;
 
   const formatSEK = (val: number) =>
@@ -30,22 +31,24 @@ export default function InreTabell({ rows, totalLabel, totalValue }: Props) {
 
   return (
     <div className="bg-slate-800 rounded-xl p-4 text-white text-sm">
-      {/* Header */}
-      <div
-        className="font-semibold border-b border-gray-700 pb-1 mb-1 grid"
-        style={{ gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }}
-      >
-        {keys.map((key) => (
-          <div
-            key={key}
-            className={`${
-              typeof rows[0][key] === "number" ? "text-right" : "text-left"
-            } break-words`}
-          >
-            {key === "value" ? "Belopp" : capitalize(key === "transaktionsdatum" ? "datum" : key)}
-          </div>
-        ))}
-      </div>
+      {/* Header - dölj om hideHeader är true */}
+      {!hideHeader && (
+        <div
+          className="font-semibold border-b border-gray-700 pb-1 mb-1 grid"
+          style={{ gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }}
+        >
+          {keys.map((key) => (
+            <div
+              key={key}
+              className={`${
+                typeof rows[0][key] === "number" ? "text-right" : "text-left"
+              } break-words`}
+            >
+              {key === "value" ? "Belopp" : capitalize(key === "transaktionsdatum" ? "datum" : key)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Rows */}
       {rows.map((row, i) => (
