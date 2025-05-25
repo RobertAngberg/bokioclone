@@ -1,18 +1,21 @@
-// #region Huvud
+//#region Imports och types
 "use client";
 
+import { useState } from "react";
 import AnimeradFlik from "../../_components/AnimeradFlik";
 import MainLayout from "../../_components/MainLayout";
 import Totalrad from "../../_components/Totalrad";
 import InreTabell from "../../_components/InreTabell";
 import Knapp from "../../_components/Knapp";
+import VerifikatModal from "./VerifikatModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 type Konto = {
   kontonummer: string;
   beskrivning: string;
-  [year: string]: number | string;
+  transaktion_id?: number;
+  [year: string]: number | string | undefined;
 };
 
 type KontoRad = {
@@ -24,6 +27,7 @@ type KontoRad = {
 type ResultatData = {
   intakter: KontoRad[];
   rorelsensKostnader: KontoRad[];
+  finansiellaIntakter?: KontoRad[];
   finansiellaKostnader: KontoRad[];
   ar: string[];
 };
@@ -33,14 +37,17 @@ type Props = {
   företagsnamn?: string;
   organisationsnummer?: string;
 };
-// #endregion
+//#endregion
 
-export default function Resultatrapport({ initialData, företagsnamn, organisationsnummer }: Props) {
+export default function Resultatrapport({ initialData }: Props) {
+  //#region State & Variables
   const data = initialData;
   const year = data.ar[0];
+  const [verifikatId, setVerifikatId] = useState<number | null>(null);
+  //#endregion
 
-  // Summera intäkter och kostnader utan att vända tecken
-  const summering = (rader: KontoRad[]) => {
+  //#region Helper Functions
+  const summering = (rader: KontoRad[] = []) => {
     const result: Record<string, number> = {};
     for (const rad of rader) {
       for (const year of data.ar) {
@@ -51,210 +58,292 @@ export default function Resultatrapport({ initialData, företagsnamn, organisati
     return result;
   };
 
-  // Intäkter är negativa i bokföringen, så vänd tecknet till positivt
+  const formatSEK = (val: number | undefined | null) =>
+    (typeof val === "number" && !isNaN(val) ? val : 0)
+      .toLocaleString("sv-SE", { style: "currency", currency: "SEK" })
+      .replace(/[^0-9,.\-\s]/g, "") // Tog bort 'a-zA-Z' och lade till '\s' för mellanslag
+      .replace(/\s+/g, " ")
+      .trim();
+  //#endregion
+
+  //#region Data Calculations
   const intaktsSumRaw = summering(data.intakter);
   const intaktsSum: Record<string, number> = {};
   for (const year of data.ar) {
     intaktsSum[year] = -intaktsSumRaw[year] || 0;
   }
 
-  // Kostnader och finansiella kostnader är redan positiva
   const rorelsensSum = summering(data.rorelsensKostnader);
-  const finansiellaSum = summering(data.finansiellaKostnader);
+  const finansiellaIntakterSum = summering(data.finansiellaIntakter);
+  const finansiellaKostnaderSum = summering(data.finansiellaKostnader);
+
+  const rorelsensResultat: Record<string, number> = {};
+  data.ar.forEach((year) => {
+    rorelsensResultat[year] = (intaktsSum[year] ?? 0) - (rorelsensSum[year] ?? 0);
+  });
+
+  const resultatEfterFinansiella: Record<string, number> = {};
+  data.ar.forEach((year) => {
+    resultatEfterFinansiella[year] =
+      (rorelsensResultat[year] ?? 0) +
+      (finansiellaIntakterSum[year] ?? 0) -
+      (finansiellaKostnaderSum[year] ?? 0);
+  });
 
   const resultat: Record<string, number> = {};
   data.ar.forEach((year) => {
-    const intakt = intaktsSum[year] ?? 0;
-    const kostnad = rorelsensSum[year] ?? 0;
-    const finansiell = finansiellaSum[year] ?? 0;
-    resultat[year] = intakt - kostnad - finansiell;
+    resultat[year] = resultatEfterFinansiella[year];
   });
+  //#endregion
 
-  const formatSEK = (val: number | undefined | null) =>
-    (typeof val === "number" && !isNaN(val) ? val : 0)
-      .toLocaleString("sv-SE", { style: "currency", currency: "SEK" })
-      .replace(/[^0-9a-zA-Z,.\- ]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const handleExportPDF = () => {
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-
-    // Header
-    let y = 30;
-    doc.setFontSize(32);
-    doc.text("Resultatrapport", 105, y, { align: "center" });
-
-    // Margin bottom under rubrik
-    y += 25;
-
-    // Företagsnamn (bold)
-    if (företagsnamn) {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text(företagsnamn, 14, y);
-      y += 7;
-    }
-
-    // Organisationsnummer (normal)
-    if (organisationsnummer) {
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "normal");
-      doc.text(organisationsnummer, 14, y);
-      y += 8;
-    }
-
-    // Utskriven datum
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Utskriven: ${new Date().toISOString().slice(0, 10)}`, 14, y);
-
-    y += 20;
-
-    // Dynamiska grupper
-    const grupper = [
-      { titel: "Rörelsens intäkter", rader: data.intakter, isIntakt: true },
-      { titel: "Rörelsens kostnader", rader: data.rorelsensKostnader, isIntakt: false },
-      { titel: "Finansiella kostnader", rader: data.finansiellaKostnader, isIntakt: false },
-    ];
-
-    grupper.forEach(({ titel, rader, isIntakt }) => {
-      doc.setFontSize(15);
-      doc.setFont("helvetica", "bold");
-      doc.text(titel, 14, y);
-      y += 8;
-
-      // Tabellrader
-      const rows: any[][] = [];
-      rader.forEach((grupp) => {
-        grupp.konton.forEach((konto) => {
-          rows.push([
-            konto.kontonummer,
-            konto.beskrivning,
-            formatSEK(isIntakt ? -(konto[year] as number) : (konto[year] as number)),
-          ]);
-        });
-        // Summeringsrad för grupp
-        rows.push([
-          {
-            content: `Summa ${grupp.namn.toLowerCase()}`,
-            colSpan: 2,
-            styles: { fontStyle: "bold" },
-          },
-          {
-            content: formatSEK(isIntakt ? -grupp.summering[year] : grupp.summering[year]),
-            styles: { fontStyle: "bold", halign: "left" },
-          },
-        ]);
-      });
-
-      autoTable(doc, {
-        startY: y,
-        head: [["Konto", "Beskrivning", "Belopp"]],
-        body: rows,
-        theme: "plain",
-        styles: { fontSize: 12, textColor: "#111", halign: "left" },
-        headStyles: { fontStyle: "bold", textColor: "#111" },
-        margin: { left: 14, right: 14 },
-        columnStyles: {
-          0: { cellWidth: 32 },
-          1: { cellWidth: 110 },
-          2: { cellWidth: 34 },
-        },
-        didDrawPage: (data) => {
-          if (data.cursor) y = data.cursor.y + 8;
-        },
-      });
-
-      y += 4;
-    });
-
-    // Resultatrad
-    doc.setFontSize(15);
-    doc.setFont("helvetica", "bold");
-    doc.text("Resultat", 14, y);
-    y += 8;
-
-    autoTable(doc, {
-      startY: y,
-      head: [["", "Belopp"]],
-      body: [
-        [
-          { content: "Beräknat resultat", styles: { fontStyle: "bold" } },
-          { content: formatSEK(resultat[year]), styles: { fontStyle: "bold", halign: "left" } },
-        ],
-      ],
-      theme: "plain",
-      styles: { fontSize: 12, textColor: "#111", halign: "left" },
-      headStyles: { fontStyle: "bold", textColor: "#111" },
-      margin: { left: 14, right: 14 },
-      columnStyles: {
-        0: { cellWidth: 142 },
-        1: { cellWidth: 34 },
-      },
-      didDrawPage: (data) => {
-        if (data.cursor) y = data.cursor.y + 8;
-      },
-    });
-
-    doc.save("resultatrapport.pdf");
-  };
-
-  const handleExportCSV = () => {
-    let csv = `Resultatrapport ${year}\n\n`;
-
-    const grupper = [
-      { titel: "Rörelsens intäkter", rader: data.intakter, isIntakt: true },
-      { titel: "Rörelsens kostnader", rader: data.rorelsensKostnader, isIntakt: false },
-      { titel: "Finansiella kostnader", rader: data.finansiellaKostnader, isIntakt: false },
-    ];
-
-    grupper.forEach(({ titel, rader, isIntakt }) => {
-      csv += `${titel}\nKonto;Beskrivning;Belopp\n`;
-      rader.forEach((grupp) => {
-        grupp.konton.forEach((konto) => {
-          csv +=
-            [
-              konto.kontonummer,
-              `"${konto.beskrivning}"`,
-              formatSEK(isIntakt ? -(konto[year] as number) : (konto[year] as number)),
-            ].join(";") + "\n";
-        });
-        csv += `;Summa ${grupp.namn.toLowerCase()};${formatSEK(isIntakt ? -grupp.summering[year] : grupp.summering[year])}\n`;
-      });
-      csv += "\n";
-    });
-
-    csv += `Resultat\n;Beräknat resultat;${formatSEK(resultat[year])}\n`;
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "resultatrapport.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const renderGrupper = (rader: KontoRad[], isIntakt = false, icon?: string) =>
+  //#region Render Functions
+  const renderGrupper = (rader: KontoRad[] = [], isIntakt = false, icon?: string) =>
     rader.map((grupp) => (
       <AnimeradFlik key={grupp.namn} title={grupp.namn} icon={icon || (isIntakt ? "💰" : "💸")}>
         <InreTabell
           rows={grupp.konton.map((konto) => ({
-            label: `${konto.kontonummer} – ${konto.beskrivning}`,
-            value: isIntakt ? -(konto[year] as number) : (konto[year] as number),
+            Konto: `${konto.kontonummer} – ${konto.beskrivning}`,
+            "": (
+              <div className="text-center">
+                <button
+                  className="underline text-blue-400 hover:text-blue-300 transition-colors"
+                  onClick={() => setVerifikatId(konto.transaktion_id as number)}
+                  disabled={!konto.transaktion_id}
+                >
+                  Visa verifikat
+                </button>
+              </div>
+            ),
+            Belopp: isIntakt ? -(konto[year] as number) : (konto[year] as number),
           }))}
           totalLabel={`Summa ${grupp.namn.toLowerCase()}`}
           totalValue={isIntakt ? -grupp.summering[year] : grupp.summering[year]}
         />
       </AnimeradFlik>
     ));
+  //#endregion
+
+  //#region Exportfunktioner
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+
+    // Centrerad titel med margin
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const title = "Resultatrapport";
+    const titleWidth = doc.getTextWidth(title);
+    const titleX = (pageWidth - titleWidth) / 2;
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(title, titleX, 20);
+    doc.setFontSize(12);
+
+    let y = 35; // Mer margin under titel
+
+    const addSection = (
+      title: string,
+      rows: { label: string; value: number }[],
+      sumLabel: string,
+      sumValue: number
+    ) => {
+      // Margin ovanför sektion
+      y += 8;
+
+      // Bold underrubrik
+      doc.setFont("helvetica", "bold");
+      doc.text(title, 14, y);
+      doc.setFont("helvetica", "normal");
+      y += 8;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Konto", "Belopp"]],
+        body: rows.map((row) => [row.label, formatSEK(row.value)]),
+        theme: "grid",
+        styles: {
+          fontSize: 10,
+          cellPadding: 3,
+          lineWidth: 0.1,
+        },
+        headStyles: {
+          fontStyle: "bold",
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      y = (doc as any).lastAutoTable?.finalY + 15 || y; // Ökad margin efter tabeller
+
+      // Bold summa
+      doc.setFont("helvetica", "bold");
+      doc.text(`${sumLabel}: ${formatSEK(sumValue)}`, 14, y);
+      doc.setFont("helvetica", "normal");
+      y += 15; // Mer margin under summor
+    };
+
+    // Intäkter - använd samma värden som visas i UI
+    data.intakter.forEach((grupp) => {
+      addSection(
+        grupp.namn,
+        grupp.konton.map((konto) => ({
+          label: `${konto.kontonummer} – ${konto.beskrivning}`,
+          value: -(konto[year] as number), // isIntakt = true
+        })),
+        `Summa ${grupp.namn.toLowerCase()}`,
+        -grupp.summering[year] // isIntakt = true
+      );
+    });
+
+    y += 10;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Summa rörelsens intäkter: ${formatSEK(intaktsSum[year])}`, 14, y);
+    doc.setFont("helvetica", "normal");
+    y += 20;
+
+    // Rörelsens kostnader - använd samma värden som visas i UI
+    data.rorelsensKostnader.forEach((grupp) => {
+      addSection(
+        grupp.namn,
+        grupp.konton.map((konto) => ({
+          label: `${konto.kontonummer} – ${konto.beskrivning}`,
+          value: konto[year] as number, // isIntakt = false
+        })),
+        `Summa ${grupp.namn.toLowerCase()}`,
+        grupp.summering[year] // isIntakt = false
+      );
+    });
+
+    y += 10;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Summa rörelsens kostnader: ${formatSEK(-rorelsensSum[year])}`, 14, y);
+    doc.setFont("helvetica", "normal");
+    y += 20;
+
+    // Rörelsens resultat
+    doc.setFont("helvetica", "bold");
+    doc.text(`Summa rörelsens resultat: ${formatSEK(rorelsensResultat[year])}`, 14, y);
+    doc.setFont("helvetica", "normal");
+    y += 20;
+
+    // Finansiella intäkter
+    if (data.finansiellaIntakter && data.finansiellaIntakter.length > 0) {
+      data.finansiellaIntakter.forEach((grupp) => {
+        addSection(
+          grupp.namn,
+          grupp.konton.map((konto) => ({
+            label: `${konto.kontonummer} – ${konto.beskrivning}`,
+            value: konto[year] as number,
+          })),
+          `Summa ${grupp.namn.toLowerCase()}`,
+          grupp.summering[year]
+        );
+      });
+
+      y += 10;
+      doc.setFont("helvetica", "bold");
+      doc.text(`Summa finansiella intäkter: ${formatSEK(finansiellaIntakterSum[year])}`, 14, y);
+      doc.setFont("helvetica", "normal");
+      y += 20;
+    }
+
+    // Finansiella kostnader
+    if (data.finansiellaKostnader && data.finansiellaKostnader.length > 0) {
+      data.finansiellaKostnader.forEach((grupp) => {
+        addSection(
+          grupp.namn,
+          grupp.konton.map((konto) => ({
+            label: `${konto.kontonummer} – ${konto.beskrivning}`,
+            value: konto[year] as number,
+          })),
+          `Summa ${grupp.namn.toLowerCase()}`,
+          grupp.summering[year]
+        );
+      });
+
+      y += 10;
+      doc.setFont("helvetica", "bold");
+      doc.text(`Summa finansiella kostnader: ${formatSEK(finansiellaKostnaderSum[year])}`, 14, y);
+      doc.setFont("helvetica", "normal");
+      y += 20;
+    }
+
+    // Resultat efter finansiella poster
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      `Resultat efter finansiella poster: ${formatSEK(resultatEfterFinansiella[year])}`,
+      14,
+      y
+    );
+    y += 15;
+
+    // Beräknat resultat
+    doc.text(`Beräknat resultat: ${formatSEK(resultat[year])}`, 14, y);
+    doc.setFont("helvetica", "normal");
+
+    doc.save("resultatrapport.pdf");
+  };
+
+  const handleExportCSV = () => {
+    let csv = "Rubrik;Konto;Belopp\n";
+    // Intäkter
+    data.intakter.forEach((grupp) => {
+      grupp.konton.forEach((konto) => {
+        csv += `Rörelsens intäkter;${konto.kontonummer} – ${konto.beskrivning};${-(konto[year] as number)}\n`;
+      });
+      csv += `Rörelsens intäkter;Summa ${grupp.namn.toLowerCase()};${-grupp.summering[year]}\n`;
+    });
+    csv += `Rörelsens intäkter;Summa rörelsens intäkter;${intaktsSum[year]}\n`;
+
+    // Kostnader
+    data.rorelsensKostnader.forEach((grupp) => {
+      grupp.konton.forEach((konto) => {
+        csv += `Rörelsens kostnader;${konto.kontonummer} – ${konto.beskrivning};${konto[year]}\n`;
+      });
+      csv += `Rörelsens kostnader;Summa ${grupp.namn.toLowerCase()};${grupp.summering[year]}\n`;
+    });
+    csv += `Rörelsens kostnader;Summa rörelsens kostnader;${rorelsensSum[year]}\n`;
+
+    // Rörelsens resultat
+    csv += `Rörelsens resultat;Summa rörelsens resultat;${rorelsensResultat[year]}\n`;
+
+    // Finansiella intäkter
+    if (data.finansiellaIntakter && data.finansiellaIntakter.length > 0) {
+      data.finansiellaIntakter.forEach((grupp) => {
+        grupp.konton.forEach((konto) => {
+          csv += `Finansiella intäkter;${konto.kontonummer} – ${konto.beskrivning};${konto[year]}\n`;
+        });
+        csv += `Finansiella intäkter;Summa ${grupp.namn.toLowerCase()};${grupp.summering[year]}\n`;
+      });
+      csv += `Finansiella intäkter;Summa finansiella intäkter;${finansiellaIntakterSum[year]}\n`;
+    }
+
+    // Finansiella kostnader
+    if (data.finansiellaKostnader && data.finansiellaKostnader.length > 0) {
+      data.finansiellaKostnader.forEach((grupp) => {
+        grupp.konton.forEach((konto) => {
+          csv += `Finansiella kostnader;${konto.kontonummer} – ${konto.beskrivning};${konto[year]}\n`;
+        });
+        csv += `Finansiella kostnader;Summa ${grupp.namn.toLowerCase()};${grupp.summering[year]}\n`;
+      });
+      csv += `Finansiella kostnader;Summa finansiella kostnader;${finansiellaKostnaderSum[year]}\n`;
+    }
+
+    // Resultat efter finansiella poster
+    csv += `Resultat efter finansiella poster;Resultat efter finansiella poster;${resultatEfterFinansiella[year]}\n`;
+
+    // Beräknat resultat
+    csv += `Beräknat resultat;Beräknat resultat;${resultat[year]}\n`;
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "resultatrapport.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  //#endregion
 
   return (
     <MainLayout>
@@ -265,23 +354,63 @@ export default function Resultatrapport({ initialData, företagsnamn, organisati
           <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
         </div>
 
+        {/* Rörelsens intäkter */}
+        <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens intäkter</h2>
         {renderGrupper(data.intakter, true, "💰")}
         <Totalrad label="Summa rörelsens intäkter" values={{ [year]: intaktsSum[year] ?? 0 }} />
 
+        {/* Rörelsens kostnader */}
         <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens kostnader</h2>
         {renderGrupper(data.rorelsensKostnader, false, "💸")}
-        <Totalrad label="Summa rörelsens kostnader" values={{ [year]: rorelsensSum[year] ?? 0 }} />
+        <Totalrad label="Summa rörelsens kostnader" values={{ [year]: -rorelsensSum[year] }} />
 
-        <h2 className="text-xl font-semibold mt-10 mb-4">Finansiella kostnader</h2>
-        {renderGrupper(data.finansiellaKostnader, false, "💸")}
+        {/* Rörelsens resultat */}
+        <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens resultat</h2>
         <Totalrad
-          label="Summa finansiella kostnader"
-          values={{ [year]: finansiellaSum[year] ?? 0 }}
+          label="Summa rörelsens resultat"
+          values={{ [year]: rorelsensResultat[year] ?? 0 }}
         />
 
-        <h2 className="text-xl font-semibold mt-10 mb-4">Resultat</h2>
-        <Totalrad label="Beräknat resultat" values={{ [year]: resultat[year] }} />
+        {/* Finansiella intäkter */}
+        {data.finansiellaIntakter && data.finansiellaIntakter.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mt-10 mb-4">Finansiella intäkter</h2>
+            {renderGrupper(data.finansiellaIntakter, false, "💰")}
+            <Totalrad
+              label="Summa finansiella intäkter"
+              values={{ [year]: finansiellaIntakterSum[year] ?? 0 }}
+            />
+          </>
+        )}
+
+        {/* Finansiella kostnader */}
+        {data.finansiellaKostnader && data.finansiellaKostnader.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mt-10 mb-4">Finansiella kostnader</h2>
+            {renderGrupper(data.finansiellaKostnader, false, "💸")}
+            <Totalrad
+              label="Summa finansiella kostnader"
+              values={{ [year]: finansiellaKostnaderSum[year] ?? 0 }}
+            />
+          </>
+        )}
+
+        {/* Resultat efter finansiella poster */}
+        <h2 className="text-xl font-semibold mt-10 mb-4">Resultat efter finansiella poster</h2>
+        <Totalrad
+          label="Resultat efter finansiella poster"
+          values={{ [year]: resultatEfterFinansiella[year] ?? 0 }}
+        />
+
+        {/* Beräknat resultat */}
+        <h2 className="text-xl font-semibold mt-10 mb-4">Beräknat resultat</h2>
+        <Totalrad label="Beräknat resultat" values={{ [year]: resultat[year] ?? 0 }} />
       </div>
+
+      {/* Modal för verifikat */}
+      {verifikatId && (
+        <VerifikatModal transaktionsId={verifikatId} onClose={() => setVerifikatId(null)} />
+      )}
     </MainLayout>
   );
 }

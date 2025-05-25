@@ -59,7 +59,7 @@ export default function InkopVarorEU25({
         debet: moms,
         kredit: 0,
       },
-      "4010": { label: "Inköp material och varor", debet: belopp ?? 0, kredit: 0 },
+      "4000": { label: "Inköp material och varor", debet: belopp ?? 0, kredit: 0 },
       "4515": {
         label: "Inköp av varor från annat EU-land, 25 %",
         debet: belopp ?? 0,

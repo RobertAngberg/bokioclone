@@ -112,7 +112,7 @@ export default function InkopTjansterSverigeOmvand({
               <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
               <DatePicker
                 className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
-                selected={ÅÅÅÅMMDDTillDate(transaktionsdatum ?? "")}
+                selected={transaktionsdatum ? ÅÅÅÅMMDDTillDate(transaktionsdatum) : null}
                 onChange={(date) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(date))}
                 dateFormat="yyyy-MM-dd"
                 locale="sv"

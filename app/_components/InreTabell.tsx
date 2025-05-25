@@ -1,7 +1,9 @@
 // #region Huvud
 "use client";
 
-type Row = { [key: string]: string | number | null | undefined };
+type Row = {
+  [key: string]: string | number | null | undefined | React.ReactNode;
+};
 
 type Props = {
   rows: Row[];

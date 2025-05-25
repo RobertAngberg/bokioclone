@@ -49,7 +49,7 @@ export default function InkopVarorUtanfEU({
   function gåTillSteg3() {
     const extrafältObj = {
       "1930": { label: "Företagskonto / affärskonto", debet: 0, kredit: belopp ?? 0 },
-      "4010": { label: "Inköp material och varor", debet: belopp ?? 0, kredit: 0 },
+      "4000": { label: "Inköp material och varor", debet: belopp ?? 0, kredit: 0 },
       "4500": { label: "Inköp utanför Sverige", debet: belopp ?? 0, kredit: 0 },
       "4598": { label: "Justering, omvänd moms", debet: 0, kredit: belopp ?? 0 },
     };
