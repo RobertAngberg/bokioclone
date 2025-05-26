@@ -7,10 +7,13 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { sv } from "date-fns/locale";
 import TextFält from "../_components/TextFält";
+import { hämtaSenasteBetalningsmetod } from "./actions"; // ✅ Uppdaterad import
+import { useSession } from "next-auth/react";
 //#endregion
 
 export default function Betalning() {
   const { formData, setFormData } = useFakturaContext();
+  const { data: session } = useSession();
 
   registerLocale("sv", sv);
 
@@ -29,41 +32,64 @@ export default function Betalning() {
     return out;
   };
 
-  // Sätter standardvärden för fakturadatum, betalningsvillkor och dröjsmålsränta vid första render.
-  // Om något av dessa saknas sätts de till: dagens datum, 30 dagar betalningsvillkor och 12% ränta.
-  // Förfallodatum beräknas automatiskt baserat på fakturadatum + betalningsvillkor.
+  // ✅ Sätter standardvärden + hämtar SENASTE betalningsmetod
   useEffect(() => {
-    const todayISO = new Date().toISOString().slice(0, 10);
-    setFormData((prev) => {
-      const updated = { ...prev };
-      let changed = false;
+    const initializeDefaults = async () => {
+      const todayISO = new Date().toISOString().slice(0, 10);
 
-      if (!prev.fakturadatum) {
-        updated.fakturadatum = todayISO;
-        changed = true;
-      }
-      if (!prev.betalningsvillkor) {
-        updated.betalningsvillkor = "30";
-        changed = true;
-      }
-      if (!prev.drojsmalsranta) {
-        updated.drojsmalsranta = "12";
-        changed = true;
+      // ✅ Hämta SENASTE betalningsmetod för denna användare
+      let senasteBetalning = { betalningsmetod: null, nummer: null };
+      if (session?.user?.id) {
+        senasteBetalning = await hämtaSenasteBetalningsmetod(session.user.id);
       }
 
-      if (changed) {
-        const fd = parseISODate(updated.fakturadatum);
-        if (fd) {
-          updated.forfallodatum = addDays(fd, parseInt(updated.betalningsvillkor, 10))
-            .toISOString()
-            .slice(0, 10);
+      setFormData((prev) => {
+        const updated = { ...prev };
+        let changed = false;
+
+        // Standard datum/villkor
+        if (!prev.fakturadatum) {
+          updated.fakturadatum = todayISO;
+          changed = true;
         }
-        return updated;
-      }
+        if (!prev.betalningsvillkor) {
+          updated.betalningsvillkor = "30";
+          changed = true;
+        }
+        if (!prev.drojsmalsranta) {
+          updated.drojsmalsranta = "12";
+          changed = true;
+        }
 
-      return prev;
-    });
-  }, [setFormData]);
+        // ✅ Sätt senaste betalningsmetod om ingen är vald
+        if (!prev.betalningsmetod && senasteBetalning.betalningsmetod) {
+          updated.betalningsmetod = senasteBetalning.betalningsmetod;
+          changed = true;
+        }
+        if (!prev.nummer && senasteBetalning.nummer) {
+          updated.nummer = senasteBetalning.nummer;
+          changed = true;
+        }
+
+        if (changed) {
+          const fd = parseISODate(updated.fakturadatum);
+          if (fd) {
+            updated.forfallodatum = addDays(fd, parseInt(updated.betalningsvillkor, 10))
+              .toISOString()
+              .slice(0, 10);
+          }
+          return updated;
+        }
+
+        return prev;
+      });
+    };
+
+    // ✅ Kör bara när session är laddad
+    if (session?.user?.id) {
+      initializeDefaults();
+    }
+  }, [setFormData, session?.user?.id]);
 
   const fakturadatumDate = parseISODate(formData.fakturadatum);
   const fallbackForfallo = fakturadatumDate
@@ -89,12 +115,14 @@ export default function Betalning() {
       [field]: d ? d.toISOString().slice(0, 10) : "",
     }));
 
-  // FIX: Acceptera både input och textarea för TextFält
   const onText = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const onSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+  // ✅ Kolla om senaste betalningsmetod är laddad
+  const harSenasteBetalning = formData.betalningsmetod && formData.nummer && session?.user?.id;
 
   return (
     <div className="space-y-6">

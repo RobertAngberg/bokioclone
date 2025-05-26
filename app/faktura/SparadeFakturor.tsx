@@ -1,8 +1,6 @@
 //#region Huvud
 "use client";
 
-import { useState } from "react";
-
 interface Props {
   onSelectCustomer: (kund: any) => void;
   onSelectInvoice: (id: number) => void;
@@ -13,19 +11,21 @@ interface Props {
   fakturor: any[];
   artiklar?: any[];
   onSelectArtiklar?: (artiklar: any[]) => void;
+  activeInvoiceId?: number;
 }
 //#endregion
 
-export default function Existerande({ onSelectInvoice, onDeleteInvoice, fakturor }: Props) {
-  const [showFakturaMsg, setShowFakturaMsg] = useState(false);
-  const [fadeOutFakturaMsg, setFadeOutFakturaMsg] = useState(false);
+export default function SparadeFakturor({
+  onSelectInvoice,
+  onDeleteInvoice,
+  fakturor,
+  activeInvoiceId,
+}: Props) {
+  // ✅ Ta bort animation state - behövs inte längre
 
   const handleSelectInvoice = (id: number) => {
     onSelectInvoice(id);
-    setShowFakturaMsg(true);
-    setFadeOutFakturaMsg(false);
-    setTimeout(() => setFadeOutFakturaMsg(true), 700);
-    setTimeout(() => setShowFakturaMsg(false), 1300);
+    // ✅ Ta bort animation-logik - behövs inte längre
   };
 
   return (
@@ -34,15 +34,7 @@ export default function Existerande({ onSelectInvoice, onDeleteInvoice, fakturor
       <div>
         <h3 className="text-xl font-semibold mb-2">🧾 Fakturor</h3>
 
-        {showFakturaMsg && (
-          <div
-            className={`mb-2 text-sm transition-opacity duration-500 ${
-              fadeOutFakturaMsg ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            ✔️ Faktura laddad
-          </div>
-        )}
+        {/* ✅ Ta bort temporär animation - vi har permanent status nu */}
 
         {fakturor.length === 0 ? (
           <p className="text-gray-400 italic">Inga fakturor hittades.</p>
@@ -57,10 +49,14 @@ export default function Existerande({ onSelectInvoice, onDeleteInvoice, fakturor
                   })
                 : "";
 
+              const isActive = activeInvoiceId === faktura.id;
+
               return (
                 <li
                   key={faktura.id}
-                  className="bg-slate-900 border border-slate-700 rounded px-4 py-2 hover:bg-slate-800"
+                  className={`bg-slate-900 border rounded px-4 py-2 hover:bg-slate-800 ${
+                    isActive ? "border-green-500" : "border-slate-700"
+                  }`}
                 >
                   <div className="flex justify-between">
                     <div className="cursor-pointer" onClick={() => handleSelectInvoice(faktura.id)}>
@@ -68,6 +64,11 @@ export default function Existerande({ onSelectInvoice, onDeleteInvoice, fakturor
                         #{faktura.fakturanummer} – {faktura.kundnamn ?? "Okänd kund"}
                       </div>
                       <div className="text-gray-400 text-sm">{datum}</div>
+                      {isActive && (
+                        <div className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                          ✅ Inladdad
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => onDeleteInvoice(faktura.id)}

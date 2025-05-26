@@ -39,6 +39,9 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
   const [artiklar, setArtiklar] = useState<Artikel[]>([]);
   const [isPending, startTransition] = useTransition();
 
+  // ✅ Spåra aktiv faktura
+  const currentInvoiceId = formData.id ? parseInt(formData.id) : undefined;
+
   // Hämta artiklar vid första render och uppdatera fakturor vid custom-event
   useInitFakturaData(setArtiklar, setFakturor);
 
@@ -215,6 +218,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
             kunder={kunder}
             fakturor={fakturor}
             artiklar={artiklar}
+            activeInvoiceId={currentInvoiceId} // ✅ Skicka aktuell faktura-ID
           />
         </AnimeradFlik>
 
