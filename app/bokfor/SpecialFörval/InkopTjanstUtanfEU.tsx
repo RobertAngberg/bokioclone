@@ -149,7 +149,7 @@ export default function InkopTjanstUtanfEU({
               kategori: "",
               konton: [],
               momssats: 0.25,
-              specialtyp: "inkoptjanstutanfEU",
+              specialtyp: "InkopTjanstUtanfEU",
             }}
             setCurrentStep={setCurrentStep}
             extrafält={extrafält}

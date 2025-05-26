@@ -86,10 +86,11 @@ export default function DrojsmalsrantaLevFakt({
               <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
               <DatePicker
                 className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
-                selected={ÅÅÅÅMMDDTillDate(transaktionsdatum ?? "")}
+                selected={transaktionsdatum ? ÅÅÅÅMMDDTillDate(transaktionsdatum) : null} // ✅ FIXA: Hantera tom sträng
                 onChange={(d) => setTransaktionsdatum(dateTillÅÅÅÅMMDD(d))}
                 dateFormat="yyyy-MM-dd"
                 locale="sv"
+                placeholderText="Välj datum" // ✅ Placeholder
                 required
               />
 

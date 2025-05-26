@@ -45,11 +45,13 @@ export default function Importmoms({
   extrafält,
   setExtrafält,
 }: Props) {
+  // #region State och oanvänd momsvariabel...
   const [tull, setTull] = useState("");
   const [fiktiv, setFiktiv] = useState("");
   const [ovrigt, setOvrigt] = useState("");
   const giltigt = !!belopp && !!transaktionsdatum;
   const moms = parseFloat((parseFloat(tull || "0") * 0.25).toFixed(2));
+  // #endregion
 
   function gåTillSteg3() {
     const extrafältObj = {
@@ -77,7 +79,7 @@ export default function Importmoms({
       },
       "5720": {
         label: "Tull- och speditionskostnader m.m.",
-        debet: parseFloat(tull || "0") * 0.8,
+        debet: parseFloat(tull || "0") * 0.8 + parseFloat(ovrigt || "0"), // ✅ LÄGG TILL ÖVRIGA!
         kredit: 0,
       },
     };
@@ -93,6 +95,7 @@ export default function Importmoms({
           <BakåtPil onClick={() => setCurrentStep?.(1)} />
 
           <h1 className="mb-6 text-3xl text-center">Steg 2: Importmoms</h1>
+
           <div className="flex flex-col-reverse justify-between max-w-5xl mx-auto px-4 md:flex-row">
             <div className="w-full md:w-[40%] bg-slate-900 border border-gray-700 rounded-xl p-6">
               <LaddaUppFil
@@ -103,27 +106,50 @@ export default function Importmoms({
                 setBelopp={setBelopp}
               />
 
+              <div className="mb-4 p-4 border border-gray-700 rounded-lg">
+                <p className="text-sm text-gray-400">
+                  <strong>💡 Importmoms steg-för-steg:</strong>
+                  <br />
+                  <br />
+                  1️ - Du köper varor utanför EU (ex. 20 000 kr) - ingen moms betalas till säljaren
+                  <br />
+                  <br />
+                  2 - Transportföretaget skickar tullfaktura (ex. 300 kr totalt)
+                  <br />
+                  <br />3 - Fyll i: Total tullfaktura (300), Tull/frakt inkl. moms (100), Fiktiv
+                  moms 25% av varans värde (5000), Övriga kostnader utan moms (200)
+                </p>
+              </div>
+
               <TextFält
-                label="Totalt belopp"
+                label="Totalt belopp att betala in"
                 name="belopp"
                 value={belopp ?? ""}
                 onChange={(e) => setBelopp(Number(e.target.value))}
                 required
               />
               <TextFält
-                label="Tull och spedition m.m. inkl. svensk moms"
+                label="Tull och spedition m.m. inkl. moms"
                 name="tull"
                 value={tull}
                 onChange={(e) => setTull(e.target.value)}
                 required
               />
               <TextFält
-                label="Fiktiv moms"
+                label="Ingående fiktiv moms på förvärv från utlandet"
                 name="fiktiv"
                 value={fiktiv}
                 onChange={(e) => setFiktiv(e.target.value)}
                 required
               />
+              <TextFält
+                label="Övriga skatter och tillval utan moms"
+                name="ovrigt"
+                value={ovrigt}
+                onChange={(e) => setOvrigt(e.target.value)}
+                required
+              />
+
               <label className="block text-sm font-medium text-white mb-2">Betaldatum</label>
               <DatePicker
                 className="w-full p-2 mb-4 rounded bg-slate-900 text-white border border-gray-700"
