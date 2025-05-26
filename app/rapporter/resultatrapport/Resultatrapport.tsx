@@ -7,7 +7,7 @@ import MainLayout from "../../_components/MainLayout";
 import Totalrad from "../../_components/Totalrad";
 import InreTabell from "../../_components/InreTabell";
 import Knapp from "../../_components/Knapp";
-import VerifikatModal from "./VerifikatModal";
+import VerifikatModal from "../../_components/VerifikatModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -15,6 +15,7 @@ type Konto = {
   kontonummer: string;
   beskrivning: string;
   transaktion_id?: number;
+  verifikatNummer?: string; // Lägg till denna
   [year: string]: number | string | undefined;
 };
 
@@ -64,6 +65,14 @@ export default function Resultatrapport({ initialData }: Props) {
       .replace(/[^0-9,.\-\s]/g, "") // Tog bort 'a-zA-Z' och lade till '\s' för mellanslag
       .replace(/\s+/g, " ")
       .trim();
+
+  const formatSEKforPDF = (val: number) => {
+    if (val === 0) return "0,00";
+    const isNegative = val < 0;
+    const absVal = Math.abs(val);
+    const formatted = absVal.toFixed(2).replace(".", ",");
+    return isNegative ? `-${formatted}` : formatted;
+  };
   //#endregion
 
   //#region Data Calculations
@@ -99,18 +108,31 @@ export default function Resultatrapport({ initialData }: Props) {
   //#region Render Functions
   const renderGrupper = (rader: KontoRad[] = [], isIntakt = false, icon?: string) =>
     rader.map((grupp) => (
-      <AnimeradFlik key={grupp.namn} title={grupp.namn} icon={icon || (isIntakt ? "💰" : "💸")}>
+      <AnimeradFlik
+        key={grupp.namn}
+        title={grupp.namn}
+        icon={icon || (isIntakt ? "💰" : "💸")}
+        visaSummaDirekt={formatSEK(isIntakt ? -grupp.summering[year] : grupp.summering[year])}
+      >
         <InreTabell
           rows={grupp.konton.map((konto) => ({
             Konto: `${konto.kontonummer} – ${konto.beskrivning}`,
             "": (
               <div className="text-center">
                 <button
-                  className="underline text-blue-400 hover:text-blue-300 transition-colors"
-                  onClick={() => setVerifikatId(konto.transaktion_id as number)}
+                  className={`underline transition-colors ${
+                    konto.transaktion_id
+                      ? "text-blue-400 hover:text-blue-300 cursor-pointer"
+                      : "text-gray-500 cursor-not-allowed"
+                  }`}
+                  onClick={() => {
+                    if (konto.transaktion_id) {
+                      setVerifikatId(konto.transaktion_id);
+                    }
+                  }}
                   disabled={!konto.transaktion_id}
                 >
-                  Visa verifikat
+                  {konto.verifikatNummer || `V${konto.transaktion_id}` || "Inget verifikat"}
                 </button>
               </div>
             ),
@@ -158,7 +180,7 @@ export default function Resultatrapport({ initialData }: Props) {
       autoTable(doc, {
         startY: y,
         head: [["Konto", "Belopp"]],
-        body: rows.map((row) => [row.label, formatSEK(row.value)]),
+        body: rows.map((row) => [row.label, formatSEKforPDF(row.value)]),
         theme: "grid",
         styles: {
           fontSize: 10,
@@ -177,7 +199,7 @@ export default function Resultatrapport({ initialData }: Props) {
 
       // Bold summa
       doc.setFont("helvetica", "bold");
-      doc.text(`${sumLabel}: ${formatSEK(sumValue)}`, 14, y);
+      doc.text(`${sumLabel}: ${formatSEKforPDF(sumValue)}`, 14, y);
       doc.setFont("helvetica", "normal");
       y += 15; // Mer margin under summor
     };
@@ -188,18 +210,12 @@ export default function Resultatrapport({ initialData }: Props) {
         grupp.namn,
         grupp.konton.map((konto) => ({
           label: `${konto.kontonummer} – ${konto.beskrivning}`,
-          value: -(konto[year] as number), // isIntakt = true
+          value: -(konto[year] as number), // Korrekt: isIntakt = true
         })),
         `Summa ${grupp.namn.toLowerCase()}`,
-        -grupp.summering[year] // isIntakt = true
+        -grupp.summering[year] // Korrekt: isIntakt = true
       );
     });
-
-    y += 10;
-    doc.setFont("helvetica", "bold");
-    doc.text(`Summa rörelsens intäkter: ${formatSEK(intaktsSum[year])}`, 14, y);
-    doc.setFont("helvetica", "normal");
-    y += 20;
 
     // Rörelsens kostnader - använd samma värden som visas i UI
     data.rorelsensKostnader.forEach((grupp) => {
@@ -207,22 +223,22 @@ export default function Resultatrapport({ initialData }: Props) {
         grupp.namn,
         grupp.konton.map((konto) => ({
           label: `${konto.kontonummer} – ${konto.beskrivning}`,
-          value: konto[year] as number, // isIntakt = false
+          value: konto[year] as number, // Korrekt: isIntakt = false
         })),
         `Summa ${grupp.namn.toLowerCase()}`,
-        grupp.summering[year] // isIntakt = false
+        grupp.summering[year] // Korrekt: isIntakt = false
       );
     });
 
     y += 10;
     doc.setFont("helvetica", "bold");
-    doc.text(`Summa rörelsens kostnader: ${formatSEK(-rorelsensSum[year])}`, 14, y);
+    doc.text(`Summa rörelsens kostnader: ${formatSEKforPDF(-rorelsensSum[year])}`, 14, y);
     doc.setFont("helvetica", "normal");
     y += 20;
 
     // Rörelsens resultat
     doc.setFont("helvetica", "bold");
-    doc.text(`Summa rörelsens resultat: ${formatSEK(rorelsensResultat[year])}`, 14, y);
+    doc.text(`Summa rörelsens resultat: ${formatSEKforPDF(rorelsensResultat[year])}`, 14, y);
     doc.setFont("helvetica", "normal");
     y += 20;
 
@@ -263,7 +279,11 @@ export default function Resultatrapport({ initialData }: Props) {
 
       y += 10;
       doc.setFont("helvetica", "bold");
-      doc.text(`Summa finansiella kostnader: ${formatSEK(finansiellaKostnaderSum[year])}`, 14, y);
+      doc.text(
+        `Summa finansiella kostnader: ${formatSEKforPDF(finansiellaKostnaderSum[year])}`,
+        14,
+        y
+      );
       doc.setFont("helvetica", "normal");
       y += 20;
     }
@@ -271,14 +291,14 @@ export default function Resultatrapport({ initialData }: Props) {
     // Resultat efter finansiella poster
     doc.setFont("helvetica", "bold");
     doc.text(
-      `Resultat efter finansiella poster: ${formatSEK(resultatEfterFinansiella[year])}`,
+      `Resultat efter finansiella poster: ${formatSEKforPDF(resultatEfterFinansiella[year])}`,
       14,
       y
     );
     y += 15;
 
     // Beräknat resultat
-    doc.text(`Beräknat resultat: ${formatSEK(resultat[year])}`, 14, y);
+    doc.text(`Beräknat resultat: ${formatSEKforPDF(resultat[year])}`, 14, y);
     doc.setFont("helvetica", "normal");
 
     doc.save("resultatrapport.pdf");
@@ -349,10 +369,6 @@ export default function Resultatrapport({ initialData }: Props) {
     <MainLayout>
       <div className="mx-auto px-4 text-white">
         <h1 className="text-3xl text-center mb-8">Resultatrapport</h1>
-        <div className="flex gap-4 mb-8 justify-center">
-          <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
-          <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
-        </div>
 
         {/* Rörelsens intäkter */}
         <h2 className="text-xl font-semibold mt-10 mb-4">Rörelsens intäkter</h2>
@@ -411,6 +427,11 @@ export default function Resultatrapport({ initialData }: Props) {
       {verifikatId && (
         <VerifikatModal transaktionsId={verifikatId} onClose={() => setVerifikatId(null)} />
       )}
+
+      <div className="flex mt-8 gap-4 justify-end">
+        <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
+        <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
+      </div>
     </MainLayout>
   );
 }

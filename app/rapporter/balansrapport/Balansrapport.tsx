@@ -7,7 +7,7 @@ import AnimeradFlik from "../../_components/AnimeradFlik";
 import Totalrad from "../../_components/Totalrad";
 import InreTabell from "../../_components/InreTabell";
 import Knapp from "../../_components/Knapp";
-import VerifikatModal from "../resultatrapport/VerifikatModal";
+import VerifikatModal from "../../_components/VerifikatModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -218,21 +218,21 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
 
     if (konton.length === 0) {
       return (
-        <AnimeradFlik title={titel} icon={icon}>
+        <AnimeradFlik title={titel} icon={icon} visaSummaDirekt={formatSEK(summa)}>
           <InreTabell rows={[]} totalLabel={`Summa ${titel.toLowerCase()}`} totalValue={summa} />
         </AnimeradFlik>
       );
     }
 
     return (
-      <AnimeradFlik title={titel} icon={icon}>
+      <AnimeradFlik title={titel} icon={icon} visaSummaDirekt={formatSEK(summa)}>
         <div className="space-y-4">
           {konton.map((konto) => (
             <AnimeradFlik
               key={konto.kontonummer}
               title={`${konto.kontonummer} – ${konto.beskrivning}`}
               icon=""
-              forceOpen={false}
+              visaSummaDirekt={formatSEK(konto.saldo)}
             >
               {(() => {
                 // Skapa rader för transaktioner
@@ -315,7 +315,7 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
     ];
 
     return (
-      <AnimeradFlik title={titel} icon={icon}>
+      <AnimeradFlik title={titel} icon={icon} visaSummaDirekt={formatSEK(totalSumma)}>
         <div className="space-y-2">
           <InreTabell rows={rows} />
           <div className="text-sm text-white font-semibold mt-4 text-right bg-gray-800 p-2 rounded">
@@ -345,10 +345,6 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
     <MainLayout>
       <div className="mx-auto px-4 text-white">
         <h1 className="text-3xl text-center mb-8">Balansrapport</h1>
-        <div className="flex gap-4 mb-8 justify-center">
-          <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
-          <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
-        </div>
 
         <h2 className="text-xl mb-4 border-b border-gray-500 pb-1">Tillgångar</h2>
         {renderaKategori("Anläggningstillgångar", "🏗️", anläggningstillgångar)}
@@ -379,6 +375,11 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
       {verifikatId && (
         <VerifikatModal transaktionsId={verifikatId} onClose={() => setVerifikatId(null)} />
       )}
+
+      <div className="flex mt-8 gap-4 justify-end">
+        <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
+        <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
+      </div>
     </MainLayout>
   );
 }

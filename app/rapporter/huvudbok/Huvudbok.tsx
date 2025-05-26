@@ -6,7 +6,7 @@ import MainLayout from "../../_components/MainLayout";
 import AnimeradFlik from "../../_components/AnimeradFlik";
 import InreTabell from "../../_components/InreTabell";
 import Knapp from "../../_components/Knapp";
-import VerifikatModal from "../resultatrapport/VerifikatModal";
+import VerifikatModal from "../../_components/VerifikatModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -218,11 +218,6 @@ export default function Huvudbok({ initialData, företagsnamn, organisationsnumm
   return (
     <MainLayout>
       <h1 className="mb-8 text-3xl text-center text-white">Huvudbok</h1>
-      <div className="flex mb-6 gap-4">
-        <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
-        <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
-      </div>
-      {/* Din vanliga UI */}
       <div>
         <div className="space-y-6">
           {(() => {
@@ -246,19 +241,22 @@ export default function Huvudbok({ initialData, företagsnamn, organisationsnumm
               const showHeading = section !== lastSection;
               lastSection = section;
 
+              // Beräkna slutsaldo för detta konto
+              let slutSaldo = 0;
+              items.forEach((item) => {
+                slutSaldo += (item.debet ?? 0) - (item.kredit ?? 0);
+              });
+
               return (
                 <div key={konto}>
                   {showHeading && (
                     <h2 className="text-xl text-white font-semibold mb-2">{section}</h2>
                   )}
-                  <AnimeradFlik title={konto} icon="📂" forceOpen={true}>
+                  <AnimeradFlik title={konto} icon="📂" visaSummaDirekt={formatSEK(slutSaldo)}>
                     {(() => {
                       let saldo = 0;
                       const rows = items.map((item) => {
                         saldo += (item.debet ?? 0) - (item.kredit ?? 0);
-
-                        // Debug: kolla om transaktion_id finns
-                        console.log("Item transaktion_id:", item.transaktion_id);
 
                         return {
                           Datum: item.transaktionsdatum,
@@ -319,6 +317,11 @@ export default function Huvudbok({ initialData, företagsnamn, organisationsnumm
           }}
         />
       )}
+
+      <div className="flex mt-6 gap-4 justify-end">
+        <Knapp text="Ladda ner PDF" onClick={handleExportPDF} />
+        <Knapp text="Ladda ner CSV" onClick={handleExportCSV} />
+      </div>
     </MainLayout>
   );
 }

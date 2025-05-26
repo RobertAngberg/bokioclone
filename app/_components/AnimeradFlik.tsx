@@ -6,24 +6,16 @@ export default function AnimeradFlik({
   title,
   icon,
   children,
-  forceOpen = false,
+  visaSummaDirekt,
 }: {
   title: string;
   icon: string;
   children: React.ReactNode;
-  forceOpen?: boolean;
+  visaSummaDirekt?: string;
 }) {
-  const [open, setOpen] = useState(forceOpen);
+  const [open, setOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(forceOpen ? "auto" : "0px");
-
-  // Om forceOpen ändras, öppna men låt användaren stänga själv
-  useEffect(() => {
-    if (forceOpen) {
-      setOpen(true);
-      setHeight("auto");
-    }
-  }, [forceOpen]);
+  const [height, setHeight] = useState("0px");
 
   const toggle = () => {
     if (!open && contentRef.current) {
@@ -63,12 +55,17 @@ export default function AnimeradFlik({
         className="w-full px-4 py-3 text-lg font-semibold flex justify-between bg-slate-900 hover:bg-slate-800 transition"
         type="button"
         tabIndex={0}
-        style={{ cursor: "pointer", opacity: forceOpen ? 0.95 : 1 }}
+        style={{ cursor: "pointer" }}
       >
         <span>
           {icon} {title}
         </span>
-        <span className={`transition-transform duration-300 ${open ? "rotate-90" : ""}`}>▼</span>
+        <div className="flex items-center gap-3">
+          {visaSummaDirekt && (
+            <span className="text-sm font-bold text-white">{visaSummaDirekt}</span>
+          )}
+          <span className={`transition-transform duration-300 ${open ? "rotate-90" : ""}`}>▼</span>
+        </div>
       </button>
       <div
         ref={contentRef}
