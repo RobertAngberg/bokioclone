@@ -2,11 +2,12 @@ import Bokför from "./Bokför";
 import { fetchFavoritforval } from "./actions";
 
 export default async function Page() {
-  // Simulerad fördröjning för att ge plats åt loading.tsx
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  // Starta ALLA asynkrona operationer samtidigt
+  const delayPromise = new Promise((resolve) => setTimeout(resolve, 400));
+  const favoritFörvalenPromise = fetchFavoritforval();
 
-  // Hämta favoritförval innan komponenten laddas
-  const favoritFörvalen = await fetchFavoritforval();
+  // Promise.all väntar på att alla blir klara (delay + data hämtas parallellt)
+  const [, favoritFörvalen] = await Promise.all([delayPromise, favoritFörvalenPromise]);
 
   return <Bokför favoritFörvalen={favoritFörvalen} />;
 }

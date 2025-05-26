@@ -77,10 +77,10 @@ export default function Balansrapport({ initialData, företagsnamn, organisation
       differens,
     };
   }
-  //#endregion
 
   const { year, tillgangar, skulderOchEgetKapital, sumTillgangar, sumSkulderEK, differens } =
     skapaBalansSammanställning(initialData);
+  //#endregion
 
   //#region Export Functions
   const handleExportPDF = () => {

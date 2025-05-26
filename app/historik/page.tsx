@@ -4,13 +4,17 @@ import { fetchTransaktioner } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  await new Promise((r) => setTimeout(r, 400));
+  // Starta ALLA asynkrona operationer samtidigt
+  const delayPromise = new Promise((r) => setTimeout(r, 400));
 
   const currentYear = new Date().getFullYear();
   const fromYear = currentYear - 4;
 
-  // Hämta ALLA transaktioner från senaste 5 åren
-  const result = await fetchTransaktioner(`${fromYear}`);
+  // Hämta ALLA transaktioner från senaste 5 åren (startar parallellt med delay)
+  const dataPromise = fetchTransaktioner(`${fromYear}`);
+
+  // Promise.all väntar på att alla blir klara (delay + data hämtas parallellt)
+  const [, result] = await Promise.all([delayPromise, dataPromise]);
 
   const historyData =
     result.success && Array.isArray(result.data)

@@ -3,14 +3,16 @@ import { hamtaResultatrapport, fetchFöretagsprofil } from "./actions";
 import { auth } from "@/auth";
 
 export default async function Page() {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-
+  // Dessa startar samtidigt (parallellt):
+  const delayPromise = new Promise((resolve) => setTimeout(resolve, 400));
   const session = await auth();
   const userId = session?.user?.id;
-  const profilPromise = userId ? fetchFöretagsprofil(Number(userId)) : Promise.resolve(null);
 
+  const profilPromise = userId ? fetchFöretagsprofil(Number(userId)) : Promise.resolve(null);
   const dataPromise = hamtaResultatrapport();
-  const [data, profil] = await Promise.all([dataPromise, profilPromise]);
+
+  // Promise.all väntar på att alla blir klara
+  const [, data, profil] = await Promise.all([delayPromise, dataPromise, profilPromise]);
 
   return (
     <Resultatrapport

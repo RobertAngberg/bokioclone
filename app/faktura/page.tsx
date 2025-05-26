@@ -5,6 +5,7 @@ import { hämtaSparadeKunder, hämtaSparadeFakturor, hämtaSparadeArtiklar } fro
 //#endregion
 
 export default async function Page() {
+  // Starta alla asynkrona operationer samtidigt
   // _ = det här värdet används inte
   const [_, kunder, fakturor, artiklar] = await Promise.all([
     new Promise((r) => setTimeout(r, 400)),

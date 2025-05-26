@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchTransactionDetails } from "./actions";
+
+// OBS...
+import { fetchTransactionDetails } from "../rapporter/resultatrapport/actions";
 
 interface VerifikatModalProps {
   transaktionsId: number;

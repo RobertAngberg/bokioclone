@@ -1,9 +1,8 @@
-//#region
+//#region Imports & Types
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Tabell, { ColumnDefinition } from "../../_components/Tabell";
-import { getMomsrapport } from "./actions";
 import Dropdown from "../../_components/Dropdown";
 
 type MomsRad = {
@@ -11,26 +10,39 @@ type MomsRad = {
   beskrivning: string;
   belopp: number;
 };
+
+interface Props {
+  initialData: MomsRad[];
+}
 //#endregion
 
-const årLista = ["2023", "2024", "2025"];
-const kvartalLista = ["Hela året", "Q1", "Q2", "Q3", "Q4"];
-
-export default function Momsrapport() {
-  // Hämtar momsrapportdata baserat på valt år och kvartal, med tillhörande state
-  const { år, setÅr, kvartal, setKvartal, data } = useMomsrapportData();
-
+export default function Momsrapport({ initialData }: Props) {
+  //#region State
+  const [år, setÅr] = useState("2025");
+  const [kvartal, setKvartal] = useState("Hela året");
   const [activeId, setActiveId] = useState<string | number | null>(null);
+  //#endregion
 
-  const get = (fält: string) => data.find((r) => r.fält === fält)?.belopp ?? 0;
-  const ruta49 = get("49");
+  //#region Constants
+  const årLista = ["2023", "2024", "2025"];
+  const kvartalLista = ["Hela året", "Q1", "Q2", "Q3", "Q4"];
+  //#endregion
+
+  //#region Helper Functions
+  const get = (fält: string) => initialData.find((r) => r.fält === fält)?.belopp ?? 0;
   const sum = (...fält: string[]) => fält.reduce((acc, f) => acc + get(f), 0);
+  //#endregion
+
+  //#region Calculations
+  const ruta49 = get("49");
   const utgåendeMoms = sum("10", "11", "12", "30", "31", "32", "60", "61", "62");
   const ingåendeMoms = get("48");
   const momsAttBetalaEllerFaTillbaka = utgåendeMoms - ingåendeMoms;
   const diff = Math.abs(momsAttBetalaEllerFaTillbaka - ruta49);
   const ärKorrekt = diff < 1;
+  //#endregion
 
+  //#region Data Configuration
   const fullData: MomsRad[] = [
     { fält: "05", beskrivning: "Momspliktig försäljning", belopp: get("05") },
     { fält: "06", beskrivning: "Momspliktiga uttag", belopp: get("06") },
@@ -99,7 +111,7 @@ export default function Momsrapport() {
 
   const spawnaBlock = (titel: string, fält: string[]) => (
     <div className="min-w-[49%] px-2">
-      <h2 className="font-bold mb-2">{titel}</h2>
+      <h2 className="font-bold mb-2 text-white">{titel}</h2>
       <Tabell
         data={fullData.filter((rad) => fält.includes(rad.fält))}
         columns={columns}
@@ -109,6 +121,7 @@ export default function Momsrapport() {
       />
     </div>
   );
+  //#endregion
 
   return (
     <div className="px-4">
@@ -122,7 +135,7 @@ export default function Momsrapport() {
         </div>
       )}
 
-      <h1 className="text-3xl text-center mb-4">
+      <h1 className="text-3xl text-center mb-4 text-white">
         Momsrapport för {år}
         {kvartal !== "Hela året" ? ` – ${kvartal}` : ""}
       </h1>
@@ -173,20 +186,4 @@ export default function Momsrapport() {
       </div>
     </div>
   );
-}
-
-function useMomsrapportData() {
-  const [år, setÅr] = useState("2025");
-  const [kvartal, setKvartal] = useState("Hela året");
-  const [data, setData] = useState<MomsRad[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const momsData = await getMomsrapport(år, kvartal === "Hela året" ? undefined : kvartal);
-      setData(momsData);
-    };
-    fetchData();
-  }, [år, kvartal]);
-
-  return { år, setÅr, kvartal, setKvartal, data };
 }
