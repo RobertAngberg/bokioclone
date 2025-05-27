@@ -7,7 +7,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { sv } from "date-fns/locale";
 import TextFält from "../_components/TextFält";
-import { hämtaSenasteBetalningsmetod } from "./actions"; // ✅ Uppdaterad import
+import { hämtaSenasteBetalningsmetod } from "./actions";
 import { useSession } from "next-auth/react";
 //#endregion
 

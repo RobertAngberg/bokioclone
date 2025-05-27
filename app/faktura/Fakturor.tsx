@@ -32,18 +32,34 @@ type Props = {
 //#endregion
 
 export default function Fakturor({ kunder: initialKunder, fakturor: initialFakturor }: Props) {
+  //#region Context och state
   const { formData, setFormData, setKundStatus } = useFakturaContext();
   const [showPreview, setShowPreview] = useState(false);
   const [kunder, setKunder] = useState(initialKunder);
   const [fakturor, setFakturor] = useState(initialFakturor);
   const [artiklar, setArtiklar] = useState<Artikel[]>([]);
   const [isPending, startTransition] = useTransition();
+  //#endregion
 
-  // ✅ Spåra aktiv faktura
+  // Spåra aktiv faktura
   const currentInvoiceId = formData.id ? parseInt(formData.id) : undefined;
 
-  // Hämta artiklar vid första render och uppdatera fakturor vid custom-event
-  useInitFakturaData(setArtiklar, setFakturor);
+  // Hämta sparade artiklar
+  useEffect(() => {
+    hämtaSparadeArtiklar().then(setArtiklar);
+  }, []);
+
+  // Lyssna på reloadFakturor event
+  useEffect(() => {
+    const reload = async () => {
+      const nyaFakturor = await hämtaSparadeFakturor();
+      setFakturor(nyaFakturor);
+    };
+
+    const handler = () => reload();
+    window.addEventListener("reloadFakturor", handler);
+    return () => window.removeEventListener("reloadFakturor", handler);
+  }, []);
 
   const hanteraValdKund = (kund: any) => {
     setFormData((prev) => ({
@@ -177,26 +193,6 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
     }
   };
 
-  function useInitFakturaData(
-    setArtiklar: React.Dispatch<React.SetStateAction<Artikel[]>>,
-    setFakturor: React.Dispatch<React.SetStateAction<any[]>>
-  ) {
-    useEffect(() => {
-      hämtaSparadeArtiklar().then(setArtiklar);
-    }, [setArtiklar]);
-
-    useEffect(() => {
-      const reload = async () => {
-        const nyaFakturor = await hämtaSparadeFakturor();
-        setFakturor(nyaFakturor);
-      };
-
-      const handler = () => reload();
-      window.addEventListener("reloadFakturor", handler);
-      return () => window.removeEventListener("reloadFakturor", handler);
-    }, [setFakturor]);
-  }
-
   return (
     <>
       <MainLayout>
@@ -218,7 +214,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
             kunder={kunder}
             fakturor={fakturor}
             artiklar={artiklar}
-            activeInvoiceId={currentInvoiceId} // ✅ Skicka aktuell faktura-ID
+            activeInvoiceId={currentInvoiceId}
           />
         </AnimeradFlik>
 

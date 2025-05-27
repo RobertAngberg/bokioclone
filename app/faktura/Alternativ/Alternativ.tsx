@@ -1,30 +1,30 @@
-//#region Huvud
-"use client";
-
 import Knapp from "../../_components/Knapp";
 import ExporteraPDFKnapp from "./ExporteraPDFKnapp";
+import SkickaEpost from "./SkickaEpost"; // Importera komponenten
 
-type AlternativProps = {
+interface Props {
   onSave: () => void;
   onReload: () => void;
   onPrint: () => void;
   onPreview: () => void;
-};
-//#endregion
+}
 
-export default function Alternativ({ onSave, onReload, onPrint, onPreview }: AlternativProps) {
+export default function Alternativ({ onSave, onReload, onPrint, onPreview }: Props) {
   return (
-    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 p-4">
-      {/* Vänster sida: Spara, Exportera, Skriv ut, Börja om */}
-      <div className="flex flex-wrap gap-2">
-        <Knapp onClick={onSave} text="💾 Spara" />
+    <div className="space-y-6">
+      {/* Befintliga knappar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Knapp onClick={onSave} text="💾 Spara faktura" />
+        <Knapp onClick={onPreview} text="👁️ Förhandsgranska" />
+        <Knapp onClick={onReload} text="🔄 Återställ" />
         <ExporteraPDFKnapp />
       </div>
 
-      {/* Höger sida: Förhandsgranska */}
-      <div className="flex">
-        <Knapp onClick={onPreview} text="🔍 Förhandsgranska" />
-      </div>
+      {/* E-postkomponent */}
+      <SkickaEpost
+        onSuccess={() => console.log("E-post skickad")}
+        onError={(err) => console.error("E-postfel:", err)}
+      />
     </div>
   );
 }

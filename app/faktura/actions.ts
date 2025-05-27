@@ -3,8 +3,11 @@
 
 import { auth } from "@/auth";
 import { Pool } from "pg";
+import { Resend } from "resend";
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+//#endregion
 
 export type Artikel = {
   id?: number;
@@ -19,7 +22,6 @@ export type Artikel = {
   avdragProcent?: number;
   arbetskostnadExMoms?: number;
 };
-//#endregion
 
 export async function saveInvoice(formData: FormData) {
   const session = await auth();
@@ -668,8 +670,6 @@ export async function hämtaNästaFakturanummer() {
   }
 }
 
-// ...existing code...
-
 export async function hämtaSenasteBetalningsmetod(userId: string) {
   try {
     const result = await pool.query(
@@ -700,5 +700,3 @@ export async function hämtaSenasteBetalningsmetod(userId: string) {
     return { betalningsmetod: null, nummer: null };
   }
 }
-
-// ...existing code...
