@@ -6,6 +6,7 @@ import { fetchDataFromYear } from "./actions";
 import Kort from "./Kort";
 import Chart from "./Chart";
 import MainLayout from "../_components/MainLayout";
+import PDFUpload from "./PDFUpload";
 
 type YearSummary = {
   totalInkomst: number;
@@ -29,6 +30,22 @@ export default function Startsida({ initialData }: Props) {
   const [year, setYear] = useState("2025");
   const { data, isLoading } = useFetchYearSummary(year, initialData);
 
+  function useFetchYearSummary(year: string, initialData: YearSummary | null) {
+    const [data, setData] = useState<YearSummary | null>(initialData);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+      if (year === "2025") return;
+
+      setIsLoading(true);
+      fetchDataFromYear(year)
+        .then((newData) => setData(newData))
+        .finally(() => setIsLoading(false));
+    }, [year]);
+
+    return { data, isLoading };
+  }
+
   return (
     <MainLayout>
       <div className="flex flex-wrap justify-center gap-4 mb-8 text-center">
@@ -44,22 +61,8 @@ export default function Startsida({ initialData }: Props) {
       ) : (
         <Chart year={year} onYearChange={setYear} chartData={data?.yearData || []} />
       )}
+
+      <PDFUpload />
     </MainLayout>
   );
-}
-
-function useFetchYearSummary(year: string, initialData: YearSummary | null) {
-  const [data, setData] = useState<YearSummary | null>(initialData);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (year === "2025") return;
-
-    setIsLoading(true);
-    fetchDataFromYear(year)
-      .then((newData) => setData(newData))
-      .finally(() => setIsLoading(false));
-  }, [year]);
-
-  return { data, isLoading };
 }

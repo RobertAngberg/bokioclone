@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Knapp from "../../_components/Knapp";
 import { useFakturaContext } from "../FakturaProvider";
 import { generatePDFAsBase64 } from "../../_utils/pdfGenerator";
@@ -14,8 +14,15 @@ export default function SkickaEpost({ onSuccess, onError }: Props) {
   const { formData, setFormData } = useFakturaContext();
 
   // Lokala states för e-postspecifika fält
-  const [mottagareEmail, setMottagareEmail] = useState(formData.kundemail || "");
+  const [mottagareEmail, setMottagareEmail] = useState("");
   const [egetMeddelande, setEgetMeddelande] = useState("");
+
+  // Uppdatera mottagarens e-post när kundens e-post ändras
+  useEffect(() => {
+    if (formData.kundemail && formData.kundemail.trim()) {
+      setMottagareEmail(formData.kundemail);
+    }
+  }, [formData.kundemail]);
 
   const skickaTestmail = async () => {
     // Validering
@@ -97,6 +104,9 @@ export default function SkickaEpost({ onSuccess, onError }: Props) {
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isSending}
           />
+          {formData.kundemail && formData.kundemail.trim() && (
+            <p className="text-slate-400 text-xs mt-1">💡 Förifylld med kundens e-postadress</p>
+          )}
         </div>
 
         {/* Eget meddelande */}

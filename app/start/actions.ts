@@ -2,6 +2,7 @@
 
 import { Pool } from "pg";
 import { auth } from "@/auth";
+import { put } from "@vercel/blob";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -336,5 +337,30 @@ export async function fetchForvalMedFel() {
     return [];
   } finally {
     client.release();
+  }
+}
+
+export async function uploadPDF(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+
+    if (!file) {
+      throw new Error("Ingen fil vald");
+    }
+
+    if (file.type !== "application/pdf") {
+      throw new Error("Endast PDF-filer är tillåtna");
+    }
+
+    // Ladda upp till Vercel Blob
+    const blob = await put(`uploads/${file.name}`, file, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+
+    return { success: true, blob };
+  } catch (error) {
+    console.error("Upload error:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Okänt fel" };
   }
 }
