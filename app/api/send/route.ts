@@ -5,25 +5,30 @@ import EmailTemplate from "./EmailTemplate";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Din egen e-postadress för testning
-const DEV_EMAIL = "info@xn--bokfr-mua.com"; // Ändra till din verifierade e-post
+const DEV_EMAIL = "info@xn--bokfr-mua.com";
 
 export async function POST(request: Request) {
   try {
     // Få data från request
     const body = await request.json();
-    const { faktura, pdfAttachment, filename = "faktura.pdf" } = body;
+    const { faktura, pdfAttachment, filename = "faktura.pdf", customMessage } = body;
     const firstName = faktura.kundnamn?.split(" ")[0] || "kund";
 
     // Kundens e-post (för visning i testkörningen)
     const customerEmail = faktura.kundemail || "ingen-email";
+
+    // Skapa ämnesrad med företagsnamn - samma för alla miljöer
+    const företagsnamn = faktura.företagsnamn || "Företag";
+    const fakturanummer = faktura.fakturanummer || "";
+    const subject = `Faktura #${fakturanummer} från ${företagsnamn}`;
 
     // Förbered e-postkontrollen
     const emailOptions: any = {
       from: process.env.RESEND_FROM_EMAIL || "Faktura <onboarding@resend.dev>",
       // Använd alltid din egen e-post för testning
       to: [process.env.NODE_ENV === "production" ? customerEmail : DEV_EMAIL],
-      subject: `Faktura #${faktura.fakturanummer || ""} ${process.env.NODE_ENV !== "production" ? `(till: ${customerEmail})` : ""}`,
-      react: EmailTemplate({ firstName, faktura }),
+      subject: subject,
+      react: EmailTemplate({ firstName, faktura, customMessage }),
     };
 
     // Lägg till bilaga om den finns

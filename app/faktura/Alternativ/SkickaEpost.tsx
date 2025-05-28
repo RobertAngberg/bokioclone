@@ -11,9 +11,24 @@ interface Props {
 
 export default function SkickaEpost({ onSuccess, onError }: Props) {
   const [isSending, setIsSending] = useState(false);
-  const { formData } = useFakturaContext();
+  const { formData, setFormData } = useFakturaContext();
+
+  // Lokala states för e-postspecifika fält
+  const [mottagareEmail, setMottagareEmail] = useState(formData.kundemail || "");
+  const [egetMeddelande, setEgetMeddelande] = useState("");
 
   const skickaTestmail = async () => {
+    // Validering
+    if (!mottagareEmail.trim()) {
+      alert("❌ Ange mottagarens e-postadress");
+      return;
+    }
+
+    if (!mottagareEmail.includes("@")) {
+      alert("❌ Ange en giltig e-postadress");
+      return;
+    }
+
     setIsSending(true);
 
     try {
@@ -25,16 +40,20 @@ export default function SkickaEpost({ onSuccess, onError }: Props) {
         ? formData.fakturanummer.toString().padStart(4, "0")
         : "faktura";
 
-      // Skicka e-post med PDF-bilaga
+      // Skicka e-post med PDF-bilaga och eget meddelande
       const response = await fetch("/api/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          faktura: formData,
+          faktura: {
+            ...formData,
+            kundemail: mottagareEmail, // Använd det angivna e-postfältet
+          },
           pdfAttachment: pdfBase64,
           filename: `Faktura-${fakturaNr}.pdf`,
+          customMessage: egetMeddelande.trim(), // Skicka med det egna meddelandet
         }),
       });
 
@@ -58,31 +77,76 @@ export default function SkickaEpost({ onSuccess, onError }: Props) {
 
   return (
     <div className="bg-slate-800 p-6 rounded-lg shadow mt-4">
-      <h3 className="text-white text-xl mb-4">Skicka faktura</h3>
-      <div className="flex items-center justify-between">
+      <h3 className="text-white text-xl mb-6">E-posta fakturan med bifogad PDF</h3>
+
+      <div className="space-y-4">
+        {/* E-postadress fält */}
         <div>
-          <p className="text-slate-300 mb-2">Skicka fakturan som e-post med bifogad PDF</p>
-          <p className="text-slate-400 text-sm">
-            {process.env.NODE_ENV === "development" ? (
-              <>
-                <span className="text-amber-400">⚠️ Utvecklingsläge:</span> E-posten skickas till
-                din verifierade adress, inte till kundens e-post.
-              </>
-            ) : (
-              <>
-                E-posten skickas till{" "}
-                <code className="bg-slate-700 px-1 py-0.5 rounded">
-                  {formData.kundemail || "info@bokför.com"}
-                </code>
-              </>
-            )}
+          <label
+            htmlFor="mottagare-email"
+            className="block text-slate-300 text-sm font-medium mb-2"
+          >
+            Mottagarens e-postadress <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="mottagare-email"
+            type="email"
+            value={mottagareEmail}
+            onChange={(e) => setMottagareEmail(e.target.value)}
+            placeholder="kundnamn@exempel.se"
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={isSending}
+          />
+        </div>
+
+        {/* Eget meddelande */}
+        <div>
+          <label
+            htmlFor="eget-meddelande"
+            className="block text-slate-300 text-sm font-medium mb-2"
+          >
+            Eget meddelande (valfritt)
+          </label>
+          <textarea
+            id="eget-meddelande"
+            value={egetMeddelande}
+            onChange={(e) => setEgetMeddelande(e.target.value)}
+            placeholder="Skriv ett personligt meddelande som läggs till i e-postmeddelandet..."
+            rows={4}
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            disabled={isSending}
+          />
+          <p className="text-slate-400 text-xs mt-1">
+            Detta meddelande visas i e-postmeddelandet före fakturainformationen
           </p>
         </div>
-        <Knapp
-          onClick={skickaTestmail}
-          text={isSending ? "📤 Skickar..." : "📧 Skicka faktura"}
-          disabled={isSending || !formData.fakturanummer}
-        />
+
+        {/* Skicka-knapp */}
+        <div className="flex justify-between items-center pt-4">
+          <div className="flex-1">
+            <p className="text-slate-400 text-sm">
+              {process.env.NODE_ENV === "development" ? (
+                <>
+                  <span className="text-amber-400">⚠️ Utvecklingsläge:</span> E-posten skickas till
+                  din verifierade adress, inte till kundens e-post.
+                </>
+              ) : (
+                <>
+                  E-posten skickas till{" "}
+                  <code className="bg-slate-700 px-1 py-0.5 rounded">
+                    {mottagareEmail || "info@bokför.com"}
+                  </code>
+                </>
+              )}
+            </p>
+          </div>
+
+          <Knapp
+            onClick={skickaTestmail}
+            text={isSending ? "📤 Skickar..." : "📧 Skicka faktura"}
+            disabled={isSending || !formData.fakturanummer || !mottagareEmail.trim()}
+          />
+        </div>
       </div>
     </div>
   );
