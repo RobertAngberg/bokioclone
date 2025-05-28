@@ -1,9 +1,12 @@
+//#region Use server och imports
 "use server";
 
 import { Pool } from "pg";
 import { auth } from "@/auth";
 import OpenAI from "openai";
 import { invalidateBokförCache } from "../_utils/invalidateBokförCache";
+import { put } from "@vercel/blob";
+//#endregion
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -184,6 +187,23 @@ export async function fetchFavoritforval() {
   }
 }
 
+export async function fetchTransactionWithBlob(transactionId: number) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Ingen användare inloggad");
+
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT *, blob_url FROM transaktioner WHERE id = $1 AND "userId" = $2`,
+      [transactionId, Number(session.user.id)]
+    );
+
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
 export async function saveTransaction(formData: FormData) {
   /* 1. ---------------------------  AUTH  --------------------------- */
   const session = await auth();
@@ -194,7 +214,6 @@ export async function saveTransaction(formData: FormData) {
   const transaktionsdatum = formData.get("transaktionsdatum")?.toString().trim() || "";
   const kommentar = formData.get("kommentar")?.toString().trim() || "";
   const fil = formData.get("fil") as File | null;
-  const filename = fil?.name ?? "";
 
   const valtFörval = JSON.parse(formData.get("valtFörval")?.toString() || "{}");
   if (!valtFörval?.konton) throw new Error("⛔ Saknar valda förval");
@@ -210,6 +229,34 @@ export async function saveTransaction(formData: FormData) {
 
   console.log("📥 formData:", { transaktionsdatum, belopp, moms, beloppUtanMoms });
 
+  /* 2.5 -------------------  SPARA FIL TILL BLOB  ------------------ */
+  let blobUrl = null;
+  let filename = "";
+
+  if (fil) {
+    try {
+      const datum = new Date(transaktionsdatum).toISOString().slice(0, 10);
+      const fileExtension = fil.name.split(".").pop() || "";
+      const timestamp = Date.now();
+      const originalName = fil.name.split(".")[0];
+      filename = `${originalName}-${timestamp}.${fileExtension}`;
+
+      const blobPath = `bokforing/${userId}/${datum}/${filename}`;
+
+      const blob = await put(blobPath, fil, {
+        access: "public",
+        contentType: fil.type,
+        addRandomSuffix: false,
+      });
+
+      blobUrl = blob.url;
+      console.log(`✅ Fil sparad till Blob Storage: ${blobUrl}`);
+    } catch (blobError) {
+      console.error("❌ Kunde inte spara fil till Blob Storage:", blobError);
+      filename = fil.name;
+    }
+  }
+
   /* 3. --------------------  STARTA DB‑SESSION  -------------------- */
   const client = await pool.connect();
   try {
@@ -217,16 +264,24 @@ export async function saveTransaction(formData: FormData) {
     const { rows } = await client.query(
       `
       INSERT INTO transaktioner (
-        transaktionsdatum, kontobeskrivning, belopp, fil, kommentar, "userId"
-      ) VALUES ($1,$2,$3,$4,$5,$6)
+        transaktionsdatum, kontobeskrivning, belopp, fil, kommentar, "userId", blob_url
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7)
       RETURNING id
       `,
-      [new Date(transaktionsdatum), valtFörval.namn ?? "", belopp, filename, kommentar, userId]
+      [
+        new Date(transaktionsdatum),
+        valtFörval.namn ?? "",
+        belopp,
+        filename,
+        kommentar,
+        userId,
+        blobUrl,
+      ]
     );
     const transaktionsId = rows[0].id;
     console.log("🆔  Skapad transaktion:", transaktionsId);
 
-    /* 3‑b. Förberedd SQL för varje transaktionspost -------------- */
+    /* Resten av funktionen förblir densamma... */
     const insertPost = `
       INSERT INTO transaktionsposter
         (transaktions_id, konto_id, debet, kredit)
@@ -292,10 +347,9 @@ export async function saveTransaction(formData: FormData) {
     }
 
     client.release();
-    // viktigt, så att vi inte får en "stale" cache
     await invalidateBokförCache();
 
-    return { success: true, id: transaktionsId };
+    return { success: true, id: transaktionsId, blobUrl };
   } catch (err) {
     client.release();
     console.error("❌ saveTransaction error:", err);

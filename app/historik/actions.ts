@@ -1,4 +1,3 @@
-// historik/actions.ts
 "use server";
 
 import { Pool } from "pg";
@@ -7,59 +6,60 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-export async function fetchTransaktioner(fromYear: string | null) {
+interface TransactionDetail {
+  transaktionspost_id: number;
+  kontonummer: string;
+  beskrivning: string;
+  debet: number;
+  kredit: number;
+}
+
+export async function fetchTransaktioner(fromYear?: string) {
   try {
     const client = await pool.connect();
-    const parsedYear = parseInt(fromYear || "");
-
     const result = await client.query(
       `
-      SELECT * FROM transaktioner
-      WHERE EXTRACT(YEAR FROM transaktionsdatum) >= $1
-      ORDER BY transaktionsdatum DESC
-      `,
-      [parsedYear]
+      SELECT 
+        id,
+        transaktionsdatum,
+        kontobeskrivning,
+        belopp,
+        kommentar,
+        fil,
+        blob_url
+      FROM transaktioner
+      ORDER BY transaktionsdatum DESC, id DESC
+      `
     );
-
     client.release();
     return { success: true, data: result.rows };
-  } catch (err: any) {
-    console.error("❌ fetchTransaktioner error:", err);
-    return { success: false, error: err.message };
+  } catch (error: any) {
+    console.error("❌ fetchTransaktioner error:", error);
+    return { success: false, error: error.message };
   }
 }
 
-export async function fetchTransactionDetails(transaktionsId: number) {
+export async function fetchTransactionDetails(transactionId: number): Promise<TransactionDetail[]> {
+  const client = await pool.connect();
   try {
-    console.log(`🔍 Hämtar detaljer för transaktion ${transaktionsId}`);
-
-    const result = await pool.query(
+    const result = await client.query(
       `
       SELECT 
         tp.id AS transaktionspost_id,
-        k.kontonummer,
-        k.beskrivning,
         tp.debet,
-        tp.kredit
+        tp.kredit,
+        k.kontonummer,
+        k.beskrivning
       FROM transaktionsposter tp
-      LEFT JOIN konton k ON tp.konto_id = k.id
+      JOIN konton k ON tp.konto_id = k.id
       WHERE tp.transaktions_id = $1
-      ORDER BY tp.id ASC
-    `,
-      [transaktionsId]
+      ORDER BY tp.id
+      `,
+      [transactionId]
     );
-
-    console.log(`✅ Hittade ${result.rows.length} poster`);
-    return result.rows.map((d) => ({
-      transaktionspost_id: d.transaktionspost_id,
-      kontonummer: d.kontonummer,
-      beskrivning: d.beskrivning,
-      debet: d.debet,
-      kredit: d.kredit,
-    }));
-  } catch (err: any) {
-    console.error("❌ fetchTransactionDetails error:", err);
-    return [];
+    return result.rows;
+  } finally {
+    client.release();
   }
 }
 
@@ -77,6 +77,7 @@ export async function exporteraTransaktionerMedPoster(year: string) {
         t.belopp,
         t.kommentar,
         t.fil,
+        t.blob_url,
         tp.id AS transaktionspost_id,
         tp.debet,
         tp.kredit,
@@ -102,6 +103,7 @@ export async function exporteraTransaktionerMedPoster(year: string) {
           belopp: row.belopp,
           kommentar: row.kommentar,
           fil: row.fil,
+          blob_url: row.blob_url,
           transaktionsposter: [],
         });
       }

@@ -16,6 +16,7 @@ export interface HistoryItem {
   belopp: number;
   kommentar?: string;
   fil?: string;
+  blob_url?: string;
 }
 
 export interface TransactionDetail {
@@ -78,7 +79,6 @@ export default function Historik({ initialData }: Props) {
   const columns: ColumnDefinition<HistoryItem>[] = [
     { key: "transaktions_id", label: "ID" },
     { key: "transaktionsdatum", label: "Datum" },
-    { key: "fil", label: "Fil", hiddenOnMobile: true },
     { key: "kontobeskrivning", label: "Konto" },
     {
       key: "belopp",
@@ -128,7 +128,7 @@ export default function Historik({ initialData }: Props) {
 
           return (
             <tr className="bg-slate-800">
-              <td colSpan={6} className="p-0">
+              <td colSpan={5} className="p-0">
                 <div className="p-4">
                   <table className="w-full text-sm">
                     <thead className="border-b border-slate-600">
@@ -164,6 +164,15 @@ export default function Historik({ initialData }: Props) {
                       ))}
                     </tbody>
                   </table>
+
+                  {item.blob_url && (
+                    <div className="pt-4 border-slate-600 text-center">
+                      <Knapp
+                        text="👁️ Se verifikat"
+                        onClick={() => window.open(item.blob_url, "_blank")}
+                      />
+                    </div>
+                  )}
                 </div>
               </td>
             </tr>
