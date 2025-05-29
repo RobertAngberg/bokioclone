@@ -2,13 +2,22 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import EmailTemplate from "./EmailTemplate";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// TA BORT DENNA RAD - initieras inte vid build-tid längre:
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Din egen e-postadress för testning
 const DEV_EMAIL = "info@xn--bokfr-mua.com";
 
 export async function POST(request: Request) {
   try {
+    // FLYTTA RESEND INIT HIT - körs vid runtime när environment variables finns:
+    if (!process.env.RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is missing");
+      return NextResponse.json({ error: "Email service not configured" }, { status: 500 });
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY); // ✅ Runtime init!
+
     // Få data från request
     const body = await request.json();
     const { faktura, pdfAttachment, filename = "faktura.pdf", customMessage } = body;
