@@ -3,7 +3,7 @@
 
 import { auth } from "@/auth";
 import { Pool } from "pg";
-import { Resend } from "resend";
+// import { Resend } from "resend";
 // TA BORT DENNA RAD:
 // const resend = new Resend(process.env.RESEND_API_KEY);
 
