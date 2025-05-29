@@ -1,4 +1,4 @@
-//#region Use server och imports
+//#region Use server, imports, pool
 "use server";
 
 import { Pool } from "pg";
@@ -6,11 +6,13 @@ import { auth } from "@/auth";
 import OpenAI from "openai";
 import { invalidateBokförCache } from "../_utils/invalidateBokförCache";
 import { put } from "@vercel/blob";
-//#endregion
+import Tesseract from "tesseract.js";
+import * as pdfjsLib from "pdfjs-dist";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
+//#endregion
 
 export async function extractDataFromOCR(text: string) {
   console.log("🧠 Extracting data from OCR text:", text);
@@ -354,5 +356,57 @@ export async function saveTransaction(formData: FormData) {
     client.release();
     console.error("❌ saveTransaction error:", err);
     return { success: false, error: (err as Error).message };
+  }
+}
+
+export async function processImageOCR(imageBase64: string): Promise<string> {
+  console.log("🤖 Server OCR startar...");
+
+  try {
+    const buffer = Buffer.from(imageBase64, "base64");
+
+    // Tesseract vill ha Buffer direkt, inte Uint8Array
+    const result = await Tesseract.recognize(buffer, "swe+eng", {
+      logger: (m) => {
+        if (m.status === "recognizing text") {
+          console.log(`🤖 Server OCR: ${(m.progress * 100).toFixed(1)}%`);
+        }
+      },
+    });
+
+    console.log("✅ Server OCR klar");
+    return result.data.text;
+  } catch (error) {
+    console.error("❌ Server OCR fel:", error);
+    return "";
+  }
+}
+
+export async function extractPDFText(pdfBase64: string): Promise<string> {
+  console.log("📄 Server PDF-extraktion startar...");
+
+  try {
+    const buffer = Buffer.from(pdfBase64, "base64");
+
+    // PDF.js vill ha Uint8Array
+    const uint8Array = new Uint8Array(buffer);
+
+    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+    const pdf = await loadingTask.promise;
+
+    let fullText = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(" ");
+      fullText += pageText + "\n";
+    }
+
+    console.log("✅ Server PDF-extraktion klar");
+    return fullText.trim();
+  } catch (error) {
+    console.error("❌ Server PDF-extraktion fel:", error);
+    return "";
   }
 }

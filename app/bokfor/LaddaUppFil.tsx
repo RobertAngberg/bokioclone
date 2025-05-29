@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import extractTextFromPDF from "pdf-parser-client-side";
-import { extractDataFromOCR } from "./actions";
+import { extractDataFromOCR, processImageOCR } from "./actions";
 import Tesseract from "tesseract.js";
 
 interface FileUploadProps {
@@ -24,58 +24,138 @@ export default function LaddaUppFil({
   const [isLoading, setIsLoading] = useState(false);
   const [timeoutTriggered, setTimeoutTriggered] = useState(false);
 
-  useEffect(() => {
-    if (!recognizedText) {
-      console.log("⚠️ Ingen text att bearbeta i useEffect");
-      return;
-    }
+  // Mjukare bildkomprimering - mål 100-200KB (läsbar)
+  async function komprimeraImage(file: File): Promise<File> {
+    return new Promise((resolve) => {
+      console.log(`🗜️ Komprimerar bild: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
 
-    console.log("🤖 Skickar text till OpenAI för tolkning...");
-    console.log("📝 Text som skickas (första 500 tecken):", recognizedText.substring(0, 500));
-    console.log("📏 Total textlängd:", recognizedText.length);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
+      const img = new Image();
 
-    (async () => {
-      try {
-        const parsed = await extractDataFromOCR(recognizedText);
-        console.log("📄 Parsed data från OpenAI:", parsed);
+      img.onload = () => {
+        let { width, height } = img;
 
-        if (parsed?.datum) {
-          console.log("📅 Sätter datum:", parsed.datum);
-          setTransaktionsdatum(parsed.datum);
-        } else {
-          console.log("⚠️ Inget datum hittades i OpenAI-svaret");
+        // Mjukare storleksreduktion - behåll läsbarhet
+        const maxDim = 1200; // Större dimensioner för läsbarhet
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width *= ratio;
+          height *= ratio;
         }
 
-        if (parsed?.belopp && !isNaN(parsed.belopp)) {
-          console.log("💰 Sätter belopp:", parsed.belopp);
-          setBelopp(Number(parsed.belopp));
-        } else {
-          console.log("⚠️ Inget giltigt belopp hittades i OpenAI-svaret");
+        // Minsta storlek för läsbarhet
+        const minDim = 400;
+        if (width < minDim && height < minDim) {
+          const ratio = minDim / Math.max(width, height);
+          width *= ratio;
+          height *= ratio;
         }
-      } catch (error) {
-        console.error("❌ Fel vid OpenAI-tolkning:", error);
-      } finally {
-        setIsLoading(false);
-        console.log("✅ useEffect avslutad, loading = false");
-      }
-    })();
-  }, [recognizedText, setBelopp, setTransaktionsdatum]);
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Börja med högre kvalitet för läsbarhet
+        tryCompress(0.7);
+
+        function tryCompress(quality: number) {
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressed = new File(
+                  [blob],
+                  file.name.replace(/\.[^.]+$/, "_compressed.jpg"),
+                  { type: "image/jpeg" }
+                );
+
+                const sizeKB = compressed.size / 1024;
+                console.log(`📊 Kvalitet ${(quality * 100).toFixed(1)}%: ${sizeKB.toFixed(1)}KB`);
+
+                // Mål: 100-200KB (läsbar men inte för stor)
+                if (sizeKB <= 200 || quality <= 0.3) {
+                  const savings = (((file.size - compressed.size) / file.size) * 100).toFixed(1);
+                  console.log(
+                    `✅ BILD FINAL: ${(file.size / 1024).toFixed(1)}KB → ${sizeKB.toFixed(1)}KB (${savings}% mindre)`
+                  );
+                  resolve(compressed);
+                } else {
+                  // Minska kvalitet gradvis
+                  tryCompress(quality * 0.8);
+                }
+              } else {
+                resolve(file);
+              }
+            },
+            "image/jpeg",
+            quality
+          );
+        }
+      };
+
+      img.onerror = () => {
+        console.log("⚠️ Bildinladdning misslyckades, använder original");
+        resolve(file);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  }
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      console.log("⚠️ Ingen fil vald");
-      return;
+    const originalFile = event.target.files?.[0];
+    if (!originalFile) return;
+
+    console.log("📁 Original fil:", originalFile.name, (originalFile.size / 1024).toFixed(1), "KB");
+
+    // VALIDERA FILSTORLEK FÖRST
+    const sizeMB = originalFile.size / (1024 * 1024);
+
+    if (originalFile.type === "application/pdf") {
+      const maxPdfMB = 2; // 2MB gräns för PDF
+      if (sizeMB > maxPdfMB) {
+        console.error(`❌ PDF för stor: ${sizeMB.toFixed(1)}MB (max ${maxPdfMB}MB)`);
+        alert(
+          `PDF-filen är för stor (${sizeMB.toFixed(1)}MB).\nMaximal tillåten storlek är ${maxPdfMB}MB.`
+        );
+        // Rensa input
+        event.target.value = "";
+        return;
+      }
+    } else if (originalFile.type.startsWith("image/")) {
+      const maxImageMB = 10; // 10MB gräns för bilder
+      if (sizeMB > maxImageMB) {
+        console.error(`❌ Bild för stor: ${sizeMB.toFixed(1)}MB (max ${maxImageMB}MB)`);
+        alert(
+          `Bilden är för stor (${sizeMB.toFixed(1)}MB).\nMaximal tillåten storlek är ${maxImageMB}MB.`
+        );
+        // Rensa input
+        event.target.value = "";
+        return;
+      }
     }
 
-    console.log("📁 Fil vald:", file.name, "Storlek:", file.size, "Typ:", file.type);
+    let file = originalFile;
 
-    // Validera filstorlek (4.5 MB limit för Vercel Functions)
-    const maxSize = 4.5 * 1024 * 1024; // 4.5 MB i bytes
-    if (file.size > maxSize) {
-      console.log("❌ Fil för stor:", file.size, "bytes (max:", maxSize, "bytes)");
-      alert("Filen är för stor. Maximal storlek är 4.5 MB.");
-      return;
+    // Komprimera bilder mjukt - PDF behålls original
+    if (originalFile.type.startsWith("image/")) {
+      console.log("🖼️ Startar mjuk bildkomprimering...");
+      file = await komprimeraImage(originalFile);
+    } else if (originalFile.type === "application/pdf") {
+      console.log(`📄 PDF (${sizeMB.toFixed(1)}MB) - behåller original`);
+      file = originalFile;
+    } else {
+      console.log("📄 Okänd filtyp - behåller original");
+    }
+
+    // Visa filstorlek efter eventuell komprimering
+    const finalSizeKB = file.size / 1024;
+    const finalSizeMB = finalSizeKB / 1024;
+
+    if (finalSizeMB >= 1) {
+      console.log(`📊 Slutlig filstorlek: ${finalSizeMB.toFixed(1)}MB`);
+    } else {
+      console.log(`📊 Slutlig filstorlek: ${finalSizeKB.toFixed(1)}KB`);
     }
 
     const fileUrl = URL.createObjectURL(file);
@@ -84,9 +164,7 @@ export default function LaddaUppFil({
 
     setIsLoading(true);
     setTimeoutTriggered(false);
-    console.log("🔄 Startar textextraktion, loading = true");
 
-    // Timeout fallback after 10s
     const timeout = setTimeout(() => {
       console.log("⏰ Timeout efter 10 sekunder!");
       setIsLoading(false);
@@ -97,28 +175,21 @@ export default function LaddaUppFil({
       let text = "";
 
       if (file.type === "application/pdf") {
-        console.log("🔍 Försöker extrahera text från PDF...");
+        console.log("🔍 Extraherar text från PDF...");
         text = (await extractTextFromPDF(file, "clean")) || "";
-        console.log("📄 Extraherad text från PDF (första 300 tecken):", text.substring(0, 300));
-        console.log("📏 PDF textlängd:", text.length);
       } else if (file.type.startsWith("image/")) {
-        console.log("🔍 Försöker OCR på bild...");
+        console.log("🔍 OCR på komprimerad bild...");
         text = await förbättraOchLäsBild(file);
-        console.log("📄 Extraherad text från bild (första 300 tecken):", text.substring(0, 300));
-        console.log("📏 Bild textlängd:", text.length);
-      } else {
-        console.log("❌ Filtyp stöds inte:", file.type);
       }
 
       if (!text || text.trim().length === 0) {
-        console.log("⚠️ Ingen text kunde extraheras från filen");
+        console.log("⚠️ Ingen text extraherad från fil");
         setTimeoutTriggered(true);
         setIsLoading(false);
         clearTimeout(timeout);
         return;
       }
 
-      console.log("✅ Text extraherad, rensar timeout och sätter recognizedText");
       clearTimeout(timeout);
       setRecognizedText(text);
     } catch (error) {
@@ -128,6 +199,29 @@ export default function LaddaUppFil({
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!recognizedText) return;
+
+    (async () => {
+      try {
+        const parsed = await extractDataFromOCR(recognizedText);
+        console.log("📄 Parsed data:", parsed);
+
+        if (parsed?.datum) {
+          setTransaktionsdatum(parsed.datum);
+        }
+
+        if (parsed?.belopp && !isNaN(parsed.belopp)) {
+          setBelopp(Number(parsed.belopp));
+        }
+      } catch (error) {
+        console.error("❌ OpenAI parsing error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [recognizedText, setBelopp, setTransaktionsdatum]);
 
   return (
     <>
@@ -153,9 +247,16 @@ export default function LaddaUppFil({
             📄 <strong>{fil.name}</strong>
           </div>
           <div className="text-xs text-slate-400">
-            {(fil.size / 1024).toFixed(1)} KB • {fil.type}
+            {fil.size >= 1024 * 1024
+              ? `${(fil.size / (1024 * 1024)).toFixed(1)} MB`
+              : `${(fil.size / 1024).toFixed(1)} KB`}{" "}
+            • {fil.type}
           </div>
-          <div className="text-xs text-green-400 mt-1">✅ Kommer sparas till din dokumentarkiv</div>
+          <div className="text-xs text-green-400 mt-1">
+            {fil.type.startsWith("image/")
+              ? "🗜️ Komprimerad bild (läsbar kvalitet)"
+              : "📄 Original PDF (under 2MB-gränsen)"}
+          </div>
         </div>
       )}
 
@@ -171,66 +272,41 @@ export default function LaddaUppFil({
           ⏱️ Tolkningen tog för lång tid – fyll i uppgifterna manuellt.
         </div>
       )}
-
-      {/* Debug-info för utveckling */}
-      {process.env.NODE_ENV === "development" && recognizedText && (
-        <div className="mb-4 p-3 bg-gray-800 rounded text-xs">
-          <div className="text-gray-400 mb-2">🐛 Debug - Extraherad text:</div>
-          <div className="text-gray-300 max-h-32 overflow-y-auto">
-            {recognizedText.substring(0, 1000)}
-            {recognizedText.length > 1000 && "..."}
-          </div>
-        </div>
-      )}
     </>
   );
 }
 
-// 🧠 Förbättrad OCR-funktion för bilder
 async function förbättraOchLäsBild(file: File): Promise<string> {
-  console.log("🖼️ Startar bildbearbetning för OCR...");
+  console.log("🖼️ Förbereder bild för server OCR...");
 
   const img = await createImageBitmap(file);
-  console.log("🖼️ Bild skapad, storlek:", img.width, "x", img.height);
-
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  if (!ctx) {
-    console.log("❌ Kunde inte skapa canvas context");
-    throw new Error("Kunde inte skapa canvas");
-  }
+  if (!ctx) throw new Error("Kunde inte skapa canvas");
 
-  canvas.width = img.width * 2;
-  canvas.height = img.height * 2;
-  console.log("🖼️ Canvas storlek:", canvas.width, "x", canvas.height);
-
+  // Bildbearbetning (samma som förut)
+  const scaleFactor = img.width < 800 ? 2 : 1.5;
+  canvas.width = img.width * scaleFactor;
+  canvas.height = img.height * scaleFactor;
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-  // Konvertera till svartvitt för bättre OCR
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   for (let i = 0; i < imageData.data.length; i += 4) {
     const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
-    const bw = avg > 150 ? 255 : 0;
+    const bw = avg > 140 ? 255 : 0;
     imageData.data[i] = bw;
     imageData.data[i + 1] = bw;
     imageData.data[i + 2] = bw;
   }
   ctx.putImageData(imageData, 0, 0);
 
-  const processedBlob = await new Promise<Blob>((resolve) =>
-    canvas.toBlob((b) => resolve(b!), "image/png")
-  );
+  // Konvertera till base64 och skicka till server
+  const dataUrl = canvas.toDataURL("image/png");
+  const base64Data = dataUrl.split(",")[1];
 
-  console.log("🤖 Startar Tesseract OCR...");
-  const result = await Tesseract.recognize(processedBlob, "swe+eng", {
-    logger: (m) => {
-      if (m.status === "recognizing text") {
-        console.log(`🤖 OCR progress: ${(m.progress * 100).toFixed(1)}%`);
-      }
-    },
-  });
+  console.log("📤 Skickar till server OCR...");
+  const text = await processImageOCR(base64Data);
 
-  console.log("✅ OCR klar, text längd:", result.data.text.length);
-  return result.data.text;
+  return text;
 }

@@ -154,7 +154,6 @@ export default function HomeChart({ year, onYearChange, chartData }: Props) {
       </div>
       <div className="flex justify-center -mt-4">
         <Dropdown
-          id="year"
           value={year}
           onChange={onYearChange}
           options={[
