@@ -4,7 +4,8 @@
 import { auth } from "@/auth";
 import { Pool } from "pg";
 import { Resend } from "resend";
-const resend = new Resend(process.env.RESEND_API_KEY);
+// TA BORT DENNA RAD:
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 //#endregion
