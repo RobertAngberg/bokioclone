@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-export default auth((req) => {
+// Skapa middleware funktionen
+const authMiddleware = auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
 
@@ -19,13 +20,17 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/api/auth/signin", nextUrl));
   }
 
-  // Om inloggad och på publk route, redirecta till dashboard
+  // Om inloggad och på public route, redirecta till dashboard
   if (isLoggedIn && isPublicRoute) {
     return NextResponse.redirect(new URL("/faktura", nextUrl));
   }
 
   return NextResponse.next();
 });
+
+// Exportera som både default och named export
+export default authMiddleware;
+export const middleware = authMiddleware;
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
