@@ -15,9 +15,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth(() => {
         clientSecret: process.env.AUTH_GOOGLE_SECRET!,
       }),
       Resend({
-        from: "xn--info@bokfr-mcb.com",
+        from: "info@xn--bokfr-mua.com", // ← Ändra till rätt domain
       }),
     ],
-    session: { strategy: "database" }, // ← Ändra till database
+    session: { strategy: "database" },
   };
 });
