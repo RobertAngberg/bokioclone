@@ -50,8 +50,5 @@
   },
   "plugins": [
     "prettier-plugin-tailwindcss"
-  ],
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
-  }
+  ]
 }
