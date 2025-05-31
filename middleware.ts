@@ -1,13 +1,18 @@
-import { auth } from "./app/login/edge"; // ← rätt väg
+import { auth } from "@/auth"; // ← Din riktiga auth.ts fil!
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  const session = await auth(req);
+  // Tillåt auth routes först
+  if (req.nextUrl.pathname.startsWith("/api/auth")) {
+    return NextResponse.next();
+  }
 
-  if (!session?.email) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
     const signInUrl = new URL("/api/auth/signin", req.url);
-    signInUrl.searchParams.set("callbackUrl", "/");
+    signInUrl.searchParams.set("callbackUrl", req.url);
     return NextResponse.redirect(signInUrl);
   }
 
@@ -15,5 +20,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
 };
