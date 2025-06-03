@@ -4,15 +4,9 @@
 import { useState } from "react";
 
 interface Props {
-  onSelectCustomer: (kund: any) => void;
   onSelectInvoice: (id: number) => void;
-  onDeleteCustomer: (id: number) => void;
   onDeleteInvoice: (id: number) => void;
-  onDeleteArtikel?: (id: number) => void;
-  kunder: any[];
   fakturor: any[];
-  artiklar?: any[];
-  onSelectArtiklar?: (artiklar: any[]) => void;
   activeInvoiceId?: number;
 }
 // #endregion

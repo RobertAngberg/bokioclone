@@ -79,8 +79,6 @@ interface FakturaContextType {
   kundStatus: KundStatus;
   setKundStatus: React.Dispatch<React.SetStateAction<KundStatus>>;
   resetKund: () => void;
-  nyArtikel: ArtikelInput;
-  setNyArtikel: React.Dispatch<React.SetStateAction<ArtikelInput>>;
 }
 
 const FakturaContext = createContext<FakturaContextType | undefined>(undefined);
@@ -121,18 +119,10 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
     artiklar: [],
   });
 
-  const [nyArtikel, setNyArtikel] = useState<ArtikelInput>({
-    beskrivning: "",
-    antal: "1",
-    prisPerEnhet: "0",
-    moms: "25",
-    valuta: "SEK",
-    typ: "vara",
-  });
-
   const [kundStatus, setKundStatus] = useState<KundStatus>("none");
   //#endregion
 
+  //#region Nästa fakturanummer
   // Hämta nästa fakturanummer när det är en ny faktura (dvs ingen id och inget fakturanummer)
   useEffect(() => {
     if (!formData.id && !formData.fakturanummer) {
@@ -144,8 +134,9 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
       });
     }
   }, [formData.id, formData.fakturanummer]);
+  //#endregion
 
-  const resetKund = () => {
+  function resetKund() {
     setFormData((prev) => ({
       ...prev,
       kundId: "",
@@ -159,27 +150,41 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
       kundemail: "",
     }));
     setKundStatus("editing");
-  };
+  }
 
   return (
+    // Provider = "Sändaren" som distribuerar data till alla child components
     <FakturaContext.Provider
       value={{
+        // Huvuddata: All faktura-information (kund, artiklar, företag, etc.)
         formData,
+        // Funktion: Uppdatera faktura-data från vilken komponent som helst
         setFormData,
+
+        // UI State: Håller koll på om kund är loaded/editing/none
         kundStatus,
+        // Funktion: Ändra kund-status (används i KundUppgifter komponenten)
         setKundStatus,
+
+        // Utility: Nollställ alla kunduppgifter (används när man vill byta kund)
         resetKund,
-        nyArtikel,
-        setNyArtikel,
       }}
     >
+      {/* Alla child components som renderas inuti FakturaProvider */}
+      {/* Dessa kan använda useFakturaContext() för att komma åt data ovan */}
       {children}
     </FakturaContext.Provider>
   );
 }
 
+// Hook = "Mottagaren" - används i components för att få tillgång till data
 export function useFakturaContext() {
+  // Hämta context-värdet (det som skickades i value={{}} ovan)
   const ctx = useContext(FakturaContext);
+
+  // Säkerhetskontroll: Om någon använder hooken utanför Provider = fel
   if (!ctx) throw new Error("useFakturaContext måste användas inom FakturaProvider");
+
+  // Returnera all data: formData, setFormData, kundStatus, setKundStatus, resetKund
   return ctx;
 }

@@ -1,6 +1,7 @@
+//#region Huvud
 import Knapp from "../../_components/Knapp";
 import ExporteraPDFKnapp from "./ExporteraPDFKnapp";
-import SkickaEpost from "./SkickaEpost"; // Importera komponenten
+import SkickaEpost from "./SkickaEpost";
 
 interface Props {
   onSave: () => void;
@@ -8,6 +9,7 @@ interface Props {
   onPrint: () => void;
   onPreview: () => void;
 }
+//#endregion
 
 export default function Alternativ({ onSave, onReload, onPreview }: Props) {
   return (

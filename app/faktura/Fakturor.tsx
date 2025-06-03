@@ -205,20 +205,9 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
 
         <AnimeradFlik title="Sparade fakturor" icon="📂">
           <SparadeFakturor
-            onSelectCustomer={hanteraValdKund}
             onSelectInvoice={hanteraValdFaktura}
-            onDeleteCustomer={hanteraRaderaKund}
             onDeleteInvoice={hanteraRaderaFaktura}
-            onDeleteArtikel={hanteraRaderaArtikel}
-            onSelectArtiklar={(a) =>
-              setFormData((prev) => ({
-                ...prev,
-                artiklar: [...(prev.artiklar ?? []), ...a],
-              }))
-            }
-            kunder={kunder}
             fakturor={fakturor}
-            artiklar={artiklar}
             activeInvoiceId={currentInvoiceId}
           />
         </AnimeradFlik>

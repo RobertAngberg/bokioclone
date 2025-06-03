@@ -1,3 +1,4 @@
+//#region
 import Knapp from "../../_components/Knapp";
 
 type FavoritArtikel = {
@@ -21,6 +22,7 @@ interface Props {
   onSelect: (a: FavoritArtikel) => void;
   onDelete: (id?: number) => void;
 }
+//#endregion
 
 export default function FavoritArtiklarList({
   favoritArtiklar,
