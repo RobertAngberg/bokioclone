@@ -155,16 +155,6 @@ export default function RotRutForm({}: RotRutFormProps) {
 
   return (
     <div className="space-y-4 p-4 bg-slate-800 rounded-lg">
-      <label className="flex items-center gap-2 text-white">
-        <input
-          type="checkbox"
-          name="rotRutAktiverat"
-          checked={formData.rotRutAktiverat ?? false}
-          onChange={handleChange}
-        />
-        🛠️ Aktivera ROT/RUT-avdrag
-      </label>
-
       {formData.rotRutAktiverat && (
         <>
           {/* ROT infotext */}
@@ -315,7 +305,7 @@ export default function RotRutForm({}: RotRutFormProps) {
 
           {formData.avdragBelopp !== undefined && (
             <div className="text-white font-semibold mt-4">
-              Beräknat avdrag:{" "}
+              Avdrag (50% av belopp inkl. moms):{" "}
               {formData.avdragBelopp.toLocaleString("sv-SE", {
                 style: "currency",
                 currency: "SEK",

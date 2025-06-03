@@ -63,7 +63,7 @@ export default function ProdukterTjanster() {
   }, []);
   //#endregion
 
-  //#region Event handlers
+  //#region Handlers
   const handleAdd = async () => {
     if (!beskrivning.trim()) {
       alert("❌ Beskrivning krävs");
@@ -234,9 +234,6 @@ export default function ProdukterTjanster() {
         onChangeTyp={setTyp}
       />
 
-      {/* Visa RotRutForm endast om användaren själv aktiverat det */}
-      {visaRotRutForm && <RotRutForm showCheckbox={false} />}
-
       <RotRutCheckbox
         checked={visaRotRutForm}
         onChange={(checked) => {
@@ -264,6 +261,9 @@ export default function ProdukterTjanster() {
         labelClassName={labelSize + " text-white"}
       />
 
+      {/* Visa RotRutForm endast om användaren själv aktiverat det */}
+      {visaRotRutForm && <RotRutForm showCheckbox={false} />}
+
       <div className="flex items-center justify-between">
         <LäggTillFavoritartikel
           checked={saveAsFavorite}
@@ -271,7 +271,11 @@ export default function ProdukterTjanster() {
           className={checkboxSize}
           labelClassName={`text-white cursor-pointer ${labelSize}`}
         />
-        <Knapp onClick={handleAdd} text={loading ? "✚ Sparar…" : "✚ Lägg till och spara"} />
+        <Knapp
+          onClick={handleAdd}
+          text={loading ? "✚ Sparar…" : "✚ Lägg till och spara"}
+          disabled={!beskrivning.trim() || loading}
+        />
       </div>
     </div>
   );

@@ -62,13 +62,14 @@ export type FakturaFormData = {
   }>;
 };
 
-export type ArtikelInput = {
+// ✅ Lägg till NyArtikel type
+export type NyArtikel = {
   beskrivning: string;
   antal: string;
   prisPerEnhet: string;
   moms: string;
   valuta: string;
-  typ: "vara" | "tjänst";
+  typ: "tjänst" | "vara";
 };
 
 type KundStatus = "none" | "loaded" | "editing";
@@ -79,6 +80,8 @@ interface FakturaContextType {
   kundStatus: KundStatus;
   setKundStatus: React.Dispatch<React.SetStateAction<KundStatus>>;
   resetKund: () => void;
+  nyArtikel: NyArtikel; // ✅ Lägg till nyArtikel
+  setNyArtikel: React.Dispatch<React.SetStateAction<NyArtikel>>; // ✅ Lägg till setter
 }
 
 const FakturaContext = createContext<FakturaContextType | undefined>(undefined);
@@ -116,10 +119,34 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
     webbplats: "",
     logo: "",
     logoWidth: 200,
+
+    rotRutAktiverat: false,
+    rotRutTyp: undefined,
+    rotRutKategori: undefined,
+    avdragProcent: undefined,
+    avdragBelopp: undefined,
+    arbetskostnadExMoms: undefined,
+    materialkostnadExMoms: undefined,
+    personnummer: "",
+    fastighetsbeteckning: "",
+    rotBoendeTyp: undefined,
+    brfOrganisationsnummer: "",
+    brfLagenhetsnummer: "",
+
     artiklar: [],
   });
 
   const [kundStatus, setKundStatus] = useState<KundStatus>("none");
+
+  // ✅ Lägg till nyArtikel state
+  const [nyArtikel, setNyArtikel] = useState<NyArtikel>({
+    beskrivning: "",
+    antal: "",
+    prisPerEnhet: "",
+    moms: "25",
+    valuta: "SEK",
+    typ: "tjänst",
+  });
   //#endregion
 
   //#region Nästa fakturanummer
@@ -168,6 +195,10 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
 
         // Utility: Nollställ alla kunduppgifter (används när man vill byta kund)
         resetKund,
+
+        // ✅ Lägg till nyArtikel state och setter
+        nyArtikel,
+        setNyArtikel,
       }}
     >
       {/* Alla child components som renderas inuti FakturaProvider */}
@@ -185,6 +216,6 @@ export function useFakturaContext() {
   // Säkerhetskontroll: Om någon använder hooken utanför Provider = fel
   if (!ctx) throw new Error("useFakturaContext måste användas inom FakturaProvider");
 
-  // Returnera all data: formData, setFormData, kundStatus, setKundStatus, resetKund
+  // Returnera all data: formData, setFormData, kundStatus, setKundStatus, resetKund, nyArtikel, setNyArtikel
   return ctx;
 }
