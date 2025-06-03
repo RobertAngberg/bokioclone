@@ -17,22 +17,22 @@ export default function Betalning() {
 
   registerLocale("sv", sv);
 
-  const parseISODate = (value: unknown): Date | null => {
+  function parseISODate(value: unknown): Date | null {
     if (value instanceof Date && !isNaN(value.getTime())) return value;
     if (typeof value === "string") {
       const d = new Date(value.trim());
       return isNaN(d.getTime()) ? null : d;
     }
     return null;
-  };
+  }
 
-  const addDays = (date: Date, days: number) => {
+  function addDays(date: Date, days: number) {
     const out = new Date(date);
     out.setDate(out.getDate() + days);
     return out;
-  };
+  }
 
-  // ✅ Sätter standardvärden + hämtar SENASTE betalningsmetod
+  // Sätter standardvärden + hämtar senaste betalningsmetod
   useEffect(() => {
     const initializeDefaults = async () => {
       const todayISO = new Date().toISOString().slice(0, 10);
@@ -109,20 +109,23 @@ export default function Betalning() {
     }
   }, [fakturadatumDate, formData.betalningsvillkor, formData.forfallodatum, setFormData]);
 
-  const onDate = (field: "fakturadatum" | "forfallodatum") => (d: Date | null) =>
-    setFormData((p) => ({
-      ...p,
-      [field]: d ? d.toISOString().slice(0, 10) : "",
-    }));
+  //#region Hanterare
+  function hanteraÄndraDatum(field: "fakturadatum" | "forfallodatum") {
+    return (d: Date | null) =>
+      setFormData((p) => ({
+        ...p,
+        [field]: d ? d.toISOString().slice(0, 10) : "",
+      }));
+  }
 
-  const onText = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  function hanteraÄndradText(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+  }
 
-  const onSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+  function hanteraÄndradDropdown(e: React.ChangeEvent<HTMLSelectElement>) {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
-
-  // ✅ Kolla om senaste betalningsmetod är laddad
-  const harSenasteBetalning = formData.betalningsmetod && formData.nummer && session?.user?.id;
+  }
+  //#endregion
 
   return (
     <div className="space-y-6">
@@ -131,7 +134,7 @@ export default function Betalning() {
           <label className="block text-sm font-medium text-white mb-2">Fakturadatum</label>
           <DatePicker
             selected={fakturadatumDate}
-            onChange={onDate("fakturadatum")}
+            onChange={hanteraÄndraDatum("fakturadatum")}
             dateFormat="yyyy-MM-dd"
             placeholderText="yyyy-mm-dd"
             locale="sv"
@@ -144,7 +147,7 @@ export default function Betalning() {
           <label className="block text-sm font-medium text-white mb-2">Förfallodatum</label>
           <DatePicker
             selected={forfalloDate}
-            onChange={onDate("forfallodatum")}
+            onChange={hanteraÄndraDatum("forfallodatum")}
             dateFormat="yyyy-MM-dd"
             placeholderText="yyyy-mm-dd"
             locale="sv"
@@ -157,14 +160,14 @@ export default function Betalning() {
           label="Betalningsvillkor (dagar)"
           name="betalningsvillkor"
           value={formData.betalningsvillkor ?? ""}
-          onChange={onText}
+          onChange={hanteraÄndradText}
         />
 
         <TextFält
           label="Dröjsmålsränta (%)"
           name="drojsmalsranta"
           value={formData.drojsmalsranta ?? ""}
-          onChange={onText}
+          onChange={hanteraÄndradText}
         />
       </div>
 
@@ -174,7 +177,7 @@ export default function Betalning() {
           <select
             name="betalningsmetod"
             value={formData.betalningsmetod ?? ""}
-            onChange={onSelectChange}
+            onChange={hanteraÄndradDropdown}
             className="w-full px-3 py-2 rounded-lg bg-slate-900 text-white border border-slate-700"
           >
             <option value="">Välj betalningsmetod</option>
@@ -187,7 +190,12 @@ export default function Betalning() {
           </select>
         </div>
 
-        <TextFält label="Nummer" name="nummer" value={formData.nummer ?? ""} onChange={onText} />
+        <TextFält
+          label="Nummer"
+          name="nummer"
+          value={formData.nummer ?? ""}
+          onChange={hanteraÄndradText}
+        />
       </div>
     </div>
   );

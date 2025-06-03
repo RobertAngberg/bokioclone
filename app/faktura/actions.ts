@@ -440,7 +440,6 @@ export async function hämtaFöretagsprofil(userId: string): Promise<any | null>
         organisationsnummer,
         momsregistreringsnummer,
         telefonnummer,
-        bankinfo,
         webbplats
       FROM företagsprofil
       WHERE id = $1
@@ -466,7 +465,6 @@ export async function sparaFöretagsprofil(
     organisationsnummer: string;
     momsregistreringsnummer: string;
     telefonnummer: string;
-    bankinfo: string;
     webbplats: string;
     logoWidth?: number; // ← Lägg till denna
   }
@@ -483,7 +481,6 @@ export async function sparaFöretagsprofil(
         organisationsnummer,
         momsregistreringsnummer,
         telefonnummer,
-        bankinfo,
         webbplats,
         logo_width  -- ← Lägg till denna kolumn
       )
@@ -499,7 +496,6 @@ export async function sparaFöretagsprofil(
         organisationsnummer = EXCLUDED.organisationsnummer,
         momsregistreringsnummer = EXCLUDED.momsregistreringsnummer,
         telefonnummer = EXCLUDED.telefonnummer,
-        bankinfo = EXCLUDED.bankinfo,
         webbplats = EXCLUDED.webbplats,
         logo_width = EXCLUDED.logo_width
       `,
@@ -512,7 +508,6 @@ export async function sparaFöretagsprofil(
         data.organisationsnummer,
         data.momsregistreringsnummer,
         data.telefonnummer,
-        data.bankinfo,
         data.webbplats,
         data.logoWidth || 200,
       ]

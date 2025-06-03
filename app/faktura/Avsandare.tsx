@@ -9,6 +9,7 @@ import Knapp from "../_components/Knapp";
 //#endregion
 
 export default function Avsandare() {
+  //#region Session, state och vars
   const { data: session } = useSession();
 
   const [form, setForm] = useState({
@@ -19,7 +20,6 @@ export default function Avsandare() {
     organisationsnummer: "",
     momsregistreringsnummer: "",
     telefonnummer: "",
-    bankinfo: "",
     webbplats: "",
     logo: "",
     logoWidth: 200,
@@ -27,7 +27,9 @@ export default function Avsandare() {
 
   const [sparat, setSparat] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  //#endregion
 
+  //#region Ladda företagsprofil
   // Ladda företagsprofil när komponenten mountas
   useEffect(() => {
     const ladda = async () => {
@@ -42,14 +44,16 @@ export default function Avsandare() {
     };
     ladda();
   }, [session]);
+  //#endregion
 
+  //#region Hanterare
   // Hantera ändringar i formuläret
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const hanteraTangentNer = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const hanteraLoggaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -93,7 +97,7 @@ export default function Avsandare() {
     img.src = URL.createObjectURL(file);
   };
 
-  const handleRemoveLogo = () => {
+  const hanteraTaBortLogga = () => {
     setForm((prev) => ({ ...prev, logo: "" }));
     localStorage.removeItem("bokioclone_logo");
     if (fileInputRef.current) {
@@ -101,7 +105,7 @@ export default function Avsandare() {
     }
   };
 
-  const handleSubmit = async () => {
+  const hanteraSubmit = async () => {
     if (!session?.user?.id) return;
 
     const res = await sparaFöretagsprofil(session.user.id, form);
@@ -112,6 +116,7 @@ export default function Avsandare() {
       alert("Kunde inte spara uppgifter.");
     }
   };
+  //#endregion
 
   return (
     <div className="max-w-4xl mx-auto bg-slate-900 text-white rounded-lg">
@@ -120,40 +125,39 @@ export default function Avsandare() {
           label="Företagsnamn"
           name="företagsnamn"
           value={form.företagsnamn}
-          onChange={handleChange}
+          onChange={hanteraTangentNer}
         />
-        <TextFält label="Adress" name="adress" value={form.adress} onChange={handleChange} />
+        <TextFält label="Adress" name="adress" value={form.adress} onChange={hanteraTangentNer} />
         <TextFält
           label="Postnummer"
           name="postnummer"
           value={form.postnummer}
-          onChange={handleChange}
+          onChange={hanteraTangentNer}
         />
-        <TextFält label="Stad" name="stad" value={form.stad} onChange={handleChange} />
+        <TextFält label="Stad" name="stad" value={form.stad} onChange={hanteraTangentNer} />
         <TextFält
           label="Organisationsnummer"
           name="organisationsnummer"
           value={form.organisationsnummer}
-          onChange={handleChange}
+          onChange={hanteraTangentNer}
         />
         <TextFält
           label="Momsregistreringsnummer"
           name="momsregistreringsnummer"
           value={form.momsregistreringsnummer}
-          onChange={handleChange}
+          onChange={hanteraTangentNer}
         />
         <TextFält
           label="Telefonnummer"
           name="telefonnummer"
           value={form.telefonnummer}
-          onChange={handleChange}
+          onChange={hanteraTangentNer}
         />
-        <TextFält label="Bankinfo" name="bankinfo" value={form.bankinfo} onChange={handleChange} />
         <TextFält
           label="Webbplats"
           name="webbplats"
           value={form.webbplats}
-          onChange={handleChange}
+          onChange={hanteraTangentNer}
         />
       </div>
 
@@ -167,7 +171,7 @@ export default function Avsandare() {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={handleLogoUpload}
+            onChange={hanteraLoggaUpload}
           />
 
           {form.logo && (
@@ -204,10 +208,10 @@ export default function Avsandare() {
           </div>
         )}
 
-        {form.logo && <Knapp onClick={handleRemoveLogo} text="❌ Ta bort logotyp" />}
+        {form.logo && <Knapp onClick={hanteraTaBortLogga} text="❌ Ta bort logotyp" />}
       </div>
 
-      <Knapp onClick={handleSubmit} text="💾 Spara uppgifter" />
+      <Knapp onClick={hanteraSubmit} text="💾 Spara uppgifter" />
 
       {sparat && <p className="text-green-400 mt-4">✅ Uppgifterna sparades!</p>}
     </div>

@@ -15,10 +15,12 @@ type KundSaveResponse = {
 //#endregion
 
 export default function KundUppgifter() {
+  //#region State och context
   const { formData, setFormData, kundStatus, setKundStatus, resetKund } = useFakturaContext();
   const [showSuccess, setShowSuccess] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const [kunder, setKunder] = useState<any[]>([]);
+  //#endregion
 
   useEffect(() => {
     const laddaKunder = async () => {
@@ -28,6 +30,7 @@ export default function KundUppgifter() {
     laddaKunder();
   }, []);
 
+  //#region Formulärhanterare
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
@@ -96,6 +99,7 @@ export default function KundUppgifter() {
     const sparade = await hämtaSparadeKunder();
     setKunder(sparade.sort((a: any, b: any) => a.kundnamn.localeCompare(b.kundnamn)));
   };
+  //#endregion
 
   return (
     <div className="space-y-6 text-white">

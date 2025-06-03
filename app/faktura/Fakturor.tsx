@@ -63,6 +63,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
     return () => window.removeEventListener("reloadFakturor", handler);
   }, []);
 
+  //#region Hanterare
   const hanteraValdKund = (kund: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -194,6 +195,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
       alert("❌ Kunde inte konvertera artiklar");
     }
   };
+  //#endregion
 
   return (
     <>

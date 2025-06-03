@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 
 import { useState } from "react";
@@ -14,6 +15,7 @@ interface Props {
   onSelectArtiklar?: (artiklar: any[]) => void;
   activeInvoiceId?: number;
 }
+// #endregion
 
 export default function SparadeFakturor({
   onSelectInvoice,
