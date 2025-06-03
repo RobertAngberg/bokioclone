@@ -33,12 +33,11 @@ export default function Avsandare() {
     const ladda = async () => {
       if (session?.user?.id) {
         const data = await hämtaFöretagsprofil(session.user.id);
-        if (data) setForm(data);
-        // Hämta logotyp från localStorage om den finns
-        const logo = localStorage.getItem("bokioclone_logo");
+        if (data) setForm(data); // Inkluderar logoWidth från databas
+
+        // Endast logo från localStorage (inte logoWidth)
+        const logo = localStorage.getItem("bokfor_logo");
         if (logo) setForm((prev) => ({ ...prev, logo }));
-        const logoWidth = localStorage.getItem("bokioclone_logoWidth");
-        if (logoWidth) setForm((prev) => ({ ...prev, logoWidth: Number(logoWidth) }));
       }
     };
     ladda();
@@ -50,20 +49,50 @@ export default function Avsandare() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Hantera logotyp-uppladdning
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const logoData = ev.target?.result as string;
-      setForm((prev) => ({ ...prev, logo: logoData }));
-      localStorage.setItem("bokioclone_logo", logoData); // <-- Spara i browsern
+
+    // Skapa canvas för komprimering
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      // Sätt max storlek
+      const maxWidth = 400;
+      const maxHeight = 400;
+      let { width, height } = img;
+
+      // Beräkna ny storlek
+      if (width > height) {
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+      }
+
+      // Rita komprimerad bild
+      canvas.width = width;
+      canvas.height = height;
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      // Konvertera till base64 med komprimering
+      const compressedData = canvas.toDataURL("image/jpeg", 0.8); // 80% kvalitet
+
+      setForm((prev) => ({ ...prev, logo: compressedData }));
+      localStorage.setItem("bokioclone_logo", compressedData);
     };
-    reader.readAsDataURL(file);
+
+    // Ladda bilden
+    img.src = URL.createObjectURL(file);
   };
 
-  // Ta bort logotyp
   const handleRemoveLogo = () => {
     setForm((prev) => ({ ...prev, logo: "" }));
     localStorage.removeItem("bokioclone_logo");
@@ -157,6 +186,23 @@ export default function Avsandare() {
             />
           )}
         </div>
+
+        {form.logo && (
+          <div className="flex flex-col gap-2">
+            <label className="text-sm">Logo-storlek: {form.logoWidth}px</label>
+            <input
+              type="range"
+              min="50"
+              max="400"
+              value={form.logoWidth}
+              onChange={(e) => {
+                const newWidth = Number(e.target.value);
+                setForm((prev) => ({ ...prev, logoWidth: newWidth }));
+              }}
+              className="w-64"
+            />
+          </div>
+        )}
 
         {form.logo && <Knapp onClick={handleRemoveLogo} text="❌ Ta bort logotyp" />}
       </div>

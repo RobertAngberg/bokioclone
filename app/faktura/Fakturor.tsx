@@ -1,4 +1,6 @@
-//#region Huvud
+// Kom ihåg; loggan sparas i localStorage
+
+//#region Imports och types
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
@@ -120,7 +122,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
       bankinfo: faktura.bankinfo ?? "",
       webbplats: faktura.webbplats ?? "",
       logo: faktura.logo ?? "",
-      logoWidth: faktura.logoWidth ?? 200,
+      logoWidth: faktura.logo_width ?? 200,
       artiklar: artiklar.map((rad: any) => ({
         beskrivning: rad.beskrivning,
         antal: Number(rad.antal),
@@ -150,7 +152,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
     setKundStatus("loaded");
   };
 
-  const handleDeleteFaktura = (id: number) => {
+  const hanteraRaderaFaktura = (id: number) => {
     if (!confirm("❌ Vill du ta bort fakturan?")) return;
     startTransition(() => {
       setFakturor((prev) => prev.filter((f) => f.id !== id));
@@ -158,7 +160,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
     });
   };
 
-  const handleDeleteKund = (id: number) => {
+  const hanteraRaderaKund = (id: number) => {
     if (!confirm("❌ Vill du ta bort kunden?")) return;
     startTransition(() => {
       setKunder((prev) => prev.filter((k) => k.id !== id));
@@ -166,13 +168,13 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
     });
   };
 
-  const handleDeleteArtikel = async (id: number) => {
+  const hanteraRaderaArtikel = async (id: number) => {
     if (!confirm("❌ Vill du ta bort artikeln?")) return;
     await deleteFavoritArtikel(id);
     setArtiklar((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const handleSave = async () => {
+  const hanteraSpara = async () => {
     const fd = new FormData();
     try {
       fd.append("artiklar", JSON.stringify(formData.artiklar ?? []));
@@ -202,9 +204,9 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
           <SparadeFakturor
             onSelectCustomer={hanteraValdKund}
             onSelectInvoice={hanteraValdFaktura}
-            onDeleteCustomer={handleDeleteKund}
-            onDeleteInvoice={handleDeleteFaktura}
-            onDeleteArtikel={handleDeleteArtikel}
+            onDeleteCustomer={hanteraRaderaKund}
+            onDeleteInvoice={hanteraRaderaFaktura}
+            onDeleteArtikel={hanteraRaderaArtikel}
             onSelectArtiklar={(a) =>
               setFormData((prev) => ({
                 ...prev,
@@ -236,7 +238,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
 
         <AnimeradFlik title="Alternativ" icon="⚙️">
           <Alternativ
-            onSave={handleSave}
+            onSave={hanteraSpara}
             onReload={() => window.location.reload()}
             onPrint={() => window.print()}
             onPreview={() => setShowPreview(true)}

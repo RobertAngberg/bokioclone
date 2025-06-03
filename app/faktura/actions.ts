@@ -8,7 +8,6 @@ import { Pool } from "pg";
 // const resend = new Resend(process.env.RESEND_API_KEY);
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-//#endregion
 
 export type Artikel = {
   id?: number;
@@ -23,6 +22,7 @@ export type Artikel = {
   avdragProcent?: number;
   arbetskostnadExMoms?: number;
 };
+//#endregion
 
 export async function saveInvoice(formData: FormData) {
   const session = await auth();
@@ -52,8 +52,9 @@ export async function saveInvoice(formData: FormData) {
     const fakturaId = isUpdate ? parseInt(fakturaIdRaw!.toString(), 10) : undefined;
 
     if (isUpdate && fakturaId) {
+      // ta bort och lägger till helt nytt längre ner
       await client.query(`DELETE FROM faktura_artiklar WHERE faktura_id = $1`, [fakturaId]);
-      await client.query(`DELETE FROM rot_rut WHERE faktura_id = $1`, [fakturaId]); // Viktigt: ta bort gammal ROT/RUT
+      await client.query(`DELETE FROM rot_rut WHERE faktura_id = $1`, [fakturaId]);
 
       await client.query(
         `UPDATE fakturor SET
@@ -64,8 +65,9 @@ export async function saveInvoice(formData: FormData) {
           betalningsvillkor = $5,
           drojsmalsranta = $6,
           "kundId" = $7,
-          nummer = $8
-        WHERE id = $9 AND "userId" = $10`,
+          nummer = $8,
+          logo_width = $9
+        WHERE id = $10 AND "userId" = $11`,
         [
           formData.get("fakturanummer"),
           fakturadatum,
@@ -75,6 +77,7 @@ export async function saveInvoice(formData: FormData) {
           formData.get("drojsmalsranta"),
           formData.get("kundId") ? parseInt(formData.get("kundId")!.toString()) : null,
           formData.get("nummer"),
+          formData.get("logoWidth") ? parseInt(formData.get("logoWidth")!.toString()) : 200,
           fakturaId,
           userId,
         ]
@@ -103,7 +106,6 @@ export async function saveInvoice(formData: FormData) {
         );
       }
 
-      // ➡️ Lägg in ROT/RUT om aktiverat
       if (formData.get("rotRutAktiverat") === "true") {
         await client.query(
           `INSERT INTO rot_rut (
@@ -150,8 +152,8 @@ export async function saveInvoice(formData: FormData) {
         `INSERT INTO fakturor (
           "userId", fakturanummer, fakturadatum, forfallodatum,
           betalningsmetod, betalningsvillkor, drojsmalsranta,
-          "kundId", nummer
-        ) VALUES ($1, $2, $3::date, $4::date, $5, $6, $7, $8, $9)
+          "kundId", nummer, logo_width
+        ) VALUES ($1, $2, $3::date, $4::date, $5, $6, $7, $8, $9, $10)
         RETURNING id`,
         [
           userId,
@@ -163,6 +165,7 @@ export async function saveInvoice(formData: FormData) {
           formData.get("drojsmalsranta"),
           formData.get("kundId") ? parseInt(formData.get("kundId")!.toString()) : null,
           formData.get("nummer"),
+          formData.get("logoWidth") ? parseInt(formData.get("logoWidth")!.toString()) : 200,
         ]
       );
 
@@ -191,7 +194,6 @@ export async function saveInvoice(formData: FormData) {
         );
       }
 
-      // ➡️ Lägg in ROT/RUT om aktiverat
       if (formData.get("rotRutAktiverat") === "true") {
         await client.query(
           `INSERT INTO rot_rut (
@@ -466,6 +468,7 @@ export async function sparaFöretagsprofil(
     telefonnummer: string;
     bankinfo: string;
     webbplats: string;
+    logoWidth?: number; // ← Lägg till denna
   }
 ): Promise<{ success: boolean }> {
   try {
@@ -481,10 +484,11 @@ export async function sparaFöretagsprofil(
         momsregistreringsnummer,
         telefonnummer,
         bankinfo,
-        webbplats
+        webbplats,
+        logo_width  -- ← Lägg till denna kolumn
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
       )
       ON CONFLICT (id)
       DO UPDATE SET
@@ -496,7 +500,8 @@ export async function sparaFöretagsprofil(
         momsregistreringsnummer = EXCLUDED.momsregistreringsnummer,
         telefonnummer = EXCLUDED.telefonnummer,
         bankinfo = EXCLUDED.bankinfo,
-        webbplats = EXCLUDED.webbplats
+        webbplats = EXCLUDED.webbplats,
+        logo_width = EXCLUDED.logo_width
       `,
       [
         userId,
@@ -509,6 +514,7 @@ export async function sparaFöretagsprofil(
         data.telefonnummer,
         data.bankinfo,
         data.webbplats,
+        data.logoWidth || 200,
       ]
     );
 
@@ -618,6 +624,7 @@ export async function hämtaFakturaMedRader(id: number) {
       `
       SELECT 
         f.*, 
+        f.logo_width,
         k.kundnamn, 
         k.kundnummer, 
         k.kundorgnummer as kundorganisationsnummer, 

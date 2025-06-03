@@ -9,10 +9,9 @@ interface Props {
   onPreview: () => void;
 }
 
-export default function Alternativ({ onSave, onReload, onPrint, onPreview }: Props) {
+export default function Alternativ({ onSave, onReload, onPreview }: Props) {
   return (
     <div className="space-y-6">
-      {/* Befintliga knappar */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Knapp onClick={onSave} text="💾 Spara faktura" />
         <Knapp onClick={onPreview} text="👁️ Förhandsgranska" />
@@ -20,7 +19,6 @@ export default function Alternativ({ onSave, onReload, onPrint, onPreview }: Pro
         <ExporteraPDFKnapp />
       </div>
 
-      {/* E-postkomponent */}
       <SkickaEpost
         onSuccess={() => console.log("E-post skickad")}
         onError={(err) => console.error("E-postfel:", err)}
