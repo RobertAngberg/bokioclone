@@ -1,3 +1,4 @@
+//#region Huvud
 "use client";
 import { useState, useEffect } from "react";
 import Knapp from "../../_components/Knapp";
@@ -8,14 +9,15 @@ interface Props {
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
+//#endregion
 
 export default function SkickaEpost({ onSuccess, onError }: Props) {
+  //#region State
   const [isSending, setIsSending] = useState(false);
   const { formData, setFormData } = useFakturaContext();
-
-  // Lokala states för e-postspecifika fält
   const [mottagareEmail, setMottagareEmail] = useState("");
   const [egetMeddelande, setEgetMeddelande] = useState("");
+  //#endregion
 
   // Uppdatera mottagarens e-post när kundens e-post ändras
   useEffect(() => {
@@ -135,19 +137,10 @@ export default function SkickaEpost({ onSuccess, onError }: Props) {
         <div className="flex justify-between items-center pt-4">
           <div className="flex-1">
             <p className="text-slate-400 text-sm">
-              {process.env.NODE_ENV === "development" ? (
-                <>
-                  <span className="text-amber-400">⚠️ Utvecklingsläge:</span> E-posten skickas till
-                  din verifierade adress, inte till kundens e-post.
-                </>
-              ) : (
-                <>
-                  E-posten skickas till{" "}
-                  <code className="bg-slate-700 px-1 py-0.5 rounded">
-                    {mottagareEmail || "info@bokför.com"}
-                  </code>
-                </>
-              )}
+              E-posten skickas till{" "}
+              <code className="bg-slate-700 px-1 py-0.5 rounded">
+                {mottagareEmail || "ingen e-post angiven"}
+              </code>
             </p>
           </div>
 

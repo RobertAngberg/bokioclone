@@ -43,6 +43,7 @@ export default function Forhandsgranskning() {
         organisationsnummer: profil.organisationsnummer ?? "",
         momsregistreringsnummer: profil.momsregistreringsnummer ?? "",
         telefonnummer: profil.telefonnummer ?? "",
+        epost: profil.epost ?? "",
         bankinfo: profil.bankinfo ?? "",
         webbplats: profil.webbplats ?? "",
       }));

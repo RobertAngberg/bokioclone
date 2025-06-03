@@ -24,6 +24,7 @@ import {
   hämtaSparadeArtiklar,
   deleteFavoritArtikel,
   hämtaSparadeFakturor,
+  hämtaFöretagsprofil,
 } from "./actions";
 
 type Props = {
@@ -113,7 +114,7 @@ export default function Fakturor({ kunder: initialKunder, fakturor: initialFaktu
       kundstad: faktura.kundstad ?? "",
       kundemail: faktura.kundemail ?? "",
       företagsnamn: faktura.företagsnamn ?? "",
-      email: faktura.email ?? "",
+      epost: faktura.epost ?? "",
       adress: faktura.adress ?? "",
       postnummer: faktura.postnummer ?? "",
       stad: faktura.stad ?? "",

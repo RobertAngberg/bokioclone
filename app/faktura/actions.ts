@@ -440,6 +440,7 @@ export async function hämtaFöretagsprofil(userId: string): Promise<any | null>
         organisationsnummer,
         momsregistreringsnummer,
         telefonnummer,
+        epost,
         webbplats
       FROM företagsprofil
       WHERE id = $1
@@ -465,8 +466,9 @@ export async function sparaFöretagsprofil(
     organisationsnummer: string;
     momsregistreringsnummer: string;
     telefonnummer: string;
+    epost: string;
     webbplats: string;
-    logoWidth?: number; // ← Lägg till denna
+    logoWidth?: number;
   }
 ): Promise<{ success: boolean }> {
   try {
@@ -481,11 +483,11 @@ export async function sparaFöretagsprofil(
         organisationsnummer,
         momsregistreringsnummer,
         telefonnummer,
-        webbplats,
-        logo_width  -- ← Lägg till denna kolumn
+        epost,
+        webbplats
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
       )
       ON CONFLICT (id)
       DO UPDATE SET
@@ -496,8 +498,8 @@ export async function sparaFöretagsprofil(
         organisationsnummer = EXCLUDED.organisationsnummer,
         momsregistreringsnummer = EXCLUDED.momsregistreringsnummer,
         telefonnummer = EXCLUDED.telefonnummer,
-        webbplats = EXCLUDED.webbplats,
-        logo_width = EXCLUDED.logo_width
+        epost = EXCLUDED.epost,
+        webbplats = EXCLUDED.webbplats
       `,
       [
         userId,
@@ -508,8 +510,8 @@ export async function sparaFöretagsprofil(
         data.organisationsnummer,
         data.momsregistreringsnummer,
         data.telefonnummer,
+        data.epost,
         data.webbplats,
-        data.logoWidth || 200,
       ]
     );
 
@@ -619,7 +621,6 @@ export async function hämtaFakturaMedRader(id: number) {
       `
       SELECT 
         f.*, 
-        f.logo_width,
         k.kundnamn, 
         k.kundnummer, 
         k.kundorgnummer as kundorganisationsnummer, 

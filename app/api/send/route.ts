@@ -2,45 +2,41 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import EmailTemplate from "./EmailTemplate";
 
-// TA BORT DENNA RAD - initieras inte vid build-tid längre:
-// const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Din egen e-postadress för testning
 const DEV_EMAIL = "info@xn--bokfr-mua.com";
 
 export async function POST(request: Request) {
   try {
-    // FLYTTA RESEND INIT HIT - körs vid runtime när environment variables finns:
     if (!process.env.RESEND_API_KEY) {
       console.error("RESEND_API_KEY is missing");
       return NextResponse.json({ error: "Email service not configured" }, { status: 500 });
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY); // ✅ Runtime init!
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Få data från request
     const body = await request.json();
     const { faktura, pdfAttachment, filename = "faktura.pdf", customMessage } = body;
     const firstName = faktura.kundnamn?.split(" ")[0] || "kund";
 
-    // Kundens e-post (för visning i testkörningen)
-    const customerEmail = faktura.kundemail || "ingen-email";
+    // ✅ Använd kundens email direkt från faktura-objektet
+    const customerEmail = faktura.kundemail;
 
-    // Skapa ämnesrad med företagsnamn - samma för alla miljöer
+    if (!customerEmail || !customerEmail.includes("@")) {
+      return NextResponse.json({ error: "Ogiltig mottagare e-postadress" }, { status: 400 });
+    }
+
     const företagsnamn = faktura.företagsnamn || "Företag";
     const fakturanummer = faktura.fakturanummer || "";
     const subject = `Faktura #${fakturanummer} från ${företagsnamn}`;
 
-    // Förbered e-postkontrollen
+    console.log("📧 Skickar till:", customerEmail); // Debug
+
     const emailOptions: any = {
       from: process.env.RESEND_FROM_EMAIL || "Faktura <onboarding@resend.dev>",
-      // Använd alltid din egen e-post för testning
-      to: [process.env.NODE_ENV === "production" ? customerEmail : DEV_EMAIL],
+      to: [customerEmail], // ← ÄNDRAT: Skicka alltid till kundens email
       subject: subject,
       react: EmailTemplate({ firstName, faktura, customMessage }),
     };
 
-    // Lägg till bilaga om den finns
     if (pdfAttachment) {
       emailOptions.attachments = [
         {
@@ -59,10 +55,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       data,
-      message:
-        process.env.NODE_ENV !== "production"
-          ? `E-post skickades till ${DEV_EMAIL} (i produktionsmiljö skulle den skickas till ${customerEmail})`
-          : `E-post skickad till ${customerEmail}`,
+      message: `E-post skickad till ${customerEmail}`,
     });
   } catch (error) {
     console.error("Server error:", error);

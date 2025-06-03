@@ -20,6 +20,7 @@ export default function Avsandare() {
     organisationsnummer: "",
     momsregistreringsnummer: "",
     telefonnummer: "",
+    epost: "",
     webbplats: "",
     logo: "",
     logoWidth: 200,
@@ -108,7 +109,24 @@ export default function Avsandare() {
   const hanteraSubmit = async () => {
     if (!session?.user?.id) return;
 
-    const res = await sparaFöretagsprofil(session.user.id, form);
+    console.log("🔍 Sparar epost:", form.epost); // Debug
+
+    const dataToSave = {
+      företagsnamn: form.företagsnamn,
+      adress: form.adress,
+      postnummer: form.postnummer,
+      stad: form.stad,
+      organisationsnummer: form.organisationsnummer,
+      momsregistreringsnummer: form.momsregistreringsnummer,
+      telefonnummer: form.telefonnummer,
+      epost: form.epost,
+      webbplats: form.webbplats,
+    };
+
+    console.log("📤 Data som skickas:", dataToSave); // Debug
+
+    const res = await sparaFöretagsprofil(session.user.id, dataToSave);
+
     if (res.success) {
       setSparat(true);
       setTimeout(() => setSparat(false), 3000);
@@ -153,6 +171,7 @@ export default function Avsandare() {
           value={form.telefonnummer}
           onChange={hanteraTangentNer}
         />
+        <TextFält label="E-post" name="epost" value={form.epost} onChange={hanteraTangentNer} />
         <TextFält
           label="Webbplats"
           name="webbplats"

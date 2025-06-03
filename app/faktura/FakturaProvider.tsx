@@ -32,7 +32,6 @@ export type FakturaFormData = {
 
   // Avsändare
   företagsnamn: string;
-  email: string;
   adress: string;
   postnummer: string;
   stad: string;
@@ -40,6 +39,7 @@ export type FakturaFormData = {
   momsregistreringsnummer: string;
   telefonnummer: string;
   bankinfo: string;
+  epost: string;
   webbplats: string;
   logo: string;
   logoWidth?: number;
@@ -107,7 +107,7 @@ export function FakturaProvider({ children }: { children: React.ReactNode }) {
     kundstad: "",
     kundemail: "",
     företagsnamn: "",
-    email: "",
+    epost: "",
     adress: "",
     postnummer: "",
     stad: "",

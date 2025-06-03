@@ -4,6 +4,9 @@ interface FotProps {
 }
 
 export default function Fot({ formData, session }: FotProps) {
+  console.log("🔍 VAR kommer telefonnummer ifrån?", formData.telefonnummer);
+  console.log("🔍 VAR kommer webbplats ifrån?", formData.webbplats);
+  console.log("🔍 VAR kommer epost ifrån?", formData.epost);
   return (
     <div
       className="grid grid-cols-2 mt-10 pt-6 text-[10pt]"
@@ -28,11 +31,12 @@ export default function Fot({ formData, session }: FotProps) {
         <p className="font-bold" style={{ lineHeight: 1.22, margin: "0 0 2px 0" }}>
           Kontaktuppgifter
         </p>
+        {/* Ej rätt????????????? Session */}
         <p style={{ lineHeight: 1.22, margin: "0 0 2px 0" }}>{session?.user?.name ?? "—"}</p>
         <p style={{ lineHeight: 1.22, margin: "0 0 2px 0" }}>
           Telefon: {formData.telefonnummer ?? "—"}
         </p>
-        <p style={{ lineHeight: 1.22, margin: "0 0 2px 0" }}>E-post: {formData.email}</p>
+        <p style={{ lineHeight: 1.22, margin: "0 0 2px 0" }}>E-post: {formData.epost}</p>
         <p style={{ lineHeight: 1.22, margin: "0 0 2px 0" }}>Webb: {formData.webbplats ?? "—"}</p>
       </div>
     </div>

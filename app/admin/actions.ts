@@ -364,9 +364,9 @@ export async function sparaForetagsprofil(formData: FormData) {
       INSERT INTO företagsprofil (
         "userId", företagsnamn, adress, postnummer, stad,
         organisationsnummer, momsregistreringsnummer,
-        telefonnummer, bankinfo, webbplats
+        telefonnummer, epost, bankinfo, webbplats
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       ON CONFLICT ("userId") DO UPDATE SET
         företagsnamn = EXCLUDED.företagsnamn,
         adress = EXCLUDED.adress,
@@ -375,6 +375,7 @@ export async function sparaForetagsprofil(formData: FormData) {
         organisationsnummer = EXCLUDED.organisationsnummer,
         momsregistreringsnummer = EXCLUDED.momsregistreringsnummer,
         telefonnummer = EXCLUDED.telefonnummer,
+        epost = EXCLUDED.epost,
         bankinfo = EXCLUDED.bankinfo,
         webbplats = EXCLUDED.webbplats
     `,
@@ -387,6 +388,7 @@ export async function sparaForetagsprofil(formData: FormData) {
         f("organisationsnummer"),
         f("momsregistreringsnummer"),
         f("telefonnummer"),
+        f("epost"),
         f("bankinfo"),
         f("webbplats"),
       ]
