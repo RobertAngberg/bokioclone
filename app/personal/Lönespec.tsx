@@ -1,6 +1,21 @@
 "use client";
 
-export default function Lönespecar() {
+interface LönespecProps {
+  anställd?: any;
+}
+
+export default function Lönespec({ anställd }: LönespecProps) {
+  if (!anställd) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-xl text-white font-semibold">Lönespecar</h3>
+          <p className="text-gray-400">Välj en anställd för att visa lönespecar.</p>
+        </div>
+      </div>
+    );
+  }
+
   const löneData = [
     { månad: "Juni 2025", brutto: "45000", skatt: "12150", netto: "32850", socialSkatt: "14175" },
     { månad: "Maj 2025", brutto: "45000", skatt: "12150", netto: "32850", socialSkatt: "14175" },
@@ -24,7 +39,9 @@ export default function Lönespecar() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white mb-6">Lönespecar</h2>
+      <h2 className="text-2xl font-bold text-white mb-6">
+        Lönespecar för {anställd.förnamn} {anställd.efternamn}
+      </h2>
 
       <div className="bg-slate-800 rounded-lg overflow-hidden">
         <table className="w-full">

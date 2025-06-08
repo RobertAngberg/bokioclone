@@ -7,39 +7,37 @@ export default function AnimeradFlik({
   icon,
   children,
   visaSummaDirekt,
+  forcedOpen = false,
 }: {
   title: string;
   icon: string;
   children: React.ReactNode;
   visaSummaDirekt?: string;
+  forcedOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(forcedOpen);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState("0px");
+  const [height, setHeight] = useState(forcedOpen ? "auto" : "0px");
 
   const toggle = () => {
     if (!open && contentRef.current) {
       setHeight(contentRef.current.scrollHeight + "px");
       setOpen(true);
     } else if (open && contentRef.current) {
-      // Sätt höjd till aktuell höjd, sen till 0px för att trigga transition
       setHeight(contentRef.current.scrollHeight + "px");
       requestAnimationFrame(() => setHeight("0px"));
       setOpen(false);
     }
   };
 
-  // När man öppnar: sätt height till auto efter transition
   useEffect(() => {
     if (open && contentRef.current) {
       setHeight(contentRef.current.scrollHeight + "px");
       const timeout = setTimeout(() => setHeight("auto"), 300);
       return () => clearTimeout(timeout);
     }
-    // När man stänger: inget att göra, height sätts till 0px i toggle
   }, [open]);
 
-  // Om innehållet ändras när fliken är öppen, justera höjden
   useEffect(() => {
     if (open && contentRef.current) {
       setHeight(contentRef.current.scrollHeight + "px");
@@ -52,10 +50,8 @@ export default function AnimeradFlik({
     <div className="border border-slate-700 rounded-lg overflow-hidden mb-4">
       <button
         onClick={toggle}
-        className="w-full px-4 py-3 text-lg font-semibold flex justify-between bg-slate-900 hover:bg-slate-800 transition"
+        className="w-full px-4 py-3 text-lg font-semibold flex justify-between transition bg-slate-900 hover:bg-slate-800 cursor-pointer"
         type="button"
-        tabIndex={0}
-        style={{ cursor: "pointer" }}
       >
         <span>
           {icon} {title}

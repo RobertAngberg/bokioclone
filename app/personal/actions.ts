@@ -37,6 +37,65 @@ type AnställdData = {
 };
 //#endregion
 
+export async function hämtaAllaAnställda() {
+  console.log("🚀 hämtaAllaAnställda() startar...");
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    const query = `
+      SELECT * FROM anställda 
+      WHERE user_id = $1 
+      ORDER BY skapad DESC
+    `;
+
+    const result = await client.query(query, [userId]);
+    console.log("✅ Hittade", result.rows.length, "anställda");
+
+    client.release();
+    return result.rows;
+  } catch (error) {
+    console.error("❌ hämtaAllaAnställda error:", error);
+    return [];
+  }
+}
+
+export async function hämtaAnställd(anställdId: number) {
+  console.log("🚀 hämtaAnställd() startar för ID:", anställdId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    const query = `
+      SELECT * FROM anställda 
+      WHERE id = $1 AND user_id = $2
+    `;
+
+    const result = await client.query(query, [anställdId, userId]);
+    console.log("✅ Hämtade anställd:", result.rows[0]);
+
+    client.release();
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error("❌ hämtaAnställd error:", error);
+    return null;
+  }
+}
+
 export async function sparaAnställd(data: AnställdData, anställdId?: number | null) {
   console.log("🚀 sparaAnställd() startar...", { anställdId });
 
@@ -179,8 +238,8 @@ export async function sparaAnställd(data: AnställdData, anställdId?: number |
   }
 }
 
-export async function hämtaAllaAnställda() {
-  console.log("🚀 hämtaAllaAnställda() startar...");
+export async function taBortAnställd(anställdId: number) {
+  console.log("🗑️ taBortAnställd() startar för ID:", anställdId);
 
   const session = await auth();
   if (!session?.user?.id) {
@@ -193,47 +252,25 @@ export async function hämtaAllaAnställda() {
     const client = await pool.connect();
 
     const query = `
-      SELECT * FROM anställda 
-      WHERE user_id = $1 
-      ORDER BY skapad DESC
-    `;
-
-    const result = await client.query(query, [userId]);
-    console.log("✅ Hittade", result.rows.length, "anställda");
-
-    client.release();
-    return result.rows;
-  } catch (error) {
-    console.error("❌ hämtaAllaAnställda error:", error);
-    return [];
-  }
-}
-
-export async function hämtaAnställd(anställdId: number) {
-  console.log("🚀 hämtaAnställd() startar för ID:", anställdId);
-
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Ingen inloggad användare");
-  }
-
-  const userId = parseInt(session.user.id, 10);
-
-  try {
-    const client = await pool.connect();
-
-    const query = `
-      SELECT * FROM anställda 
+      DELETE FROM anställda 
       WHERE id = $1 AND user_id = $2
     `;
 
     const result = await client.query(query, [anställdId, userId]);
-    console.log("✅ Hämtade anställd:", result.rows[0]);
+    console.log("✅ Anställd borttagen:", result.rowCount);
 
     client.release();
-    return result.rows[0] || null;
+    revalidatePath("/personal");
+
+    return {
+      success: true,
+      message: "Anställd borttagen!",
+    };
   } catch (error) {
-    console.error("❌ hämtaAnställd error:", error);
-    return null;
+    console.error("❌ taBortAnställd error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Ett fel uppstod",
+    };
   }
 }
