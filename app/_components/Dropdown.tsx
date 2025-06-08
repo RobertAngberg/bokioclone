@@ -14,7 +14,7 @@ export default function Dropdown({ value, options, onChange, placeholder }: Drop
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="px-4 py-2 text-white rounded cursor-pointer bg-cyan-700 hover:bg-cyan-800"
+      className="w-full px-4 py-2 text-white rounded cursor-pointer bg-cyan-700 hover:bg-cyan-800"
     >
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((opt) => (

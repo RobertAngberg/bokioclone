@@ -5,6 +5,7 @@ type TextFältProps = {
   value: string | number;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   required?: boolean;
+  placeholder?: string; // ✅ Lägg till placeholder
 };
 
 export default function TextFält({
@@ -14,6 +15,7 @@ export default function TextFält({
   value,
   onChange,
   required = true,
+  placeholder,
 }: TextFältProps) {
   return (
     <div>
@@ -28,7 +30,8 @@ export default function TextFält({
           value={value}
           onChange={onChange}
           required={required}
-          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white mb-4 h-24 resize-y"
+          placeholder={placeholder}
+          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white mb-4 h-24 resize-y placeholder-slate-400 focus:border-blue-500 focus:outline-none"
         />
       ) : (
         <input
@@ -38,7 +41,8 @@ export default function TextFält({
           value={value}
           onChange={onChange}
           required={required}
-          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white mb-4"
+          placeholder={placeholder}
+          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white mb-4 placeholder-slate-400 focus:border-blue-500 focus:outline-none"
         />
       )}
     </div>
