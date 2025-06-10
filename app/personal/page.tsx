@@ -1,4 +1,4 @@
-// #region Imports
+// #region Huvud
 "use client";
 
 import { useState } from "react";
@@ -38,7 +38,6 @@ export default function PersonalPage() {
   };
   // #endregion
 
-  // #region Render
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -75,5 +74,4 @@ export default function PersonalPage() {
       </div>
     </MainLayout>
   );
-  // #endregion
 }
