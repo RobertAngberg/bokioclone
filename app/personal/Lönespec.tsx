@@ -1,11 +1,14 @@
 //#region Huvud
 "use client";
 
+import { useState } from "react";
 import AnställdInfo from "./Lönespec/AnställdInfo";
 import LönespecHeader from "./Lönespec/LönespecHeader";
 import Lönetabell from "./Lönespec/Lönetabell";
 import Sammanfattning from "./Lönespec/Sammanfattning";
 import Företagsinfo from "./Lönespec/Företagsinfo";
+import Förhandsgranskning from "./Lönespec/Förhandsgranskning";
+import ExporteraPDFKnapp from "./Lönespec/ExporteraPDFKnapp";
 
 interface LönespecProps {
   anställd?: any;
@@ -13,6 +16,8 @@ interface LönespecProps {
 //#endregion
 
 export default function Lönespec({ anställd }: LönespecProps) {
+  const [showPreview, setShowPreview] = useState(false);
+
   //#region Beräkningar
   // Dynamisk skatteberäkning
   const beräknaSkatt = (bruttolön: number, skattetabell: number): number => {
@@ -86,13 +91,18 @@ export default function Lönespec({ anställd }: LönespecProps) {
   };
   //#endregion
 
-  // Formatera bankkonto
-  const formateraBankkonto = (clearingnummer: string, kontonummer: string): string => {
-    return `${clearingnummer}-${kontonummer}`;
-  };
+  if (!anställd) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-xl text-white font-semibold">Lönespecar</h3>
+          <p className="text-gray-400">Välj en anställd för att visa lönespecar.</p>
+        </div>
+      </div>
+    );
+  }
 
   //#region Formler
-  // Beräkna månadslön baserat på Bokios formler
   const månadslön = beräknaMånadslön(anställd);
   const bruttolön =
     anställd.arbetsbelastning === "Deltid" && anställd.deltid_procent
@@ -105,41 +115,56 @@ export default function Lönespec({ anställd }: LönespecProps) {
   const socialSkatt = beräknaSocialSkatt(bruttolön);
   const totalLönekostnad = bruttolön + socialSkatt;
 
-  const personnummer = anställd.personnummer;
-  const bankkonto = formateraBankkonto(anställd.clearingnummer, anställd.bankkonto);
   const löneperiod = beräknaLöneperiod();
   const utbetalning = beräknaUtbetalning();
   //#endregion
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <AnställdInfo
-        anställd={anställd}
-        personnummer={anställd.personnummer}
-        bankkonto={`${anställd.clearingnummer}-${anställd.bankkonto}`}
-      />
-
-      <div className="bg-slate-800 p-6 rounded-lg">
-        <LönespecHeader
+    <>
+      <div className="space-y-6 max-w-4xl mx-auto">
+        <AnställdInfo
+          anställd={anställd}
           personnummer={anställd.personnummer}
           bankkonto={`${anställd.clearingnummer}-${anställd.bankkonto}`}
-          löneperiod={löneperiod}
         />
 
-        <Lönetabell bruttolön={bruttolön} />
+        <div className="bg-slate-800 p-6 rounded-lg">
+          <LönespecHeader
+            personnummer={anställd.personnummer}
+            bankkonto={`${anställd.clearingnummer}-${anställd.bankkonto}`}
+            löneperiod={löneperiod}
+          />
 
-        <Sammanfattning
-          bruttolön={bruttolön}
-          skatt={skatt}
-          nettolön={nettolön}
-          socialSkatt={socialSkatt}
-          totalLönekostnad={totalLönekostnad}
-          utbetalning={utbetalning}
-          anställd={anställd}
-        />
+          <Lönetabell bruttolön={bruttolön} />
+
+          <Sammanfattning
+            bruttolön={bruttolön}
+            skatt={skatt}
+            nettolön={nettolön}
+            socialSkatt={socialSkatt}
+            totalLönekostnad={totalLönekostnad}
+            utbetalning={utbetalning}
+            anställd={anställd}
+          />
+        </div>
+
+        <Företagsinfo anställd={anställd} />
+
+        <ExporteraPDFKnapp onClick={() => setShowPreview(true)} />
       </div>
 
-      <Företagsinfo anställd={anställd} />
-    </div>
+      <Förhandsgranskning
+        anställd={anställd}
+        bruttolön={bruttolön}
+        skatt={skatt}
+        nettolön={nettolön}
+        socialSkatt={socialSkatt}
+        totalLönekostnad={totalLönekostnad}
+        utbetalning={utbetalning}
+        löneperiod={löneperiod}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+      />
+    </>
   );
 }

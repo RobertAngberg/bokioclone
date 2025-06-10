@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from "react";
 import Knapp from "../_components/Knapp";
-import Personalinformation from "./Personalinformation";
-import Kompensation from "./Kompensation";
-import Tjänsteställe from "./Tjänsteställe";
-import Skatt from "./Skatt";
+import Personalinformation from "./NyAnställd/Personalinformation";
+import Kompensation from "./NyAnställd/Kompensation";
+import Tjänsteställe from "./NyAnställd/Tjänsteställe";
+import Skatt from "./NyAnställd/Skatt";
 import { sparaAnställd, hämtaAllaAnställda, hämtaAnställd, taBortAnställd } from "./actions";
 
 interface AnställdaProps {
@@ -66,11 +66,13 @@ export default function Anställda({
   const [växaStöd, setVäxaStöd] = useState(false);
   // #endregion
 
-  // #region Alla andra funktioner samma som innan...
+  // #region Ladda anställda på mount
   useEffect(() => {
     laddaAnställda();
   }, []);
+  // #endregion
 
+  // #region Handlers
   const laddaAnställda = async () => {
     setLoading(true);
     try {
@@ -90,48 +92,6 @@ export default function Anställda({
     } catch (error) {
       console.error("Fel vid laddning av anställd:", error);
       onAnställdVald(anställd);
-    }
-  };
-
-  const laddaAnställdForRedigering = async (id: number) => {
-    try {
-      const anställd = await hämtaAnställd(id);
-      if (anställd) {
-        setPersonalData({
-          förnamn: anställd.förnamn || "",
-          efternamn: anställd.efternamn || "",
-          personnummer: anställd.personnummer || "",
-          jobbtitel: anställd.jobbtitel || "",
-          clearingnummer: anställd.clearingnummer || "",
-          bankkonto: anställd.bankkonto || "",
-          mail: anställd.mail || "",
-          adress: anställd.adress || "",
-          postnummer: anställd.postnummer || "",
-          ort: anställd.ort || "",
-        });
-
-        if (anställd.startdatum) setStartdatum(new Date(anställd.startdatum));
-        if (anställd.förnya_kontrakt) setFörnyaKontrakt(new Date(anställd.förnya_kontrakt));
-
-        setAnställningstyp(anställd.anställningstyp || "");
-        setLöneperiod(anställd.löneperiod || "");
-        setErsättningPer(anställd.ersättning_per || "");
-        setArbetsbelastning(anställd.arbetsbelastning || "");
-
-        setKompensation(anställd.kompensation?.toString() || "");
-        setArbetsvecka(anställd.arbetsvecka_timmar?.toString() || "");
-        SetDeltidProcent(anställd.deltid_procent?.toString() || "");
-        setTjänsteställeAdress(anställd.tjänsteställe_adress || "");
-        setTjänsteställeOrt(anställd.tjänsteställe_ort || "");
-        setSkattetabell(anställd.skattetabell?.toString() || "");
-        setSkattekolumn(anställd.skattekolumn?.toString() || "");
-        setVäxaStöd(anställd.växa_stöd || false);
-
-        setRedigerarId(id);
-      }
-    } catch (error) {
-      console.error("Fel vid laddning av anställd:", error);
-      alert("Kunde inte ladda anställd");
     }
   };
 

@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import TextFält from "../_components/TextFält";
-import Knapp from "../_components/Knapp";
-import { sparaAnställd } from "./actions";
+import TextFält from "../../_components/TextFält";
+import Knapp from "../../_components/Knapp";
+import { sparaAnställd } from "../actions";
 
 interface PersonalinformationProps {
   anställd?: any;
@@ -29,7 +29,6 @@ export default function Personalinformation({
   anställd,
   personalData,
   handleChange,
-  onRedigera,
 }: PersonalinformationProps) {
   // #region State för editable mode
   const [isEditing, setIsEditing] = useState(false);

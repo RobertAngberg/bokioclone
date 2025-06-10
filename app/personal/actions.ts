@@ -274,3 +274,31 @@ export async function taBortAnställd(anställdId: number) {
     };
   }
 }
+
+export async function hämtaFöretagsprofil(userId: string): Promise<any | null> {
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT
+        företagsnamn,
+        adress,
+        postnummer,
+        stad,
+        organisationsnummer,
+        momsregistreringsnummer,
+        telefonnummer,
+        epost,
+        webbplats
+      FROM företagsprofil
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    return rows[0] || null;
+  } catch (error) {
+    console.error("Fel vid hämtning av företagsprofil:", error);
+    return null;
+  }
+}

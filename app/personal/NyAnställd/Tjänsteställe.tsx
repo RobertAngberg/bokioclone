@@ -1,7 +1,7 @@
 // #region Imports och Types
 "use client";
 
-import TextFält from "../_components/TextFält";
+import TextFält from "../../_components/TextFält";
 
 interface TjänsteställeProps {
   tjänsteställeAdress: string;

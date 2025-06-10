@@ -1,6 +1,6 @@
 "use client";
 
-import Dropdown from "../_components/Dropdown";
+import Dropdown from "../../_components/Dropdown";
 
 interface SkattProps {
   skattetabell: string;

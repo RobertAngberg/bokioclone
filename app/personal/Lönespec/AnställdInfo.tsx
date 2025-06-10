@@ -33,9 +33,6 @@ export default function AnställdInfo({ anställd, personnummer, bankkonto }: An
             </div>
           </div>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-          Redigera anställd
-        </button>
       </div>
     </div>
   );
