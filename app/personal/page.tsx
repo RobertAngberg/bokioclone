@@ -6,9 +6,9 @@ import MainLayout from "../_components/MainLayout";
 import AnimeradFlik from "../_components/AnimeradFlik";
 import Anställda from "./Anställda";
 import Personalinformation from "./NyAnställd/Personalinformation";
-import Kontrakt from "./Kontrakt";
+import Kontrakt from "./Kontrakt/Kontrakt";
 import Lönespecar from "./Lönespec";
-import Semester from "./Semester";
+import Semester from "./Semester/Semester";
 // #endregion
 
 export default function PersonalPage() {
