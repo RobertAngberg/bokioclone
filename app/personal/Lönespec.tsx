@@ -91,17 +91,6 @@ export default function Lönespec({ anställd }: LönespecProps) {
   };
   //#endregion
 
-  if (!anställd) {
-    return (
-      <div className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-xl text-white font-semibold">Lönespecar</h3>
-          <p className="text-gray-400">Välj en anställd för att visa lönespecar.</p>
-        </div>
-      </div>
-    );
-  }
-
   //#region Formler
   const månadslön = beräknaMånadslön(anställd);
   const bruttolön =

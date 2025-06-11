@@ -23,7 +23,7 @@ export default function Anställda({
   visaFormulär,
   onAvbryt,
 }: AnställdaProps) {
-  // #region State - samma som innan
+  // #region State
   const [anställdaLista, setAnställdaLista] = useState<any[]>([]);
   const [redigerarId, setRedigerarId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +41,8 @@ export default function Anställda({
     ort: "",
   });
 
-  // Alla andra state variabler samma som innan...
   const [startdatum, setStartdatum] = useState<Date>(new Date());
-  const [förnyaKontrakt, setFörnyaKontrakt] = useState<Date>(() => {
+  const [slutdatum, setSlutdatum] = useState<Date>(() => {
     const datum = new Date();
     datum.setFullYear(datum.getFullYear() + 1);
     return datum;
@@ -135,7 +134,7 @@ export default function Anställda({
       postnummer: personalData.postnummer,
       ort: personalData.ort,
       startdatum: startdatum.toISOString().split("T")[0],
-      förnyaKontrakt: förnyaKontrakt.toISOString().split("T")[0],
+      slutdatum: slutdatum.toISOString().split("T")[0],
       anställningstyp,
       löneperiod,
       ersättningPer,
@@ -180,9 +179,10 @@ export default function Anställda({
       postnummer: "",
       ort: "",
     });
-    // Återställ alla andra fält också
+
+    // Återställ alla andra fält
     setStartdatum(new Date());
-    setFörnyaKontrakt(() => {
+    setSlutdatum(() => {
       const datum = new Date();
       datum.setFullYear(datum.getFullYear() + 1);
       return datum;
@@ -263,8 +263,8 @@ export default function Anställda({
           <Kompensation
             startdatum={startdatum}
             setStartdatum={setStartdatum}
-            förnyaKontrakt={förnyaKontrakt}
-            setFörnyaKontrakt={setFörnyaKontrakt}
+            slutdatum={slutdatum}
+            setSlutdatum={setSlutdatum}
             anställningstyp={anställningstyp}
             setAnställningstyp={setAnställningstyp}
             löneperiod={löneperiod}

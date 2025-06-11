@@ -8,8 +8,8 @@ import Dropdown from "../../_components/Dropdown";
 interface KompensationProps {
   startdatum: Date;
   setStartdatum: (date: Date) => void;
-  förnyaKontrakt: Date;
-  setFörnyaKontrakt: (date: Date) => void;
+  slutdatum: Date;
+  setSlutdatum: (date: Date) => void;
   anställningstyp: string;
   setAnställningstyp: (value: string) => void;
   löneperiod: string;
@@ -29,8 +29,8 @@ interface KompensationProps {
 export default function Kompensation({
   startdatum,
   setStartdatum,
-  förnyaKontrakt,
-  setFörnyaKontrakt,
+  slutdatum,
+  setSlutdatum,
   anställningstyp,
   setAnställningstyp,
   löneperiod,
@@ -63,8 +63,8 @@ export default function Kompensation({
         <div>
           <label className="block text-sm font-medium text-white mb-2">Förnya kontrakt</label>
           <DatePicker
-            selected={förnyaKontrakt}
-            onChange={(date) => date && setFörnyaKontrakt(date)}
+            selected={slutdatum}
+            onChange={(date) => date && setSlutdatum(date)}
             dateFormat="yyyy-MM-dd"
             className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
           />

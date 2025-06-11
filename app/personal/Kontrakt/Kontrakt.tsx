@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react";
 import Knapp from "../../_components/Knapp";
 import { sparaAnställd } from "../actions";
-import Kompensation from "./Kompensation";
 import Anställningstyp from "./Anställningstyp";
 import KontraktPeriod from "./KontraktPeriod";
 import Lön from "./Lön";
@@ -210,7 +209,6 @@ export default function Kontrakt({ anställd }: KontraktProps) {
 
       {isEditing ? (
         <div className="space-y-8">
-          <Kompensation editData={editData} handleChange={handleChange} />
           <Anställningstyp editData={editData} handleChange={handleChange} />
           <KontraktPeriod editData={editData} handleChange={handleChange} />
           <Lön editData={editData} handleChange={handleChange} />
@@ -224,7 +222,6 @@ export default function Kontrakt({ anställd }: KontraktProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Vänster kolumn */}
           <div className="space-y-6">
-            <Kompensation anställd={anställd} viewMode />
             <KontraktPeriod anställd={anställd} viewMode />
             <Lön anställd={anställd} viewMode />
             <Arbetsbelastning anställd={anställd} viewMode />
