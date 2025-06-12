@@ -7,7 +7,7 @@ import AnimeradFlik from "../_components/AnimeradFlik";
 import Anställda from "./Anställda";
 import Personalinformation from "./NyAnställd/Personalinformation";
 import Kontrakt from "./Kontrakt/Kontrakt";
-import Lönespecar from "./Lönespec";
+import Lönespecar from "./Lönespecar/Lönespecar";
 import Semester from "./Semester/Semester";
 // #endregion
 

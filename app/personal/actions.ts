@@ -576,3 +576,225 @@ export async function uppdateraSemesterdata(
     };
   }
 }
+
+export async function hämtaLönespecifikationer(anställdId: number) {
+  console.log("🚀 hämtaLönespecifikationer() startar för anställd:", anställdId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    // Kontrollera att anställd tillhör användaren
+    const checkQuery = `
+      SELECT id FROM anställda 
+      WHERE id = $1 AND user_id = $2
+    `;
+    const checkResult = await client.query(checkQuery, [anställdId, userId]);
+
+    if (checkResult.rows.length === 0) {
+      client.release();
+      return [];
+    }
+
+    const query = `
+      SELECT * FROM lönespecifikationer 
+      WHERE anställd_id = $1 
+      ORDER BY år DESC, månad DESC
+    `;
+
+    const result = await client.query(query, [anställdId]);
+    console.log("✅ Hittade", result.rows.length, "lönespecifikationer");
+
+    client.release();
+    return result.rows;
+  } catch (error) {
+    console.error("❌ hämtaLönespecifikationer error:", error);
+    return [];
+  }
+}
+
+export async function genereraLönespecifikation(anställdId: number, månad?: number, år?: number) {
+  console.log("🚀 genereraLönespecifikation() startar för anställd:", anställdId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    // Hämta anställd data
+    const anställdQuery = `
+      SELECT * FROM anställda 
+      WHERE id = $1 AND user_id = $2
+    `;
+    const anställdResult = await client.query(anställdQuery, [anställdId, userId]);
+
+    if (anställdResult.rows.length === 0) {
+      client.release();
+      return { success: false, error: "Anställd hittades inte" };
+    }
+
+    const anställd = anställdResult.rows[0];
+
+    // Beräkna period (nuvarande månad om inte specificerat)
+    const now = new Date();
+    const targetMånad = månad || now.getMonth() + 1; // 1-12
+    const targetÅr = år || now.getFullYear();
+
+    // Kontrollera om lönespec redan finns
+    const existsQuery = `
+      SELECT id FROM lönespecifikationer 
+      WHERE anställd_id = $1 AND månad = $2 AND år = $3
+    `;
+    const existsResult = await client.query(existsQuery, [anställdId, targetMånad, targetÅr]);
+
+    if (existsResult.rows.length > 0) {
+      client.release();
+      return {
+        success: false,
+        error: `Lönespecifikation för ${targetMånad}/${targetÅr} finns redan`,
+      };
+    }
+
+    // Beräkna period datum
+    const periodStart = new Date(targetÅr, targetMånad - 1, 1);
+    const periodSlut = new Date(targetÅr, targetMånad, 0);
+
+    // Beräkna grundlön baserat på anställnings typ
+    let grundlön = 0;
+    const kompensation = parseFloat(anställd.kompensation || 0);
+
+    switch (anställd.ersättning_per) {
+      case "Månad":
+        grundlön = kompensation;
+        break;
+      case "År":
+        grundlön = kompensation / 12;
+        break;
+      case "Timme":
+        const timmarPerVecka = parseFloat(anställd.arbetsvecka_timmar || 40);
+        grundlön = (kompensation * timmarPerVecka * 52) / 12;
+        break;
+      case "Vecka":
+        grundlön = (kompensation * 52) / 12;
+        break;
+      case "Dag":
+        grundlön = kompensation * 21.7; // Genomsnitt arbetsdagar per månad
+        break;
+      default:
+        grundlön = kompensation;
+    }
+
+    // Justera för deltid
+    if (anställd.arbetsbelastning === "Deltid" && anställd.deltid_procent) {
+      grundlön = grundlön * (parseFloat(anställd.deltid_procent) / 100);
+    }
+
+    // Bruttolön (bara grundlön till att börja med)
+    const bruttolön = grundlön;
+
+    // Beräkna skatt
+    const skattesatser: { [key: number]: number } = {
+      29: 0.18,
+      30: 0.2,
+      31: 0.21974,
+      32: 0.24,
+      33: 0.26,
+      34: 0.21974,
+      35: 0.3,
+      36: 0.32,
+      37: 0.34,
+      38: 0.36,
+      39: 0.38,
+      40: 0.4,
+      41: 0.42,
+      42: 0.44,
+    };
+
+    const skattetabell = parseInt(anställd.skattetabell) || 34;
+    const skattesats = skattesatser[skattetabell] || 0.21974;
+    const skatt = Math.round(bruttolön * skattesats);
+
+    // Beräkna sociala avgifter (arbetsgivaravgifter)
+    const socialaAvgifter = Math.round(bruttolön * 0.3142); // 31.42%
+
+    // Nettolön
+    const nettolön = bruttolön - skatt;
+
+    // Standard arbetstimmar per månad
+    const standardTimmar =
+      anställd.ersättning_per === "Timme"
+        ? parseFloat(anställd.arbetsvecka_timmar || 40) * 4.33
+        : 0;
+
+    // Skapa lönespecifikation
+    const insertQuery = `
+      INSERT INTO lönespecifikationer (
+        anställd_id, period_start, period_slut, månad, år,
+        grundlön, bruttolön, skatt, sociala_avgifter, nettolön,
+        arbetade_timmar, status, skapad_av
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING id
+    `;
+
+    const insertResult = await client.query(insertQuery, [
+      anställdId,
+      periodStart,
+      periodSlut,
+      targetMånad,
+      targetÅr,
+      Math.round(grundlön),
+      Math.round(bruttolön),
+      skatt,
+      socialaAvgifter,
+      Math.round(nettolön),
+      standardTimmar,
+      "Utkast",
+      userId,
+    ]);
+
+    client.release();
+
+    const lönespecId = insertResult.rows[0].id;
+    console.log("✅ Lönespecifikation skapad med ID:", lönespecId);
+
+    return {
+      success: true,
+      message: `Lönespecifikation för ${getMånadsNamn(targetMånad)} ${targetÅr} har skapats`,
+      id: lönespecId,
+    };
+  } catch (error) {
+    console.error("❌ genereraLönespecifikation error:", error);
+    return { success: false, error: "Kunde inte skapa lönespecifikation" };
+  }
+}
+
+// Helper function för månadsnamn
+function getMånadsNamn(månad: number): string {
+  const månader = [
+    "Januari",
+    "Februari",
+    "Mars",
+    "April",
+    "Maj",
+    "Juni",
+    "Juli",
+    "Augusti",
+    "September",
+    "Oktober",
+    "November",
+    "December",
+  ];
+  return månader[månad - 1] || "Okänd";
+}

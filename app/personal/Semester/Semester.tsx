@@ -1,30 +1,32 @@
-// #region Huvud
+//#region Huvud
 "use client";
 
 import { useState } from "react";
 import TextFält from "../../_components/TextFält";
 import InfoTooltip from "../../_components/InfoTooltip";
 import Knapp from "../../_components/Knapp";
+import { uppdateraSemesterdata } from "../actions";
 
 interface SemesterdataProps {
   anställd: any;
 }
-// #endregion
+//#endregion
 
 export default function Semesterdata({ anställd }: SemesterdataProps) {
-  // #region State
+  //#region State
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [editData, setEditData] = useState({
-    semesterdagarPerÅr: anställd?.semesterdata?.semesterdagarPerÅr || "25",
-    kvarandeDagar: anställd?.semesterdata?.kvarandeDagar || "0",
-    sparadeDagar: anställd?.semesterdata?.sparadeDagar || "0",
-    användaFörskott: anställd?.semesterdata?.användaFörskott || "0",
-    kvarandeFörskott: anställd?.semesterdata?.kvarandeFörskott || "0",
-    innestående: anställd?.semesterdata?.innestående || "0",
+    semesterdagarPerÅr: anställd?.semesterdagar_per_år?.toString() || "25",
+    kvarandeDagar: anställd?.kvarvarande_dagar?.toString() || "0",
+    sparadeDagar: anställd?.sparade_dagar?.toString() || "0",
+    användaFörskott: anställd?.använda_förskott?.toString() || "0",
+    kvarandeFörskott: anställd?.kvarvarande_förskott?.toString() || "0",
+    innestående: anställd?.innestående_ersättning?.toString() || "0",
   });
-  // #endregion
+  //#endregion
 
-  // #region Info texts
+  //#region Info texts
   const infoTexts = {
     semesterdagarPerÅr:
       "Laglig minimum är 25 dagar per år för heltidsanställda. Kan vara högre enligt kollektivavtal eller företagspolicy.",
@@ -39,9 +41,9 @@ export default function Semesterdata({ anställd }: SemesterdataProps) {
     innestående:
       "Pengar som ska betalas ut för ej uttagen semester vid uppsägning. Beräknas som 12% av bruttolön × sparade dagar.",
   };
-  // #endregion
+  //#endregion
 
-  // #region Handlers
+  //#region Handlers
   const handleChange = (name: string, value: any) => {
     setEditData((prev) => ({
       ...prev,
@@ -49,25 +51,53 @@ export default function Semesterdata({ anställd }: SemesterdataProps) {
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Spara till databas
-    console.log("Sparar semesterdata:", editData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    setLoading(true);
+
+    try {
+      const result = await uppdateraSemesterdata(anställd.id, {
+        semesterdagarPerÅr: parseInt(editData.semesterdagarPerÅr) || 25,
+        kvarandeDagar: parseFloat(editData.kvarandeDagar) || 0,
+        sparadeDagar: parseFloat(editData.sparadeDagar) || 0,
+        användaFörskott: parseFloat(editData.användaFörskott) || 0,
+        kvarandeFörskott: parseFloat(editData.kvarandeFörskott) || 0,
+        innestående: parseFloat(editData.innestående) || 0,
+      });
+
+      if (result.success) {
+        alert("✅ Semesterdata sparad!");
+        setIsEditing(false);
+        // Uppdatera anställd objektet med nya värden
+        anställd.semesterdagar_per_år = parseInt(editData.semesterdagarPerÅr) || 25;
+        anställd.kvarvarande_dagar = parseFloat(editData.kvarandeDagar) || 0;
+        anställd.sparade_dagar = parseFloat(editData.sparadeDagar) || 0;
+        anställd.använda_förskott = parseFloat(editData.användaFörskott) || 0;
+        anställd.kvarvarande_förskott = parseFloat(editData.kvarandeFörskott) || 0;
+        anställd.innestående_ersättning = parseFloat(editData.innestående) || 0;
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Fel vid sparande:", error);
+      alert("Ett fel uppstod vid sparande");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
     // Återställ till original data
     setEditData({
-      semesterdagarPerÅr: anställd?.semesterdata?.semesterdagarPerÅr || "25",
-      kvarandeDagar: anställd?.semesterdata?.kvarandeDagar || "0",
-      sparadeDagar: anställd?.semesterdata?.sparadeDagar || "0",
-      användaFörskott: anställd?.semesterdata?.användaFörskott || "0",
-      kvarandeFörskott: anställd?.semesterdata?.kvarandeFörskott || "0",
-      innestående: anställd?.semesterdata?.innestående || "0",
+      semesterdagarPerÅr: anställd?.semesterdagar_per_år?.toString() || "25",
+      kvarandeDagar: anställd?.kvarvarande_dagar?.toString() || "0",
+      sparadeDagar: anställd?.sparade_dagar?.toString() || "0",
+      användaFörskott: anställd?.använda_förskott?.toString() || "0",
+      kvarandeFörskott: anställd?.kvarvarande_förskott?.toString() || "0",
+      innestående: anställd?.innestående_ersättning?.toString() || "0",
     });
     setIsEditing(false);
   };
-  // #endregion
+  //#endregion
 
   if (isEditing) {
     return (
@@ -81,8 +111,8 @@ export default function Semesterdata({ anställd }: SemesterdataProps) {
             />
           </div>
           <div className="flex gap-2">
-            <Knapp text="Spara" onClick={handleSave} />
-            <Knapp text="Avbryt" onClick={handleCancel} />
+            <Knapp text={loading ? "Sparar..." : "Spara"} onClick={handleSave} disabled={loading} />
+            <Knapp text="Avbryt" onClick={handleCancel} disabled={loading} />
           </div>
         </div>
 

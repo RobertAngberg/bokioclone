@@ -27,6 +27,7 @@ export default function Anställda({
   const [anställdaLista, setAnställdaLista] = useState<any[]>([]);
   const [redigerarId, setRedigerarId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingAnställdId, setLoadingAnställdId] = useState<number | null>(null); // ← Ny state
 
   const [personalData, setPersonalData] = useState({
     förnamn: "",
@@ -85,12 +86,15 @@ export default function Anställda({
   };
 
   const handleAnställdKlick = async (anställd: any) => {
+    setLoadingAnställdId(anställd.id); // ← Sätt loading state
     try {
       const fullData = await hämtaAnställd(anställd.id);
       onAnställdVald(fullData);
     } catch (error) {
       console.error("Fel vid laddning av anställd:", error);
       onAnställdVald(anställd);
+    } finally {
+      setLoadingAnställdId(null); // ← Ta bort loading state
     }
   };
 
@@ -208,7 +212,6 @@ export default function Anställda({
   return (
     <div className="space-y-6">
       {!visaFormulär ? (
-        // Visa lista och "Lägg till"-knapp
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-xl text-white font-semibold">Sparade anställda</h3>
@@ -229,13 +232,24 @@ export default function Anställda({
                   key={anställd.id}
                   className="flex justify-between items-center bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600 group"
                 >
-                  <div onClick={() => handleAnställdKlick(anställd)} className="flex-1">
-                    <span className="text-white">
-                      {anställd.förnamn} {anställd.efternamn} -{" "}
-                      {anställd.jobbtitel || "Ingen titel"}
-                    </span>
-                    <div className="text-gray-400 text-sm">
-                      {new Date(anställd.skapad).toLocaleDateString()}
+                  <div
+                    onClick={() => handleAnställdKlick(anställd)}
+                    className={`flex-1 ${loadingAnställdId === anställd.id ? "pointer-events-none opacity-50" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* ← Spinner när denna anställd laddas */}
+                      {loadingAnställdId === anställd.id && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-500"></div>
+                      )}
+                      <div>
+                        <span className="text-white">
+                          {anställd.förnamn} {anställd.efternamn} -{" "}
+                          {anställd.jobbtitel || "Ingen titel"}
+                        </span>
+                        <div className="text-gray-400 text-sm">
+                          {new Date(anställd.skapad).toLocaleDateString()}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <Knapp
