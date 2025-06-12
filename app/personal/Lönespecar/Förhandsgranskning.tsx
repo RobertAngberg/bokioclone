@@ -126,26 +126,23 @@ export default function Förhandsgranskning({
   if (!lönespec || !anställd) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-auto">
-        {/* Header med knappar */}
-        <div className="sticky top-0 bg-slate-800 text-white p-4 flex justify-between items-center z-10">
-          <h2 className="text-xl font-bold">Förhandsgranskning - Lönespec {månadsNamn}</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={handleExportPDF}
-              disabled={isExporting}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded transition-colors"
-            >
-              {isExporting ? "Exporterar..." : "📤 Exportera PDF"}
-            </button>
-            <button
-              onClick={onStäng}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors"
-            >
-              ✕ Stäng
-            </button>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+        {/* Modal med knappar */}
+        <div className="sticky top-0 bg-slate-800 text-white p-4 flex justify-end items-center z-10">
+          <button
+            onClick={handleExportPDF}
+            disabled={isExporting}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded transition-colors"
+          >
+            {isExporting ? "Exporterar..." : "📤 Exportera PDF"}
+          </button>
+          <button
+            onClick={onStäng}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors ml-2"
+          >
+            ✕ Stäng
+          </button>
         </div>
 
         {/* PDF-innehåll */}

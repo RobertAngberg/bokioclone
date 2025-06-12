@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AnimeradFlik from "../../_components/AnimeradFlik";
-import Förhandsgranskning from "./Förhandsgranskning"; // ← IMPORTERAR DEN NYA KOMPONENTEN
+import Förhandsgranskning from "./Förhandsgranskning";
+import ExporteraPDFKnapp from "./ExporteraPDFKnapp";
+import Knapp from "../../_components/Knapp";
 import {
   hämtaLönespecifikationer,
   genereraLönespecifikation,
@@ -13,226 +15,6 @@ import {
 interface LönespecProps {
   anställd?: any;
 }
-
-// Placeholder komponenter
-const LönespecHeader = ({
-  lönespec,
-  anställd,
-  månadsNamn,
-  getStatusBadge,
-  onVisaFörhandsgranskning,
-}: any) => (
-  <div className="bg-slate-700 p-4 rounded-lg">
-    <div className="flex justify-between items-start mb-4">
-      <h4 className="text-lg font-bold text-white">Lönespecifikation {månadsNamn}</h4>
-      <div className="flex gap-2 items-center">
-        {getStatusBadge(lönespec.status)}
-        <button
-          onClick={onVisaFörhandsgranskning}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-        >
-          👁️ Förhandsgranska
-        </button>
-      </div>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-base">
-      <div>
-        <span className="font-semibold text-white">Löneperiod:</span>
-        <br />
-        <span className="text-gray-300">
-          {new Date(lönespec.period_start || lönespec.skapad).toLocaleDateString("sv-SE")} -
-          {new Date(lönespec.period_slut || lönespec.skapad).toLocaleDateString("sv-SE")}
-        </span>
-      </div>
-      <div>
-        <span className="font-semibold text-white">Bankkonto:</span>
-        <br />
-        <span className="text-gray-300">
-          {anställd.clearingnummer}-{anställd.bankkonto}
-        </span>
-      </div>
-      <div>
-        <span className="font-semibold text-white">Lönespec ID:</span>
-        <br />
-        <span className="text-gray-300">#{lönespec.id}</span>
-      </div>
-    </div>
-  </div>
-);
-
-const Lönetabell = ({ lönespec }: any) => {
-  const grundlön = parseFloat(lönespec.grundlön || lönespec.bruttolön || 0);
-  const övertid = parseFloat(lönespec.övertid || 0);
-  const tillägg = parseFloat(lönespec.tillägg || 0);
-  const bonus = parseFloat(lönespec.bonus || 0);
-  const bruttolön = parseFloat(lönespec.bruttolön || 0);
-  const socialaAvgifter = parseFloat(lönespec.sociala_avgifter || 0);
-  const skatt = parseFloat(lönespec.skatt || 0);
-
-  return (
-    <div className="bg-slate-700 p-4 rounded-lg">
-      <h4 className="text-lg font-bold text-white mb-4">Lönekomponenter</h4>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th className="text-left text-white font-semibold py-2">Benämning</th>
-              <th className="text-right text-white font-semibold py-2">Antal</th>
-              <th className="text-right text-white font-semibold py-2">Kostnad</th>
-              <th className="text-right text-white font-semibold py-2">Summa</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="text-gray-300 py-2">Lön</td>
-              <td className="text-right text-gray-300 py-2">1 Månad</td>
-              <td className="text-right text-gray-300 py-2">
-                {grundlön.toLocaleString("sv-SE")} kr
-              </td>
-              <td className="text-right text-white font-medium py-2">
-                {grundlön.toLocaleString("sv-SE")} kr
-              </td>
-            </tr>
-            {övertid > 0 && (
-              <tr className="border-b border-slate-600">
-                <td className="text-gray-300 py-2">Övertid</td>
-                <td className="text-right text-gray-300 py-2">
-                  {parseFloat(lönespec.övertid_timmar || 0)} h
-                </td>
-                <td className="text-right text-gray-300 py-2">
-                  {övertid.toLocaleString("sv-SE")} kr
-                </td>
-                <td className="text-right text-white font-medium py-2">
-                  {övertid.toLocaleString("sv-SE")} kr
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-slate-600 space-y-2">
-        <div className="flex justify-between text-base">
-          <span className="text-white font-semibold">Totalt Lönekostnad</span>
-          <span className="text-white font-bold">
-            {(bruttolön + socialaAvgifter).toLocaleString("sv-SE")} kr
-          </span>
-        </div>
-        <div className="flex justify-between text-base">
-          <span className="text-white font-semibold">Totalt Bruttolön</span>
-          <span className="text-white font-bold">{bruttolön.toLocaleString("sv-SE")} kr</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-300">varav sociala avgifter</span>
-          <span className="text-gray-300">{socialaAvgifter.toLocaleString("sv-SE")} kr</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-300">varav Skatt</span>
-          <span className="text-gray-300">{skatt.toLocaleString("sv-SE")} kr</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Sammanfattning = ({ lönespec, anställd }: any) => {
-  const nettolön = parseFloat(lönespec.nettolön || 0);
-  const utbetalningsDatum = new Date(lönespec.år, (lönespec.månad || 1) - 1, 25);
-
-  return (
-    <div className="bg-slate-700 p-4 rounded-lg">
-      <h4 className="text-lg font-bold text-white mb-4">Sammanfattning</h4>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="bg-slate-800 p-4 rounded">
-            <div className="text-sm text-gray-400 mb-1">
-              Utbetalas: {utbetalningsDatum.toLocaleDateString("sv-SE")}
-            </div>
-            <div className="text-xl font-bold text-green-400">
-              Nettolön: {nettolön.toLocaleString("sv-SE")} kr
-            </div>
-          </div>
-
-          <div>
-            <h5 className="text-white font-semibold mb-2">Semesterdagar</h5>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <div>
-                <span className="text-gray-400">Betalda</span>
-                <div className="text-white font-medium">
-                  {parseFloat(lönespec.semester_uttag || 0)}
-                </div>
-              </div>
-              <div>
-                <span className="text-gray-400">Sparade</span>
-                <div className="text-white font-medium">
-                  {parseFloat(anställd.sparade_dagar || 0)}
-                </div>
-              </div>
-              <div>
-                <span className="text-gray-400">Förskott</span>
-                <div className="text-white font-medium">
-                  {parseFloat(anställd.använda_förskott || 0)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <h5 className="text-white font-semibold mb-2">Skatt beräknad på</h5>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-gray-400">Skattetabell</span>
-                <div className="text-white font-medium">{anställd.skattetabell}</div>
-              </div>
-              <div>
-                <span className="text-gray-400">Skattekolumn</span>
-                <div className="text-white font-medium">{anställd.skattekolumn}</div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h5 className="text-white font-semibold mb-2">Totalt detta år</h5>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Brutto</span>
-                <span className="text-white">
-                  {parseFloat(lönespec.bruttolön || 0).toLocaleString("sv-SE")} kr
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Förmåner</span>
-                <span className="text-white">0,00 kr</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Skatt</span>
-                <span className="text-white">
-                  {parseFloat(lönespec.skatt || 0).toLocaleString("sv-SE")} kr
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ExporteraPDFKnapp = ({ lönespec, anställd, företagsprofil }: any) => (
-  <div className="text-center">
-    <button
-      onClick={() => alert("PDF export kommer snart!")}
-      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-    >
-      📄 Exportera som PDF
-    </button>
-  </div>
-);
-
 //#endregion
 
 export default function Lönespecar({ anställd }: LönespecProps) {
@@ -330,7 +112,9 @@ export default function Lönespecar({ anställd }: LönespecProps) {
   return (
     <>
       <div className="space-y-4 max-w-6xl mx-auto">
-        {/* Anställd info header */}
+        {
+          //#region Anställd Header
+        }
         <div className="bg-slate-800 p-6 rounded-lg">
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-xl font-bold text-white">
@@ -394,23 +178,13 @@ export default function Lönespecar({ anställd }: LönespecProps) {
             </div>
           </div>
         </div>
+        {
+          //#endregion
+        }
 
-        {/* Loading state */}
-        {loading && (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
-            <span className="ml-3 text-white text-base">Laddar lönespecifikationer...</span>
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <div className="bg-red-900/20 border border-red-500 p-4 rounded-lg">
-            <p className="text-red-400 text-base">❌ {error}</p>
-          </div>
-        )}
-
-        {/* Inga lönespecifikationer */}
+        {
+          //#region Empty State
+        }
         {!loading && !error && lönespecar.length === 0 && (
           <div className="bg-slate-800 p-8 rounded-lg text-center">
             <h3 className="text-lg font-semibold text-white mb-3">
@@ -422,49 +196,256 @@ export default function Lönespecar({ anställd }: LönespecProps) {
             </p>
           </div>
         )}
+        {
+          //#endregion
+        }
 
-        {/* Lönespecifikationer rendering */}
+        {
+          //#region Lönespecifikationer Lista
+        }
         {!loading &&
           lönespecar.length > 0 &&
           lönespecar.map((lönespec) => {
             const månadsNamn = getMånadsNamn(lönespec.månad || 1, lönespec.år || 2025);
+            const grundlön = parseFloat(lönespec.grundlön || lönespec.bruttolön || 0);
+            const övertid = parseFloat(lönespec.övertid || 0);
+            const bruttolön = parseFloat(lönespec.bruttolön || 0);
+            const socialaAvgifter = parseFloat(lönespec.sociala_avgifter || 0);
+            const skatt = parseFloat(lönespec.skatt || 0);
+            const nettolön = parseFloat(lönespec.nettolön || 0);
+            const utbetalningsDatum = new Date(lönespec.år, (lönespec.månad || 1) - 1, 25);
 
             return (
               <AnimeradFlik
                 key={lönespec.id}
-                title={`💰 Lönespec ${månadsNamn}`}
+                title={`Lönespec ${månadsNamn}`}
                 icon="💰"
-                visaSummaDirekt={`Netto: ${parseFloat(lönespec.nettolön || 0).toLocaleString("sv-SE")} kr`}
+                visaSummaDirekt={`Netto: ${nettolön.toLocaleString("sv-SE")} kr`}
               >
                 <div className="space-y-6">
-                  {/* Header med status och knappar */}
-                  <LönespecHeader
-                    lönespec={lönespec}
-                    anställd={anställd}
-                    månadsNamn={månadsNamn}
-                    getStatusBadge={getStatusBadge}
-                    onVisaFörhandsgranskning={() => setVisaFörhandsgranskning(lönespec.id)}
-                  />
+                  {
+                    //#region Header
+                  }
+                  <div className="bg-slate-700 p-4 rounded-lg">
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 className="text-lg font-bold text-white">
+                        Lönespecifikation {månadsNamn}
+                      </h4>
+                      <div className="flex gap-2 items-center">
+                        {getStatusBadge(lönespec.status)}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-base">
+                      <div>
+                        <span className="font-semibold text-white">Löneperiod:</span>
+                        <br />
+                        <span className="text-gray-300">
+                          {new Date(lönespec.period_start || lönespec.skapad).toLocaleDateString(
+                            "sv-SE"
+                          )}{" "}
+                          -{" "}
+                          {new Date(lönespec.period_slut || lönespec.skapad).toLocaleDateString(
+                            "sv-SE"
+                          )}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-white">Bankkonto:</span>
+                        <br />
+                        <span className="text-gray-300">
+                          {anställd.clearingnummer}-{anställd.bankkonto}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-white">Lönespec ID:</span>
+                        <br />
+                        <span className="text-gray-300">#{lönespec.id}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {
+                    //#endregion
+                  }
 
-                  {/* Lönetabell */}
-                  <Lönetabell lönespec={lönespec} />
+                  {
+                    //#region Lönetabell
+                  }
+                  <div className="bg-slate-700 p-4 rounded-lg">
+                    <h4 className="text-lg font-bold text-white mb-4">Lönekomponenter</h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr>
+                            <th className="text-left text-white font-semibold py-2">Benämning</th>
+                            <th className="text-right text-white font-semibold py-2">Antal</th>
+                            <th className="text-right text-white font-semibold py-2">Kostnad</th>
+                            <th className="text-right text-white font-semibold py-2">Summa</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="text-gray-300 py-2">Lön</td>
+                            <td className="text-right text-gray-300 py-2">1 Månad</td>
+                            <td className="text-right text-gray-300 py-2">
+                              {grundlön.toLocaleString("sv-SE")} kr
+                            </td>
+                            <td className="text-right text-white font-medium py-2">
+                              {grundlön.toLocaleString("sv-SE")} kr
+                            </td>
+                          </tr>
+                          {övertid > 0 && (
+                            <tr className="border-b border-slate-600">
+                              <td className="text-gray-300 py-2">Övertid</td>
+                              <td className="text-right text-gray-300 py-2">
+                                {parseFloat(lönespec.övertid_timmar || 0)} h
+                              </td>
+                              <td className="text-right text-gray-300 py-2">
+                                {övertid.toLocaleString("sv-SE")} kr
+                              </td>
+                              <td className="text-right text-white font-medium py-2">
+                                {övertid.toLocaleString("sv-SE")} kr
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  {/* Sammanfattning */}
-                  <Sammanfattning lönespec={lönespec} anställd={anställd} />
+                    <div className="mt-4 pt-4 border-t border-slate-600 space-y-2">
+                      <div className="flex justify-between text-base">
+                        <span className="text-white font-semibold">Totalt Lönekostnad</span>
+                        <span className="text-white font-bold">
+                          {(bruttolön + socialaAvgifter).toLocaleString("sv-SE")} kr
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-base">
+                        <span className="text-white font-semibold">Totalt Bruttolön</span>
+                        <span className="text-white font-bold">
+                          {bruttolön.toLocaleString("sv-SE")} kr
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">varav sociala avgifter</span>
+                        <span className="text-gray-300">
+                          {socialaAvgifter.toLocaleString("sv-SE")} kr
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">varav Skatt</span>
+                        <span className="text-gray-300">{skatt.toLocaleString("sv-SE")} kr</span>
+                      </div>
+                    </div>
+                  </div>
+                  {
+                    //#endregion
+                  }
 
-                  {/* Export knapp */}
-                  <ExporteraPDFKnapp
-                    lönespec={lönespec}
-                    anställd={anställd}
-                    företagsprofil={företagsprofil}
-                  />
+                  {
+                    //#region Sammanfattning
+                  }
+                  <div className="bg-slate-700 p-4 rounded-lg">
+                    <h4 className="text-lg font-bold text-white mb-4">Sammanfattning</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="bg-slate-800 p-4 rounded">
+                          <div className="text-sm text-gray-400 mb-1">
+                            Utbetalas: {utbetalningsDatum.toLocaleDateString("sv-SE")}
+                          </div>
+                          <div className="text-xl font-bold text-green-400">
+                            Nettolön: {nettolön.toLocaleString("sv-SE")} kr
+                          </div>
+                        </div>
+
+                        <div>
+                          <h5 className="text-white font-semibold mb-2">Semesterdagar</h5>
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <span className="text-gray-400">Betalda</span>
+                              <div className="text-white font-medium">
+                                {parseFloat(lönespec.semester_uttag || 0)}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Sparade</span>
+                              <div className="text-white font-medium">
+                                {parseFloat(anställd.sparade_dagar || 0)}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Förskott</span>
+                              <div className="text-white font-medium">
+                                {parseFloat(anställd.använda_förskott || 0)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <h5 className="text-white font-semibold mb-2">Skatt beräknad på</h5>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-gray-400">Skattetabell</span>
+                              <div className="text-white font-medium">{anställd.skattetabell}</div>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Skattekolumn</span>
+                              <div className="text-white font-medium">{anställd.skattekolumn}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h5 className="text-white font-semibold mb-2">Totalt detta år</h5>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Brutto</span>
+                              <span className="text-white">
+                                {bruttolön.toLocaleString("sv-SE")} kr
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Förmåner</span>
+                              <span className="text-white">0,00 kr</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Skatt</span>
+                              <span className="text-white">{skatt.toLocaleString("sv-SE")} kr</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {
+                    //#endregion
+                  }
+
+                  {
+                    //#region Knappar
+                  }
+                  <div className="flex gap-2 mt-4">
+                    <Knapp
+                      text="👁️ Förhandsgranska & Exportera PDF"
+                      onClick={() => setVisaFörhandsgranskning(lönespec.id)}
+                    />
+                  </div>
+                  {
+                    //#endregion
+                  }
                 </div>
               </AnimeradFlik>
             );
           })}
+        {
+          //#endregion
+        }
       </div>
 
-      {/* Förhandsgranskning modal - Använder den importerade komponenten */}
+      {
+        //#region Modal
+      }
       {visaFörhandsgranskning && (
         <Förhandsgranskning
           lönespec={lönespecar.find((l) => l.id === visaFörhandsgranskning)}
@@ -473,6 +454,9 @@ export default function Lönespecar({ anställd }: LönespecProps) {
           onStäng={() => setVisaFörhandsgranskning(null)}
         />
       )}
+      {
+        //#endregion
+      }
     </>
   );
 }
