@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AnimeradFlik from "../../_components/AnimeradFlik";
+import Förhandsgranskning from "./Förhandsgranskning"; // ← IMPORTERAR DEN NYA KOMPONENTEN
 import {
   hämtaLönespecifikationer,
   genereraLönespecifikation,
@@ -75,7 +76,7 @@ const Lönetabell = ({ lönespec }: any) => {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-600">
+            <tr>
               <th className="text-left text-white font-semibold py-2">Benämning</th>
               <th className="text-right text-white font-semibold py-2">Antal</th>
               <th className="text-right text-white font-semibold py-2">Kostnad</th>
@@ -83,7 +84,7 @@ const Lönetabell = ({ lönespec }: any) => {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-slate-600">
+            <tr>
               <td className="text-gray-300 py-2">Lön</td>
               <td className="text-right text-gray-300 py-2">1 Månad</td>
               <td className="text-right text-gray-300 py-2">
@@ -232,79 +233,6 @@ const ExporteraPDFKnapp = ({ lönespec, anställd, företagsprofil }: any) => (
   </div>
 );
 
-const Förhandsgranskning = ({ lönespec, anställd, företagsprofil, onStäng }: any) => {
-  if (!lönespec) return null;
-
-  const månadsNamn = new Date(lönespec.år, (lönespec.månad || 1) - 1, 1).toLocaleDateString(
-    "sv-SE",
-    { month: "long", year: "numeric" }
-  );
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">Lönespecifikation {månadsNamn}</h2>
-          <button
-            onClick={onStäng}
-            className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="p-6 space-y-6">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Lönespecifikation {månadsNamn}
-            </h1>
-            <div className="text-lg">
-              <span className="font-bold text-green-600">
-                Nettolön: {parseFloat(lönespec.nettolön || 0).toLocaleString("sv-SE")} kr
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 text-sm">
-            <div>
-              <h3 className="font-semibold mb-2">Anställd</h3>
-              <div>
-                {anställd.förnamn} {anställd.efternamn}
-              </div>
-              <div>{anställd.personnummer}</div>
-              <div>{anställd.adress}</div>
-              <div>
-                {anställd.postnummer} {anställd.ort}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-2">Företag</h3>
-              <div>{företagsprofil?.företagsnamn || "Företag AB"}</div>
-              <div>{företagsprofil?.organisationsnummer || "123456-7890"}</div>
-              <div>{företagsprofil?.epost || "info@företag.se"}</div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-2">Lönedetaljer</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>Bruttolön: {parseFloat(lönespec.bruttolön || 0).toLocaleString("sv-SE")} kr</div>
-              <div>Skatt: {parseFloat(lönespec.skatt || 0).toLocaleString("sv-SE")} kr</div>
-              <div>
-                Sociala avgifter:{" "}
-                {parseFloat(lönespec.sociala_avgifter || 0).toLocaleString("sv-SE")} kr
-              </div>
-              <div className="font-bold">
-                Nettolön: {parseFloat(lönespec.nettolön || 0).toLocaleString("sv-SE")} kr
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 //#endregion
 
 export default function Lönespecar({ anställd }: LönespecProps) {
@@ -536,7 +464,7 @@ export default function Lönespecar({ anställd }: LönespecProps) {
           })}
       </div>
 
-      {/* Förhandsgranskning modal */}
+      {/* Förhandsgranskning modal - Använder den importerade komponenten */}
       {visaFörhandsgranskning && (
         <Förhandsgranskning
           lönespec={lönespecar.find((l) => l.id === visaFörhandsgranskning)}
