@@ -40,8 +40,8 @@ interface Step3Props {
   valtFörval?: Förval | null;
   setCurrentStep?: (step: number) => void;
   extrafält?: Record<string, ExtrafältRad>;
-  isUtlägg?: boolean;
-  valdaAnställda?: number[];
+  isUtlägg?: boolean; // ← LÄGG TILL
+  valdaAnställda?: number[]; // ← LÄGG TILL
 }
 // #endregion
 
@@ -55,8 +55,8 @@ export default function Steg3({
   valtFörval = null,
   setCurrentStep,
   extrafält = {},
-  isUtlägg,
-  valdaAnställda,
+  isUtlägg = false, // ← LÄGG TILL
+  valdaAnställda = [], // ← LÄGG TILL
 }: Step3Props) {
   // #region Moms- och beloppsberäkning
   const momsSats = valtFörval?.momssats ?? 0;
@@ -78,7 +78,8 @@ export default function Steg3({
     formData.set("belopp", belopp.toString());
     formData.set("moms", moms.toString());
     formData.set("beloppUtanMoms", beloppUtanMoms.toString());
-
+    formData.set("isUtlägg", isUtlägg ? "true" : "false");
+    formData.set("valdaAnställda", JSON.stringify(valdaAnställda));
     const result = await saveTransaction(formData);
     if (result.success) setCurrentStep(4);
   };
@@ -96,12 +97,16 @@ export default function Steg3({
       : valtFörval
         ? valtFörval.konton.map((rad, i) => {
             const kontoNr = rad.kontonummer?.toString().trim();
-            const namn = `${kontoNr} ${rad.beskrivning ?? ""}`;
+            let namn = `${kontoNr} ${rad.beskrivning ?? ""}`;
             let beloppAttVisa = 0;
 
             if (kontoNr?.startsWith("26")) {
               beloppAttVisa = moms;
             } else if (kontoNr === "1930") {
+              // Om det är utlägg, visa 2890 istället för 1930
+              if (isUtlägg && valdaAnställda.length > 0) {
+                namn = `2890 Övriga kortfristiga skulder`;
+              }
               beloppAttVisa = belopp;
             } else {
               beloppAttVisa = beloppUtanMoms;
@@ -125,21 +130,11 @@ export default function Steg3({
       <BakåtPil onClick={() => setCurrentStep?.(2)} />
 
       <h1 className="text-3xl mb-4 text-center">Steg 3: Kontrollera och slutför</h1>
-
       <p className="text-center font-bold text-xl mb-1">{valtFörval ? valtFörval.namn : ""}</p>
       <p className="text-center text-gray-300 mb-8">
         {transaktionsdatum ? new Date(transaktionsdatum).toLocaleDateString("sv-SE") : ""}
       </p>
       {kommentar && <p className="text-center text-gray-400 mb-4 italic">{kommentar}</p>}
-
-      {isUtlägg && valdaAnställda && valdaAnställda.length > 0 && (
-        <div className="mb-6 p-4 bg-blue-900 rounded-lg">
-          <h3 className="text-white font-bold">✅ Utlägg för anställd</h3>
-          <p className="text-gray-300">
-            Detta är ett utlägg för {valdaAnställda.length} anställd(a)
-          </p>
-        </div>
-      )}
 
       <form action={handleSubmit}>
         <table className="w-full text-left border border-gray-700 text-sm md:text-base bg-slate-900 rounded-xl overflow-hidden">

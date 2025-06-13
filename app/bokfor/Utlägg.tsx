@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { hämtaAnställda } from "./actions"; // Importera från dina actions
+import { hämtaAnställda } from "./actions";
 
 interface Anställd {
   id: number;
@@ -24,6 +24,7 @@ export default function Utlägg({ onUtläggChange, initialValue = false }: Utlä
   const [loading, setLoading] = useState(false);
   //#endregion
 
+  //#region Handlers
   const handleUtläggChange = async (checked: boolean) => {
     setIsUtlägg(checked);
 
@@ -53,6 +54,7 @@ export default function Utlägg({ onUtläggChange, initialValue = false }: Utlä
     setValdaAnställda(nyaValda);
     onUtläggChange?.(isUtlägg, nyaValda);
   };
+  //#endregion
 
   return (
     <div className="space-y-4">
@@ -69,7 +71,7 @@ export default function Utlägg({ onUtläggChange, initialValue = false }: Utlä
           htmlFor="utlägg-checkbox"
           className="text-gray-400 text-base font-medium cursor-pointer select-none"
         >
-          Är utlägg åt en anställd
+          Är ett utlägg åt en anställd
         </label>
       </div>
 
