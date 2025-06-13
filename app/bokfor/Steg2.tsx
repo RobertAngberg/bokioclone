@@ -6,6 +6,8 @@ import Information from "./Information";
 import Kommentar from "./Kommentar";
 import Forhandsgranskning from "./Förhandsgranskning";
 import BakåtPil from "../_components/BakåtPil";
+import Utlägg from "./Utlägg";
+import KnappFullWidth from "../_components/KnappFullWidth";
 
 type KontoRad = {
   beskrivning: string;
@@ -40,6 +42,8 @@ type Step2Props = {
   valtFörval: Förval | null;
   extrafält: Record<string, { label: string; debet: number; kredit: number }>;
   setExtrafält: (fält: Record<string, { label: string; debet: number; kredit: number }>) => void;
+  setIsUtlägg: (value: boolean) => void;
+  setValdaAnställda: (value: number[]) => void;
 };
 // #endregion
 
@@ -58,8 +62,10 @@ export default function Steg2({
   valtFörval,
   extrafält,
   setExtrafält,
+  setIsUtlägg,
+  setValdaAnställda,
 }: Step2Props) {
-  // Rendera specialförval om sådant finns
+  //#region Visa specialförval om det finns
   if (valtFörval?.specialtyp) {
     try {
       const SpecialComponent = require(`./SpecialFörval/${valtFörval.specialtyp}`).default;
@@ -90,6 +96,7 @@ export default function Steg2({
       );
     }
   }
+  // #endregion
 
   return (
     <>
@@ -98,7 +105,6 @@ export default function Steg2({
 
         <h1 className="mb-6 text-3xl text-center text-white">Steg 2: Fyll i uppgifter</h1>
         <div className="flex flex-col-reverse justify-between h-auto md:flex-row">
-          {/* Formulärsektion */}
           <div className="w-full mb-10 md:w-[40%] md:mb-0 bg-slate-900 border border-gray-700 rounded-xl p-6 text-white">
             <LaddaUppFil
               fil={fil}
@@ -113,17 +119,15 @@ export default function Steg2({
               transaktionsdatum={transaktionsdatum}
               setTransaktionsdatum={setTransaktionsdatum}
             />
-
             <Kommentar kommentar={kommentar ?? ""} setKommentar={setKommentar} />
-            <button
-              type="button"
-              onClick={() => setCurrentStep(3)}
-              className="w-full flex items-center justify-center px-4 py-4 font-bold text-white rounded cursor-pointer bg-cyan-600 hover:bg-cyan-700"
-            >
-              Bokför
-            </button>
+            <Utlägg
+              onUtläggChange={(utlägg, anställda) => {
+                setIsUtlägg(utlägg);
+                setValdaAnställda(anställda || []);
+              }}
+            />
+            <KnappFullWidth text="Bokför" onClick={() => setCurrentStep(3)} />
           </div>
-
           <Forhandsgranskning fil={fil} pdfUrl={pdfUrl} />
         </div>
       </div>

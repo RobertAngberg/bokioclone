@@ -410,3 +410,22 @@ export async function extractPDFText(pdfBase64: string): Promise<string> {
     return "";
   }
 }
+
+export async function hämtaAnställda() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Inte inloggad");
+  }
+
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      "SELECT id, förnamn, efternamn FROM anställda WHERE user_id = $1 ORDER BY förnamn, efternamn",
+      [session.user.id]
+    );
+
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
