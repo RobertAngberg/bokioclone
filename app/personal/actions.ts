@@ -798,3 +798,208 @@ function getMånadsNamn(månad: number): string {
   ];
   return månader[månad - 1] || "Okänd";
 }
+
+export async function hämtaUtlägg(anställdId: number) {
+  console.log("🚀 hämtaUtlägg() startar för anställd:", anställdId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    // Kontrollera att anställd tillhör användaren
+    const checkQuery = `
+      SELECT id FROM anställda 
+      WHERE id = $1 AND user_id = $2
+    `;
+    const checkResult = await client.query(checkQuery, [anställdId, userId]);
+
+    if (checkResult.rows.length === 0) {
+      client.release();
+      return [];
+    }
+
+    const query = `
+      SELECT * FROM utlägg 
+      WHERE anställd_id = $1 
+      ORDER BY datum DESC, skapad DESC
+    `;
+
+    const result = await client.query(query, [anställdId]);
+    console.log("✅ Hittade", result.rows.length, "utlägg");
+
+    client.release();
+    return result.rows;
+  } catch (error) {
+    console.error("❌ hämtaUtlägg error:", error);
+    return [];
+  }
+}
+
+export async function godkännUtlägg(utläggId: number, lönespecId?: number) {
+  console.log("🚀 godkännUtlägg() startar för utlägg:", utläggId, "lönespec:", lönespecId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    // Kontrollera att utlägg tillhör användarens anställd
+    const checkQuery = `
+      SELECT u.*, a.förnamn, a.efternamn FROM utlägg u
+      JOIN anställda a ON u.anställd_id = a.id
+      WHERE u.id = $1 AND a.user_id = $2
+    `;
+    const checkResult = await client.query(checkQuery, [utläggId, userId]);
+
+    if (checkResult.rows.length === 0) {
+      client.release();
+      return { success: false, error: "Utlägg inte hittat" };
+    }
+
+    const utlägg = checkResult.rows[0];
+
+    if (utlägg.status !== "Väntande") {
+      client.release();
+      return { success: false, error: "Utlägg är redan behandlat" };
+    }
+
+    // Uppdatera utlägg status
+    const updateUtläggQuery = `
+      UPDATE utlägg SET
+        status = 'Godkänd',
+        godkänd_datum = NOW(),
+        lönespecifikation_id = $1,
+        uppdaterad = NOW()
+      WHERE id = $2
+      RETURNING *
+    `;
+
+    await client.query(updateUtläggQuery, [lönespecId || null, utläggId]);
+
+    // Om lönespec är specificerad, uppdatera lönespecen
+    if (lönespecId) {
+      // Kontrollera att lönespec tillhör samma anställd
+      const lönespecQuery = `
+        SELECT * FROM lönespecifikationer 
+        WHERE id = $1 AND anställd_id = $2
+      `;
+      const lönespecResult = await client.query(lönespecQuery, [lönespecId, utlägg.anställd_id]);
+
+      if (lönespecResult.rows.length > 0) {
+        const lönespec = lönespecResult.rows[0];
+        const utläggBelopp = parseFloat(utlägg.belopp);
+
+        // Lägg till utlägg till bruttolön
+        const nyBruttolön = parseFloat(lönespec.bruttolön) + utläggBelopp;
+
+        // Omberäkna skatt och nettolön
+        const skattetabell = 34; // Default, borde hämtas från anställd
+        const skattesats = 0.21974;
+        const nySkatt = Math.round(nyBruttolön * skattesats);
+        const nyNettolön = nyBruttolön - nySkatt;
+
+        // Uppdatera lönespecifikation
+        const updateLönespecQuery = `
+          UPDATE lönespecifikationer SET
+            bruttolön = $1,
+            skatt = $2,
+            nettolön = $3,
+            utlägg_total = COALESCE(utlägg_total, 0) + $4,
+            uppdaterad = NOW()
+          WHERE id = $5
+        `;
+
+        await client.query(updateLönespecQuery, [
+          Math.round(nyBruttolön),
+          nySkatt,
+          Math.round(nyNettolön),
+          utläggBelopp,
+          lönespecId,
+        ]);
+
+        console.log(`✅ Utlägg ${utläggBelopp} kr tillagt till lönespec ${lönespecId}`);
+      }
+    }
+
+    client.release();
+    revalidatePath("/personal");
+
+    return {
+      success: true,
+      message: `Utlägg godkänt${lönespecId ? " och tillagt till lönespec" : ""}!`,
+    };
+  } catch (error) {
+    console.error("❌ godkännUtlägg error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Ett fel uppstod",
+    };
+  }
+}
+
+export async function avvisaUtlägg(utläggId: number, anledning?: string) {
+  console.log("🚀 avvisaUtlägg() startar för utlägg:", utläggId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    // Kontrollera att utlägg tillhör användarens anställd
+    const checkQuery = `
+      SELECT u.* FROM utlägg u
+      JOIN anställda a ON u.anställd_id = a.id
+      WHERE u.id = $1 AND a.user_id = $2
+    `;
+    const checkResult = await client.query(checkQuery, [utläggId, userId]);
+
+    if (checkResult.rows.length === 0) {
+      client.release();
+      return { success: false, error: "Utlägg inte hittat" };
+    }
+
+    const updateQuery = `
+      UPDATE utlägg SET
+        status = 'Avvisad',
+        kommentar = CASE 
+          WHEN kommentar IS NULL THEN $1
+          ELSE kommentar || ' | AVVISAD: ' || $1
+        END,
+        uppdaterad = NOW()
+      WHERE id = $2
+      RETURNING *
+    `;
+
+    await client.query(updateQuery, [anledning || "Ingen anledning angiven", utläggId]);
+
+    client.release();
+    revalidatePath("/personal");
+
+    return {
+      success: true,
+      message: "Utlägg avvisat!",
+    };
+  } catch (error) {
+    console.error("❌ avvisaUtlägg error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Ett fel uppstod",
+    };
+  }
+}

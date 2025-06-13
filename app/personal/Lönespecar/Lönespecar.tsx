@@ -4,44 +4,45 @@
 import { useState, useEffect, useCallback } from "react";
 import AnimeradFlik from "../../_components/AnimeradFlik";
 import Förhandsgranskning from "./Förhandsgranskning";
-import ExporteraPDFKnapp from "./ExporteraPDFKnapp";
 import Knapp from "../../_components/Knapp";
-import {
-  hämtaLönespecifikationer,
-  genereraLönespecifikation,
-  hämtaFöretagsprofil,
-} from "../actions";
+import { hämtaLönespecifikationer, hämtaFöretagsprofil, hämtaUtlägg } from "../actions";
 
 interface LönespecProps {
   anställd?: any;
 }
 //#endregion
 
+//#region State och Handlers
 export default function Lönespecar({ anställd }: LönespecProps) {
-  //#region State
   const [lönespecar, setLönespecar] = useState<any[]>([]);
+  const [utlägg, setUtlägg] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [genererar, setGenererar] = useState(false);
   const [företagsprofil, setFöretagsprofil] = useState<any>(null);
   const [visaFörhandsgranskning, setVisaFörhandsgranskning] = useState<string | null>(null);
-  //#endregion
 
-  //#region Handlers
   const laddaLönespecifikationer = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       console.log("🔍 Laddar lönespecifikationer för anställd ID:", anställd.id);
-      const [lönespecData, företagsData] = await Promise.all([
+      const [lönespecData, företagsData, utläggData] = await Promise.all([
         hämtaLönespecifikationer(anställd.id),
         hämtaFöretagsprofil(anställd.user_id?.toString() || ""),
+        hämtaUtlägg(anställd.id),
       ]);
 
       setLönespecar(lönespecData);
       setFöretagsprofil(företagsData);
-      console.log("✅ Laddade", lönespecData.length, "lönespecifikationer");
+      setUtlägg(utläggData);
+      console.log(
+        "✅ Laddade",
+        lönespecData.length,
+        "lönespecifikationer och",
+        utläggData.length,
+        "utlägg"
+      );
     } catch (err) {
       console.error("❌ Fel vid laddning av lönespecifikationer:", err);
       setError("Kunde inte ladda lönespecifikationer");
@@ -50,56 +51,15 @@ export default function Lönespecar({ anställd }: LönespecProps) {
     }
   }, [anställd?.id, anställd?.user_id]);
 
-  const handleGenereraLönespec = async () => {
-    setGenererar(true);
-
-    try {
-      const result = await genereraLönespecifikation(anställd.id);
-
-      if (result.success) {
-        alert(`✅ ${result.message}`);
-        await laddaLönespecifikationer();
-      } else {
-        alert(`❌ ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Fel vid generering:", error);
-      alert("Ett fel uppstod vid generering av lönespecifikation");
-    } finally {
-      setGenererar(false);
-    }
-  };
-
-  const getNuvarandeMånad = (): string => {
-    const now = new Date();
-    return now.toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
-  };
-  //#endregion
-
-  //#region Effects
-  useEffect(() => {
-    if (anställd?.id) {
-      laddaLönespecifikationer();
-    }
-  }, [anställd?.id, laddaLönespecifikationer]);
-  //#endregion
-
-  //#region Helper Functions
-  const getMånadsNamn = (månad: number, år: number): string => {
-    const datum = new Date(år, månad - 1, 1);
-    const månadsnamn = datum.toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
-    return månadsnamn.charAt(0).toUpperCase() + månadsnamn.slice(1);
-  };
-
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      Utkast: { color: "bg-yellow-600", text: "📝 Utkast" },
-      Godkänd: { color: "bg-blue-600", text: "✅ Godkänd" },
-      Utbetald: { color: "bg-green-600", text: "💰 Utbetald" },
-      Arkiverad: { color: "bg-gray-600", text: "📁 Arkiverad" },
+      Avvisad: { color: "bg-red-600", text: "❌ Avvisad" },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig["Utkast"];
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      color: "bg-gray-600",
+      text: status,
+    };
 
     return (
       <span className={`${config.color} text-white px-2 py-1 rounded-md text-sm font-medium`}>
@@ -107,88 +67,45 @@ export default function Lönespecar({ anställd }: LönespecProps) {
       </span>
     );
   };
+
+  const getMånadsNamn = (månad: number, år: number): string => {
+    const datum = new Date(år, månad - 1, 1);
+    const månadsnamn = datum.toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
+    return månadsnamn.charAt(0).toUpperCase() + månadsnamn.slice(1);
+  };
+
+  const getLönespecStatusBadge = (status: string) => {
+    const statusConfig = {
+      Arkiverad: { color: "bg-gray-600", text: "📁 Arkiverad" },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      color: "bg-blue-600",
+      text: status,
+    };
+
+    return (
+      <span className={`${config.color} text-white px-2 py-1 rounded-md text-sm font-medium`}>
+        {config.text}
+      </span>
+    );
+  };
+
+  useEffect(() => {
+    if (anställd?.id) {
+      laddaLönespecifikationer();
+    }
+  }, [anställd?.id, laddaLönespecifikationer]);
   //#endregion
 
   return (
     <>
       <div className="space-y-4 max-w-6xl mx-auto">
-        {
-          //#region Anställd Header
-        }
-        <div className="bg-slate-800 p-6 rounded-lg">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-bold text-white">
-              {anställd.förnamn} {anställd.efternamn}
-            </h3>
-
-            <button
-              onClick={handleGenereraLönespec}
-              disabled={genererar || loading}
-              className={`${
-                genererar || loading
-                  ? "bg-gray-600 cursor-not-allowed opacity-50"
-                  : "bg-green-600 hover:bg-green-700"
-              } text-white px-6 py-2 rounded-lg font-semibold transition-colors text-base flex items-center gap-2`}
-            >
-              {genererar ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Genererar...
-                </>
-              ) : (
-                <>⚡ Generera lönespec för {getNuvarandeMånad()}</>
-              )}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-base text-gray-300">
-            <div>
-              <span className="font-semibold text-white">Adress:</span>
-              <br />
-              <span className="text-base">
-                {anställd.adress} {anställd.postnummer} {anställd.ort}
-              </span>
-            </div>
-            <div>
-              <span className="font-semibold text-white">Mail:</span>
-              <br />
-              <span className="text-base">{anställd.mail}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-white">Personnummer:</span>
-              <br />
-              <span className="text-base">{anställd.personnummer}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-white">Bankkonto:</span>
-              <br />
-              <span className="text-base">
-                {anställd.clearingnummer}-{anställd.bankkonto}
-              </span>
-            </div>
-            <div>
-              <span className="font-semibold text-white">Skattetabell:</span>
-              <br />
-              <span className="text-base">{anställd.skattetabell}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-white">Skattekolumn:</span>
-              <br />
-              <span className="text-base">{anställd.skattekolumn}</span>
-            </div>
-          </div>
-        </div>
-        {
-          //#endregion
-        }
-
-        {
-          //#region Empty State
-        }
-        {!loading && !error && lönespecar.length === 0 && (
+        {/* Empty State */}
+        {!loading && !error && lönespecar.length === 0 && utlägg.length === 0 && (
           <div className="bg-slate-800 p-8 rounded-lg text-center">
             <h3 className="text-lg font-semibold text-white mb-3">
-              📋 Inga lönespecifikationer skapade än
+              📋 Inga lönespecifikationer eller utlägg skapade än
             </h3>
             <p className="text-gray-400 text-base mb-4">
               Klicka på &quot;Generera lönespec&quot; ovan för att skapa den första
@@ -196,13 +113,8 @@ export default function Lönespecar({ anställd }: LönespecProps) {
             </p>
           </div>
         )}
-        {
-          //#endregion
-        }
 
-        {
-          //#region Lönespecifikationer Lista
-        }
+        {/* Lönespecifikationer Lista */}
         {!loading &&
           lönespecar.length > 0 &&
           lönespecar.map((lönespec) => {
@@ -215,24 +127,27 @@ export default function Lönespecar({ anställd }: LönespecProps) {
             const nettolön = parseFloat(lönespec.nettolön || 0);
             const utbetalningsDatum = new Date(lönespec.år, (lönespec.månad || 1) - 1, 25);
 
+            // Alla utlägg för denna lönespec (även okopplade visas)
+            const lönespecUtlägg = utlägg.filter(
+              (u) => u.lönespecifikation_id === lönespec.id || !u.lönespecifikation_id
+            );
+
             return (
               <AnimeradFlik
                 key={lönespec.id}
                 title={`Lönespec ${månadsNamn}`}
-                icon="💰"
+                icon="📅"
                 visaSummaDirekt={`Netto: ${nettolön.toLocaleString("sv-SE")} kr`}
               >
                 <div className="space-y-6">
-                  {
-                    //#region Header
-                  }
+                  {/* Header */}
                   <div className="bg-slate-700 p-4 rounded-lg">
                     <div className="flex justify-between items-start mb-4">
                       <h4 className="text-lg font-bold text-white">
                         Lönespecifikation {månadsNamn}
                       </h4>
                       <div className="flex gap-2 items-center">
-                        {getStatusBadge(lönespec.status)}
+                        {getLönespecStatusBadge(lönespec.status)}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-base">
@@ -263,13 +178,8 @@ export default function Lönespecar({ anställd }: LönespecProps) {
                       </div>
                     </div>
                   </div>
-                  {
-                    //#endregion
-                  }
 
-                  {
-                    //#region Lönetabell
-                  }
+                  {/* Lönetabell */}
                   <div className="bg-slate-700 p-4 rounded-lg">
                     <h4 className="text-lg font-bold text-white mb-4">Lönekomponenter</h4>
                     <div className="overflow-x-auto">
@@ -336,13 +246,58 @@ export default function Lönespecar({ anställd }: LönespecProps) {
                       </div>
                     </div>
                   </div>
-                  {
-                    //#endregion
-                  }
 
-                  {
-                    //#region Sammanfattning
-                  }
+                  {/* Utlägg Sektion - inuti lönespec */}
+                  {lönespecUtlägg.length > 0 && (
+                    <div className="bg-slate-700 p-4 rounded-lg">
+                      <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        💳 Utlägg ({lönespecUtlägg.length})
+                        <span className="text-sm font-normal text-gray-300">
+                          {lönespecUtlägg
+                            .reduce((sum, u) => sum + parseFloat(u.belopp || 0), 0)
+                            .toLocaleString("sv-SE")}{" "}
+                          kr
+                        </span>
+                      </h4>
+                      <div className="space-y-3">
+                        {lönespecUtlägg.map((utläggItem) => (
+                          <div key={utläggItem.id} className="bg-slate-800 p-3 rounded-lg">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h5 className="text-white font-medium">{utläggItem.beskrivning}</h5>
+                                <p className="text-gray-400 text-sm">
+                                  {new Date(utläggItem.datum).toLocaleDateString("sv-SE")}
+                                  {utläggItem.kategori && ` • ${utläggItem.kategori}`}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-white font-bold">
+                                  {parseFloat(utläggItem.belopp).toLocaleString("sv-SE")} kr
+                                </div>
+                              </div>
+                            </div>
+
+                            {utläggItem.kommentar && (
+                              <div className="text-gray-400 text-sm mb-2">
+                                {utläggItem.kommentar}
+                              </div>
+                            )}
+
+                            <div className="flex justify-between items-center text-xs text-gray-500">
+                              <span>ID: #{utläggItem.id}</span>
+                              <div className="flex gap-3">
+                                {utläggItem.kvitto_fil && (
+                                  <span>📎 Kvitto: {utläggItem.kvitto_fil}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sammanfattning */}
                   <div className="bg-slate-700 p-4 rounded-lg">
                     <h4 className="text-lg font-bold text-white mb-4">Sammanfattning</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -418,34 +373,20 @@ export default function Lönespecar({ anställd }: LönespecProps) {
                       </div>
                     </div>
                   </div>
-                  {
-                    //#endregion
-                  }
 
-                  {
-                    //#region Knappar
-                  }
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-2 mt-4 justify-center">
                     <Knapp
                       text="👁️ Förhandsgranska & Exportera PDF"
                       onClick={() => setVisaFörhandsgranskning(lönespec.id)}
                     />
                   </div>
-                  {
-                    //#endregion
-                  }
                 </div>
               </AnimeradFlik>
             );
           })}
-        {
-          //#endregion
-        }
       </div>
 
-      {
-        //#region Modal
-      }
+      {/* Modal */}
       {visaFörhandsgranskning && (
         <Förhandsgranskning
           lönespec={lönespecar.find((l) => l.id === visaFörhandsgranskning)}
@@ -454,9 +395,6 @@ export default function Lönespecar({ anställd }: LönespecProps) {
           onStäng={() => setVisaFörhandsgranskning(null)}
         />
       )}
-      {
-        //#endregion
-      }
     </>
   );
 }
