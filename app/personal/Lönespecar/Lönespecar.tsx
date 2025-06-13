@@ -109,8 +109,12 @@ export default function Lönespecar({ anställd }: LönespecProps) {
         {!loading && !error && lönespecar.length === 0 && utlägg.length === 0 && (
           <div className="bg-slate-800 p-8 rounded-lg text-center">
             <h3 className="text-lg font-semibold text-white mb-3">
-              📋 Inga lönespecifikationer eller utlägg skapade än.
+              📋 Inga lönespecifikationer eller utlägg skapade än
             </h3>
+            <p className="text-gray-400 text-base mb-4">
+              Klicka på &quot;Generera lönespec&quot; ovan för att skapa den första
+              lönespecifikationen.
+            </p>
           </div>
         )}
 
@@ -140,6 +144,7 @@ export default function Lönespecar({ anställd }: LönespecProps) {
                 visaSummaDirekt={`Netto: ${nettolön.toLocaleString("sv-SE")} kr`}
               >
                 <div className="space-y-6">
+                  {/* ToppInfo */}
                   <ToppInfo
                     månadsNamn={månadsNamn}
                     lönespec={lönespec}
@@ -147,6 +152,7 @@ export default function Lönespecar({ anställd }: LönespecProps) {
                     getLönespecStatusBadge={getLönespecStatusBadge}
                   />
 
+                  {/* Lönekomponenter */}
                   <Lönekomponenter
                     grundlön={grundlön}
                     övertid={övertid}
@@ -156,8 +162,10 @@ export default function Lönespecar({ anställd }: LönespecProps) {
                     skatt={skatt}
                   />
 
+                  {/* Utlägg */}
                   <Utlägg lönespecUtlägg={lönespecUtlägg} getStatusBadge={getStatusBadge} />
 
+                  {/* Sammanfattning */}
                   <Sammanfattning
                     utbetalningsDatum={utbetalningsDatum}
                     nettolön={nettolön}
@@ -167,6 +175,7 @@ export default function Lönespecar({ anställd }: LönespecProps) {
                     skatt={skatt}
                   />
 
+                  {/* Knappar */}
                   <div className="flex gap-2 mt-4 justify-center">
                     <Knapp
                       text="👁️ Förhandsgranska & Exportera PDF"

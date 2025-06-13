@@ -9,6 +9,7 @@ import Personalinformation from "./NyAnställd/Personalinformation";
 import Kontrakt from "./Kontrakt/Kontrakt";
 import Lönespecar from "./Lönespecar/Lönespecar";
 import Semester from "./Semester/Semester";
+import Lönekörning from "./Lönekörning/Lönekörning";
 // #endregion
 
 export default function PersonalPage() {
@@ -50,6 +51,9 @@ export default function PersonalPage() {
             visaFormulär={visaAnställdFormulär}
             onAvbryt={handleAvbrytFormulär}
           />
+        </AnimeradFlik>
+        <AnimeradFlik title="Lönekörning" icon="💰" forcedOpen={false}>
+          <Lönekörning />
         </AnimeradFlik>
 
         {valdAnställd && !visaAnställdFormulär && (
