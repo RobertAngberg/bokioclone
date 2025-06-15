@@ -1,86 +1,119 @@
-import Extrarader from "./Extrarader/Extrarader";
+"use client";
 
-interface LönekomponenterProps {
-  grundlön: number;
-  övertid: number;
+import { useEffect, useState } from "react";
+import { hämtaExtrarader } from "../actions";
+import ExtraRader from "./Extrarader/Extrarader";
+
+type LönekomponenterProps = {
   lönespec: any;
-  bruttolön: number;
-  socialaAvgifter: number;
-  skatt: number;
-}
+  grundlön?: number;
+  övertid?: number;
+  bruttolön?: number;
+  socialaAvgifter?: number;
+  skatt?: number;
+};
 
 export default function Lönekomponenter({
+  lönespec,
   grundlön,
   övertid,
-  lönespec,
   bruttolön,
   socialaAvgifter,
   skatt,
 }: LönekomponenterProps) {
+  const [extrarader, setExtrarader] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (lönespec?.id) {
+      hämtaExtrarader(lönespec.id).then(setExtrarader);
+    }
+  }, [lönespec?.id]);
+
+  // Visa alltid dessa rader överst
+  const lönRader = [
+    {
+      label: "Grundlön",
+      antal: "",
+      aSEK: "",
+      kommentar: "",
+      value: grundlön ?? lönespec?.grundlön ?? lönespec?.bruttolön ?? 0,
+    },
+    {
+      label: "Övertid",
+      antal: "",
+      aSEK: "",
+      kommentar: "",
+      value: övertid ?? lönespec?.övertid ?? 0,
+    },
+    {
+      label: "Bruttolön",
+      antal: "",
+      aSEK: "",
+      kommentar: "",
+      value: bruttolön ?? lönespec?.bruttolön ?? 0,
+    },
+    {
+      label: "Sociala avgifter",
+      antal: "",
+      aSEK: "",
+      kommentar: "",
+      value: socialaAvgifter ?? lönespec?.sociala_avgifter ?? 0,
+    },
+    {
+      label: "Skatt",
+      antal: "",
+      aSEK: "",
+      kommentar: "",
+      value: skatt ?? lönespec?.skatt ?? 0,
+    },
+    {
+      label: "Nettolön",
+      antal: "",
+      aSEK: "",
+      kommentar: "",
+      value: lönespec?.nettolön ?? 0,
+    },
+  ];
+
   return (
     <div className="bg-slate-700 p-4 rounded-lg">
-      <h4 className="text-lg font-bold text-white mb-4">Lönekomponenter</h4>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th className="text-left text-white font-semibold py-2">Benämning</th>
-              <th className="text-right text-white font-semibold py-2">Antal</th>
-              <th className="text-right text-white font-semibold py-2">Kostnad</th>
-              <th className="text-right text-white font-semibold py-2">Summa</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="text-gray-300 py-2">Lön</td>
-              <td className="text-right text-gray-300 py-2">1 Månad</td>
-              <td className="text-right text-gray-300 py-2">
-                {grundlön.toLocaleString("sv-SE")} kr
-              </td>
+      <h3 className="text-lg font-semibold text-white mb-4">Lönekomponenter</h3>
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th className="text-left text-gray-400">Benämning</th>
+            <th className="text-right text-gray-400">Antal</th>
+            <th className="text-right text-gray-400">à SEK</th>
+            <th className="text-right text-gray-400">Kommentar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* LÖNERADER */}
+          {lönRader.map((rad, i) => (
+            <tr key={rad.label} className="border-b border-slate-600">
+              <td className="text-gray-300 py-2">{rad.label}</td>
+              <td className="text-right text-gray-300 py-2">{rad.antal}</td>
+              <td className="text-right text-gray-300 py-2">{rad.aSEK}</td>
               <td className="text-right text-white font-medium py-2">
-                {grundlön.toLocaleString("sv-SE")} kr
+                {rad.value !== "" ? rad.value.toLocaleString("sv-SE") : ""}
               </td>
             </tr>
-            {övertid > 0 && (
-              <tr className="border-b border-slate-600">
-                <td className="text-gray-300 py-2">Övertid</td>
-                <td className="text-right text-gray-300 py-2">
-                  {parseFloat(lönespec.övertid_timmar || 0)} h
-                </td>
-                <td className="text-right text-gray-300 py-2">
-                  {övertid.toLocaleString("sv-SE")} kr
-                </td>
-                <td className="text-right text-white font-medium py-2">
-                  {övertid.toLocaleString("sv-SE")} kr
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="my-4 pt-4 border-t border-slate-600 space-y-2">
-        <div className="flex justify-between text-base">
-          <span className="text-white font-semibold">Totalt Lönekostnad</span>
-          <span className="text-white font-bold">
-            {(bruttolön + socialaAvgifter).toLocaleString("sv-SE")} kr
-          </span>
-        </div>
-        <div className="flex justify-between text-base">
-          <span className="text-white font-semibold">Totalt Bruttolön</span>
-          <span className="text-white font-bold">{bruttolön.toLocaleString("sv-SE")} kr</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-300">varav sociala avgifter</span>
-          <span className="text-gray-300">{socialaAvgifter.toLocaleString("sv-SE")} kr</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-300">varav Skatt</span>
-          <span className="text-gray-300">{skatt.toLocaleString("sv-SE")} kr</span>
-        </div>
-      </div>
-
-      <Extrarader />
+          ))}
+          {/* EXTRARADER */}
+          {extrarader.map((rad, i) => (
+            <tr key={rad.id || i} className="border-b border-slate-600">
+              <td className="text-gray-300 py-2">{rad.kolumn1}</td>
+              <td className="text-right text-gray-300 py-2">{rad.kolumn2}</td>
+              <td className="text-right text-gray-300 py-2">{rad.kolumn3}</td>
+              <td className="text-right text-white font-medium py-2">{rad.kolumn4}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <ExtraRader
+        lönespecId={lönespec?.id}
+        onNyRad={() => lönespec?.id && hämtaExtrarader(lönespec.id).then(setExtrarader)}
+      />
     </div>
   );
 }

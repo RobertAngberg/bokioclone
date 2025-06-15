@@ -2,8 +2,8 @@
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import TextFält from "../../_components/TextFält";
-import Dropdown from "../../_components/Dropdown";
+import TextFält from "../../../_components/TextFält";
+import Dropdown from "../../../_components/Dropdown";
 
 interface KompensationProps {
   startdatum: Date;

@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import TextFält from "../../_components/TextFält";
-import Knapp from "../../_components/Knapp";
-import { sparaAnställd } from "../actions";
+import TextFält from "../../../_components/TextFält";
+import Knapp from "../../../_components/Knapp";
+import { sparaAnställd } from "../../actions";
 
 interface PersonalinformationProps {
   anställd?: any;
@@ -112,9 +112,8 @@ export default function Personalinformation({
           adress: editData.adress,
           postnummer: editData.postnummer,
           ort: editData.ort,
-          // Behåll nuvarande värden för dessa
           startdatum: anställd.startdatum || new Date().toISOString().split("T")[0],
-          förnyaKontrakt: anställd.förnya_kontrakt || new Date().toISOString().split("T")[0],
+          slutdatum: anställd.förnya_kontrakt || new Date().toISOString().split("T")[0],
           anställningstyp: anställd.anställningstyp || "",
           löneperiod: anställd.löneperiod || "",
           ersättningPer: anställd.ersättning_per || "",

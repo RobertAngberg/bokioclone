@@ -1002,3 +1002,46 @@ export async function avvisaUtlägg(utläggId: number, anledning?: string) {
     };
   }
 }
+
+export async function sparaExtrarad({
+  lönespecifikation_id,
+  kolumn1,
+  kolumn2,
+  kolumn3,
+  kolumn4,
+}: {
+  lönespecifikation_id: number;
+  kolumn1: string;
+  kolumn2: string;
+  kolumn3: string;
+  kolumn4: string;
+}) {
+  try {
+    const client = await pool.connect();
+    await client.query(
+      `INSERT INTO lönespec_extrarader (lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4]
+    );
+    client.release();
+    return { success: true };
+  } catch (error) {
+    console.error("❌ sparaExtrarad error:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Fel vid sparande" };
+  }
+}
+
+export async function hämtaExtrarader(lönespecifikation_id: number) {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(
+      `SELECT * FROM lönespec_extrarader WHERE lönespecifikation_id = $1`,
+      [lönespecifikation_id]
+    );
+    client.release();
+    return result.rows;
+  } catch (error) {
+    console.error("❌ hämtaExtrarader error:", error);
+    return [];
+  }
+}
