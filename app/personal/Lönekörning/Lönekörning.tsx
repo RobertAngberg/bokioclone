@@ -1,4 +1,4 @@
-//#region Huvud
+//#region Imports, types och export Lönekörning
 "use client";
 
 import { useState, useEffect } from "react";
@@ -53,6 +53,7 @@ export default function Lönekörning() {
   const totalLönekostnad = totalBrutto * 1.3142; // Approximation med sociala avgifter
   //#endregion
 
+  //#region Render
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-white text-center">Kör löner för alla anställda</h2>
@@ -138,3 +139,4 @@ export default function Lönekörning() {
     </div>
   );
 }
+// #endregion

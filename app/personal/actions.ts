@@ -780,7 +780,6 @@ export async function genereraLönespecifikation(anställdId: number, månad?: n
   }
 }
 
-// Helper function för månadsnamn
 function getMånadsNamn(månad: number): string {
   const månader = [
     "Januari",

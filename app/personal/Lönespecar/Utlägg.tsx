@@ -8,7 +8,7 @@ export default function Utlägg({ lönespecUtlägg, getStatusBadge }: UtläggPro
 
   return (
     <div className="bg-slate-700 p-4 rounded-lg">
-      <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">💳 Utlägg</h4>
+      <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">Utlägg</h4>
       <div className="space-y-3">
         {lönespecUtlägg.map((utläggItem) => (
           <div key={utläggItem.id} className="bg-slate-800 p-3 rounded-lg">
