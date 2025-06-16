@@ -1,9 +1,12 @@
+//#region Huvud
 interface UtläggProps {
   lönespecUtlägg: any[];
   getStatusBadge: (status: string) => React.ReactElement;
 }
 
 export default function Utlägg({ lönespecUtlägg, getStatusBadge }: UtläggProps) {
+  //#endregion
+
   if (lönespecUtlägg.length === 0) return null;
 
   return (

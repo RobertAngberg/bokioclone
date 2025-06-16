@@ -1,92 +1,54 @@
-import TextFält from "../../../_components/TextFält";
-import Knapp from "../../../_components/Knapp";
+import { FormEvent, ChangeEvent } from "react";
 
-type ModalField = {
-  label: string;
-  name: string;
-  type?: string;
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  placeholder?: string;
-  required?: boolean;
-};
-
-type ModalProps = {
+interface ModalProps {
   open: boolean;
   onClose: () => void;
-  fields?: ModalField[];
   title?: string;
-  children?: React.ReactNode;
-  onSubmit?: (e: React.FormEvent) => void;
-};
+  fields: {
+    label: string;
+    name: string;
+    value: string;
+    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  }[];
+  onSubmit: (e: FormEvent) => void;
+}
 
-const defaultFields: ModalField[] = [
-  {
-    label: "Antal",
-    name: "antal",
-    type: "number",
-    value: "",
-    onChange: () => {},
-    placeholder: "Antal",
-  },
-  {
-    label: "à SEK",
-    name: "aSEK",
-    type: "number",
-    value: "",
-    onChange: () => {},
-    placeholder: "à SEK",
-  },
-  {
-    label: "Kommentar",
-    name: "kommentar",
-    type: "text",
-    value: "",
-    onChange: () => {},
-    placeholder: "Kommentar",
-  },
-];
-
-export default function Modal({
-  open,
-  onClose,
-  fields = defaultFields,
-  title = "Redigera",
-  children,
-  onSubmit,
-}: ModalProps) {
+export default function Modal({ open, onClose, title, fields, onSubmit }: ModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-slate-800 rounded-lg shadow-lg p-6 min-w-[340px] max-w-lg w-full">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          <button onClick={onClose} aria-label="Stäng" type="button">
-            <span role="img" aria-label="Stäng">
-              ❌
-            </span>
-          </button>
-        </div>
-        <form onSubmit={onSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {fields.map((field) => (
-              <TextFält
-                key={field.name}
-                label={field.label}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 p-6 rounded-lg w-96">
+        <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+        <form onSubmit={onSubmit} className="space-y-4">
+          {fields.map((field) => (
+            <div key={field.name}>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{field.label}</label>
+              <input
+                type={field.name === "kolumn3" ? "number" : "text"}
+                step={field.name === "kolumn3" ? "0.01" : undefined}
                 name={field.name}
-                type={field.type}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder={field.placeholder}
-                required={field.required}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                required={field.name !== "kolumn4"} // Kommentar är inte required
               />
-            ))}
-          </div>
-          {children && <div className="mt-4">{children}</div>}
-          <div className="flex justify-end gap-2 mt-6">
-            <Knapp text="❌ Avbryt" onClick={onClose} type="button" />
-            <Knapp text="💾 Spara" type="submit" />
+            </div>
+          ))}
+          <div className="flex gap-2 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-500"
+            >
+              Avbryt
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-500"
+            >
+              Lägg till
+            </button>
           </div>
         </form>
       </div>

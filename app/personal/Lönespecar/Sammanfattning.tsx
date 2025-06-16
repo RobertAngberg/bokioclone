@@ -1,3 +1,4 @@
+//#region
 interface SammanfattningProps {
   utbetalningsDatum: Date;
   nettolön: number;
@@ -19,6 +20,8 @@ export default function Sammanfattning({
   socialaAvgifter,
   lönekostnad,
 }: SammanfattningProps) {
+  //#endregion
+
   return (
     <div className="bg-slate-700 p-4 rounded-lg">
       <h4 className="text-lg font-bold text-white mb-4">Sammanfattning</h4>
@@ -29,7 +32,7 @@ export default function Sammanfattning({
               Utbetalas: {utbetalningsDatum.toLocaleDateString("sv-SE")}
             </div>
             <div className="text-xl font-bold text-green-400">
-              Nettolön: {nettolön.toLocaleString("sv-SE")} kr
+              Nettolön: {Math.round(nettolön).toLocaleString("sv-SE")} kr
             </div>
           </div>
 
@@ -78,30 +81,18 @@ export default function Sammanfattning({
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Brutto</span>
-                <span className="text-white">{bruttolön.toLocaleString("sv-SE")} kr</span>
+                <span className="text-white">
+                  {Math.round(bruttolön).toLocaleString("sv-SE")} kr
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Förmåner</span>
-                <span className="text-white">0,00 kr</span>
+                <span className="text-white">0 kr</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Skatt</span>
-                <span className="text-white">{skatt.toLocaleString("sv-SE")} kr</span>
+                <span className="text-white">{Math.round(skatt).toLocaleString("sv-SE")} kr</span>
               </div>
-              {socialaAvgifter && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Sociala avgifter</span>
-                  <span className="text-white">{socialaAvgifter.toLocaleString("sv-SE")} kr</span>
-                </div>
-              )}
-              {lönekostnad && (
-                <div className="flex justify-between border-t border-slate-600 pt-1">
-                  <span className="text-gray-400 font-semibold">Lönekostnad</span>
-                  <span className="text-cyan-400 font-bold">
-                    {lönekostnad.toLocaleString("sv-SE")} kr
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         </div>

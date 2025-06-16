@@ -1,0 +1,46 @@
+interface LöneRadItemProps {
+  benämning: string;
+  belopp: number;
+  typ: "total" | "extrarad" | "netto";
+  onTaBort?: () => void;
+  kommentar?: string;
+}
+
+export default function LöneRadItem({
+  benämning,
+  belopp,
+  typ,
+  onTaBort,
+  kommentar,
+}: LöneRadItemProps) {
+  const textColor = typ === "netto" ? "text-white" : "text-white";
+  const isExtrarad = typ === "extrarad";
+
+  return (
+    <tr
+      className={`border-b border-slate-600/70 ${isExtrarad ? "hover:bg-slate-600 cursor-pointer group relative" : ""}`}
+    >
+      <td className={`${textColor} font-medium py-2`}>{benämning}</td>
+      <td className="text-center text-gray-300 py-2">{kommentar || ""}</td>
+      <td className={`text-right ${textColor} font-medium py-2 relative`}>
+        {belopp.toLocaleString("sv-SE", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}{" "}
+        kr
+        {onTaBort && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTaBort();
+            }}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-400 text-sm bg-slate-800 rounded px-1"
+            title="Ta bort"
+          >
+            ❌
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}

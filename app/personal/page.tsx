@@ -10,9 +10,10 @@ import Kontrakt from "./Kontrakt/Kontrakt";
 import Lönespecar from "./Lönespecar/Lönespecar";
 import Semester from "./Semester/Semester";
 import Lönekörning from "./Lönekörning/Lönekörning";
-// #endregion
 
 export default function PersonalPage() {
+  // #endregion
+
   // #region State
   const [valdAnställd, setValdAnställd] = useState<any>(null);
   const [visaAnställdFormulär, setVisaAnställdFormulär] = useState(false);
