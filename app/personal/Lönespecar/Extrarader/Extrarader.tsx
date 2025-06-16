@@ -7,13 +7,16 @@ import Modal from "./Modal";
 import Rad from "./Rad";
 import DropdownRad from "./DropdownRad";
 import { sparaExtrarad } from "../../actions";
+import { beräknaKarensavdrag } from "./formler";
 
 export default function ExtraRader({
   lönespecId,
   onNyRad,
+  grundlön,
 }: {
   lönespecId: number;
   onNyRad: () => void;
+  grundlön?: number;
 }) {
   //#endregion
 
@@ -38,11 +41,23 @@ export default function ExtraRader({
   const toggleCheckbox = (id: string, label: string) => {
     setState((prev) => ({ ...prev, [id]: !prev[id] }));
     setModalRow({ id, label });
-    setModalFields({
-      kolumn2: "",
-      kolumn3: "",
-      kolumn4: "",
-    });
+
+    // Special hantering för karensavdrag
+    if (id === "karensavdrag" && grundlön) {
+      const karensbelopp = beräknaKarensavdrag(grundlön);
+      setModalFields({
+        kolumn2: "1",
+        kolumn3: Math.abs(karensbelopp).toFixed(2),
+        kolumn4: "",
+      });
+    } else {
+      setModalFields({
+        kolumn2: "",
+        kolumn3: "",
+        kolumn4: "",
+      });
+    }
+
     setModalOpen(true);
   };
 
@@ -52,12 +67,11 @@ export default function ExtraRader({
   //#endregion
 
   //#region Rader
-  // Alla val (utom dropdowns) i bokstavsordning, men Fritext och Lön sist
   const staticRows = [
     { id: "foretagsbilExtra", label: "Företagsbil" },
     { id: "foraldraledighet", label: "Föräldraledighet" },
     { id: "jamkning", label: "Jämkning" },
-    { id: "nettolönejustering", label: "Nettolönejustering" },
+    { id: "nettolönejustering", label: "Nettolönejustering" },
     { id: "obetaldFranvaro", label: "Obetald frånvaro" },
     { id: "obTillagg", label: "OB-tillägg" },
     { id: "overtid", label: "Övertid" },
@@ -65,9 +79,8 @@ export default function ExtraRader({
     { id: "semesterskuld", label: "Semesterskuld" },
     { id: "semestertillagg", label: "Semestertillägg" },
     { id: "vab", label: "Vård av sjukt barn" },
-    // Fritext och Lön sist
-    { id: "lon", label: "Lön" },
     { id: "fritext", label: "Fritext" },
+    { id: "lon", label: "Lön" },
   ];
 
   const mittenRows = staticRows.slice(0, Math.ceil(staticRows.length / 2));
@@ -187,6 +200,7 @@ export default function ExtraRader({
             </div>
           )}
         </div>
+
         {/* Mitten kolumn */}
         <div className="space-y-1">
           {mittenRows.map((item) => (
@@ -199,6 +213,7 @@ export default function ExtraRader({
             />
           ))}
         </div>
+
         {/* Höger kolumn */}
         <div className="space-y-1">
           {hogerRows.map((item) => (
@@ -212,6 +227,7 @@ export default function ExtraRader({
           ))}
         </div>
       </div>
+
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -239,11 +255,18 @@ export default function ExtraRader({
         onSubmit={async (e) => {
           e.preventDefault();
           if (!lönespecId) return;
+
+          // För karensavdrag, spara som negativt belopp
+          let kolumn3Value = modalFields.kolumn3;
+          if (modalRow?.id === "karensavdrag") {
+            kolumn3Value = `-${Math.abs(parseFloat(modalFields.kolumn3))}`;
+          }
+
           await sparaExtrarad({
             lönespecifikation_id: lönespecId,
             kolumn1: modalRow?.label ?? "",
             kolumn2: modalFields.kolumn2,
-            kolumn3: modalFields.kolumn3,
+            kolumn3: kolumn3Value,
             kolumn4: modalFields.kolumn4,
           });
           setModalOpen(false);
@@ -252,5 +275,5 @@ export default function ExtraRader({
       />
     </AnimeradFlik>
   );
+  //#endregion
 }
-//#endregion

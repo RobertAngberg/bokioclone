@@ -1045,3 +1045,30 @@ export async function hämtaExtrarader(lönespecifikation_id: number) {
     return [];
   }
 }
+
+export async function taBortExtrarad(extraradId: number) {
+  console.log("🚀 taBortExtrarad() startar för ID:", extraradId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  try {
+    const client = await pool.connect();
+
+    const query = `
+      DELETE FROM lönespec_extrarader 
+      WHERE id = $1
+    `;
+
+    const result = await client.query(query, [extraradId]);
+    console.log("✅ Extrarad borttagen:", result.rowCount);
+
+    client.release();
+    return { success: true };
+  } catch (error) {
+    console.error("❌ taBortExtrarad error:", error);
+    throw error;
+  }
+}

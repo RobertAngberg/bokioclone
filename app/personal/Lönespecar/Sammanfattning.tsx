@@ -5,6 +5,8 @@ interface SammanfattningProps {
   anställd: any;
   bruttolön: number;
   skatt: number;
+  socialaAvgifter?: number;
+  lönekostnad?: number;
 }
 
 export default function Sammanfattning({
@@ -14,6 +16,8 @@ export default function Sammanfattning({
   anställd,
   bruttolön,
   skatt,
+  socialaAvgifter,
+  lönekostnad,
 }: SammanfattningProps) {
   return (
     <div className="bg-slate-700 p-4 rounded-lg">
@@ -84,6 +88,20 @@ export default function Sammanfattning({
                 <span className="text-gray-400">Skatt</span>
                 <span className="text-white">{skatt.toLocaleString("sv-SE")} kr</span>
               </div>
+              {socialaAvgifter && (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Sociala avgifter</span>
+                  <span className="text-white">{socialaAvgifter.toLocaleString("sv-SE")} kr</span>
+                </div>
+              )}
+              {lönekostnad && (
+                <div className="flex justify-between border-t border-slate-600 pt-1">
+                  <span className="text-gray-400 font-semibold">Lönekostnad</span>
+                  <span className="text-cyan-400 font-bold">
+                    {lönekostnad.toLocaleString("sv-SE")} kr
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
