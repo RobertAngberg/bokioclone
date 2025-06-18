@@ -3,11 +3,11 @@
 
 import { useState } from "react";
 import AnimeradFlik from "../../../_components/AnimeradFlik";
-import Modal from "./Modal";
+import ExtraraderModal from "./ExtraraderModal";
 import Rad from "./Rad";
 import DropdownRad from "./DropdownRad";
 import { sparaExtrarad } from "../../actions";
-import { beräknaKarensavdrag } from "./formler";
+import { RAD_KONFIGURATIONER } from "./radKonfiguration";
 
 export default function ExtraRader({
   lönespecId,
@@ -34,31 +34,217 @@ export default function ExtraRader({
     kolumn2: "",
     kolumn3: "",
     kolumn4: "",
+    enhet: "", // Nytt: för dropdown-enhet
   });
+  //#endregion
+
+  //#region Helper Functions
+  const getStandardFields = () => [
+    {
+      label: "Antal",
+      name: "kolumn2",
+      type: "text" as const,
+      value: modalFields.kolumn2,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setModalFields((f) => ({ ...f, kolumn2: e.target.value })),
+      required: true,
+      placeholder: "Ange antal",
+    },
+    {
+      label: "à SEK",
+      name: "kolumn3",
+      type: "number" as const,
+      value: modalFields.kolumn3,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setModalFields((f) => ({ ...f, kolumn3: e.target.value })),
+      step: "0.01",
+      required: true,
+      placeholder: "Belopp per enhet",
+    },
+    {
+      label: "Kommentar",
+      name: "kolumn4",
+      type: "text" as const,
+      value: modalFields.kolumn4,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        setModalFields((f) => ({ ...f, kolumn4: e.target.value })),
+      required: false,
+      placeholder: "Valfri kommentar",
+    },
+  ];
+
+  const getFieldsForRow = (rowId: string) => {
+    const config = RAD_KONFIGURATIONER[rowId];
+
+    if (config) {
+      const fields: any[] = [
+        {
+          label: config.fält.antalLabel,
+          name: "kolumn2",
+          type: rowId === "foretagsbilExtra" ? "text" : "number", // Text för Företagsbil, number för resten
+          value: modalFields.kolumn2,
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+            setModalFields((f) => ({ ...f, kolumn2: e.target.value })),
+          required: true,
+          min: rowId === "foretagsbilExtra" ? undefined : "0", // Ingen min för text-fält
+          step: config.fält.step || "1",
+          placeholder: config.fält.antalPlaceholder,
+        },
+      ];
+
+      // Lägg till dropdown för enhet om konfigurerat
+      if (config.fält.enhetDropdown) {
+        fields.push({
+          label: "Enhet",
+          name: "enhet",
+          type: "select" as const,
+          value: modalFields.enhet,
+          onChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+            setModalFields((f) => ({ ...f, enhet: e.target.value })),
+          required: true,
+          options: config.fält.enhetDropdown,
+        });
+      }
+
+      // Lägg till belopp-fält om konfigurerat
+      if (config.fält.visaBelopp) {
+        fields.push({
+          label: "à SEK",
+          name: "kolumn3",
+          type: "number" as const,
+          value: modalFields.kolumn3,
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+            setModalFields((f) => ({ ...f, kolumn3: e.target.value })),
+          step: "0.01",
+          required: true,
+          min: "0",
+          placeholder: "Belopp per " + config.enhet,
+        });
+      } else {
+        // Dolt fält för automatisk beräkning
+        fields.push({
+          label: "à SEK",
+          name: "kolumn3",
+          type: "text" as const,
+          value: config.beräknaVärde && grundlön ? config.beräknaVärde(grundlön).toFixed(2) : "0",
+          onChange: () => {},
+          required: false,
+          placeholder: "",
+          hidden: true,
+        });
+      }
+
+      // Lägg till kommentar-fält ENDAST om inte skipKommentar är sant
+      if (!config.fält.skipKommentar) {
+        fields.push({
+          label: "Kommentar",
+          name: "kolumn4",
+          type: "text" as const,
+          value: modalFields.kolumn4,
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+            setModalFields((f) => ({ ...f, kolumn4: e.target.value })),
+          required: false,
+          placeholder: "Valfri kommentar",
+        });
+      }
+
+      return fields;
+    }
+
+    // Fallback för okonfigurerade rader
+    return getStandardFields();
+  };
+
+  const initializeModalFields = (rowId: string) => {
+    const config = RAD_KONFIGURATIONER[rowId];
+
+    if (config?.beräknaVärde && grundlön) {
+      const värde = config.beräknaVärde(grundlön);
+      return {
+        kolumn2: config.fält.visaBelopp ? "1" : "",
+        kolumn3: värde.toFixed(2),
+        kolumn4: "",
+        enhet: config.fält.enhetDropdown ? config.fält.enhetDropdown[0] : "",
+      };
+    }
+
+    return {
+      kolumn2: "",
+      kolumn3: "",
+      kolumn4: "",
+      enhet: config?.fält.enhetDropdown ? config.fält.enhetDropdown[0] : "",
+    };
+  };
+
+  const beräknaSumma = (rowId: string) => {
+    const config = RAD_KONFIGURATIONER[rowId];
+
+    if (config?.beräknaTotalt && grundlön) {
+      const antal = parseFloat(modalFields.kolumn2) || 0;
+      let summa = config.beräknaTotalt(grundlön, antal);
+
+      if (config.negativtBelopp) {
+        summa = -Math.abs(summa);
+      }
+
+      return summa.toFixed(2);
+    }
+
+    return modalFields.kolumn3;
+  };
+
+  const formatKolumn2Värde = (rowId: string) => {
+    const config = RAD_KONFIGURATIONER[rowId];
+
+    // För rader med dropdown, kombinera antal + enhet
+    if (config?.fält.enhetDropdown && modalFields.enhet) {
+      return `${modalFields.kolumn2} ${modalFields.enhet}`;
+    }
+
+    // För alla andra rader, lägg till enhetstext baserat på konfiguration
+    if (config) {
+      const antal = modalFields.kolumn2;
+
+      // Mappning av enheter till visningstext
+      const enhetTexts: Record<string, string> = {
+        dagar: "Dag",
+        timmar: "Timme",
+        st: "st",
+        mål: "Mål",
+        kvm: "m²",
+        km: "km",
+        kr: "", // Ingen enhetstext för kronor (bara summan)
+      };
+
+      const enhetText = enhetTexts[config.enhet] || "";
+
+      // Specialfall för olika rader
+      if (rowId === "boende") {
+        return `${antal}m²`; // "1m²"
+      } else if (rowId === "gratisFrukost" || rowId === "gratisLunchMiddag") {
+        return `${antal} Mål`; // "1 Mål"
+      } else if (config.enhet === "kr") {
+        return antal; // Bara summan för kronor
+      } else if (enhetText) {
+        return `${antal} ${enhetText}`; // "1 Dag", "1 st", etc.
+      }
+    }
+
+    return modalFields.kolumn2;
+  };
   //#endregion
 
   //#region Togglers
   const toggleCheckbox = (id: string, label: string) => {
-    setState((prev) => ({ ...prev, [id]: !prev[id] }));
-    setModalRow({ id, label });
+    const newCheckedState = !state[id];
+    setState((prev) => ({ ...prev, [id]: newCheckedState }));
 
-    // Special hantering för karensavdrag
-    if (id === "karensavdrag" && grundlön) {
-      const karensbelopp = beräknaKarensavdrag(grundlön);
-      setModalFields({
-        kolumn2: "1",
-        kolumn3: Math.abs(karensbelopp).toFixed(2),
-        kolumn4: "",
-      });
-    } else {
-      setModalFields({
-        kolumn2: "",
-        kolumn3: "",
-        kolumn4: "",
-      });
+    // Öppna modal endast om raden kryssas I (inte ur)
+    if (newCheckedState) {
+      setModalRow({ id, label });
+      setModalFields(initializeModalFields(id));
+      setModalOpen(true);
     }
-
-    setModalOpen(true);
   };
 
   const toggleDropdown = (key: string) => {
@@ -87,7 +273,6 @@ export default function ExtraRader({
   const hogerRows = staticRows.slice(Math.ceil(staticRows.length / 2));
   //#endregion
 
-  //#region Render
   return (
     <AnimeradFlik title="Extra rader" icon="➕">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -228,44 +413,22 @@ export default function ExtraRader({
         </div>
       </div>
 
-      <Modal
+      <ExtraraderModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={modalRow?.label}
-        fields={[
-          {
-            label: "Antal",
-            name: "kolumn2",
-            value: modalFields.kolumn2,
-            onChange: (e) => setModalFields((f) => ({ ...f, kolumn2: e.target.value })),
-          },
-          {
-            label: "à SEK",
-            name: "kolumn3",
-            value: modalFields.kolumn3,
-            onChange: (e) => setModalFields((f) => ({ ...f, kolumn3: e.target.value })),
-          },
-          {
-            label: "Kommentar",
-            name: "kolumn4",
-            value: modalFields.kolumn4,
-            onChange: (e) => setModalFields((f) => ({ ...f, kolumn4: e.target.value })),
-          },
-        ]}
+        fields={getFieldsForRow(modalRow?.id || "")}
         onSubmit={async (e) => {
           e.preventDefault();
           if (!lönespecId) return;
 
-          // För karensavdrag, spara som negativt belopp
-          let kolumn3Value = modalFields.kolumn3;
-          if (modalRow?.id === "karensavdrag") {
-            kolumn3Value = `-${Math.abs(parseFloat(modalFields.kolumn3))}`;
-          }
+          const kolumn3Value = beräknaSumma(modalRow?.id || "");
+          const kolumn2Value = formatKolumn2Värde(modalRow?.id || "");
 
           await sparaExtrarad({
             lönespecifikation_id: lönespecId,
             kolumn1: modalRow?.label ?? "",
-            kolumn2: modalFields.kolumn2,
+            kolumn2: kolumn2Value,
             kolumn3: kolumn3Value,
             kolumn4: modalFields.kolumn4,
           });
@@ -275,5 +438,4 @@ export default function ExtraRader({
       />
     </AnimeradFlik>
   );
-  //#endregion
 }
