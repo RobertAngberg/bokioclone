@@ -14,6 +14,9 @@ interface LönespecCardProps {
   onFörhandsgranskning: (id: string) => void;
   onBeräkningarUppdaterade: (lönespecId: string, beräkningar: any) => void;
   beräknadeVärden: any;
+  ingenAnimering?: boolean;
+  onTaBortLönespec?: () => void;
+  taBortLoading?: boolean;
 }
 
 export default function LönespecCard({
@@ -23,6 +26,9 @@ export default function LönespecCard({
   onFörhandsgranskning,
   onBeräkningarUppdaterade,
   beräknadeVärden,
+  ingenAnimering,
+  onTaBortLönespec,
+  taBortLoading,
 }: LönespecCardProps) {
   //#endregion
 
@@ -71,7 +77,60 @@ export default function LönespecCard({
   );
   //#endregion
 
-  //#region Render
+  //#region Render Content
+  const innehåll = (
+    <div className="space-y-6">
+      <ToppInfo
+        månadsNamn={månadsNamn}
+        lönespec={lönespec}
+        anställd={anställd}
+        getLönespecStatusBadge={(status: string) => <StatusBadge status={status} type="lönespec" />}
+      />
+
+      <Lönekomponenter
+        grundlön={grundlön}
+        övertid={övertid}
+        lönespec={lönespec}
+        onBeräkningarUppdaterade={onBeräkningarUppdaterade}
+      />
+
+      <Utlägg
+        lönespecUtlägg={lönespecUtlägg}
+        getStatusBadge={(status: string) => <StatusBadge status={status} type="utlägg" />}
+      />
+
+      <Sammanfattning
+        utbetalningsDatum={utbetalningsDatum}
+        nettolön={visaNettolön}
+        lönespec={lönespec}
+        anställd={anställd}
+        bruttolön={visaBruttolön}
+        skatt={visaSkatt}
+        socialaAvgifter={visaSocialaAvgifter}
+        lönekostnad={visaLönekostnad}
+      />
+
+      <div className="flex gap-2 mt-4 justify-center">
+        <Knapp text="👁️ Förhandsgranska / PDF" onClick={() => onFörhandsgranskning(lönespec.id)} />
+
+        {onTaBortLönespec && (
+          <Knapp
+            text="🗑️ Ta bort lönespec"
+            loading={taBortLoading}
+            loadingText="⏳ Tar bort..."
+            onClick={onTaBortLönespec}
+          />
+        )}
+      </div>
+    </div>
+  );
+
+  // Om ingenAnimering = true, visa bara innehållet direkt
+  if (ingenAnimering) {
+    return innehåll;
+  }
+
+  // Annars visa med AnimeradFlik som vanligt
   return (
     <AnimeradFlik
       key={lönespec.id}
@@ -79,46 +138,7 @@ export default function LönespecCard({
       icon="📅"
       visaSummaDirekt={`Netto: ${visaNettolön.toLocaleString("sv-SE")} kr`}
     >
-      <div className="space-y-6">
-        <ToppInfo
-          månadsNamn={månadsNamn}
-          lönespec={lönespec}
-          anställd={anställd}
-          getLönespecStatusBadge={(status: string) => (
-            <StatusBadge status={status} type="lönespec" />
-          )}
-        />
-
-        <Lönekomponenter
-          grundlön={grundlön}
-          övertid={övertid}
-          lönespec={lönespec}
-          onBeräkningarUppdaterade={onBeräkningarUppdaterade}
-        />
-
-        <Utlägg
-          lönespecUtlägg={lönespecUtlägg}
-          getStatusBadge={(status: string) => <StatusBadge status={status} type="utlägg" />}
-        />
-
-        <Sammanfattning
-          utbetalningsDatum={utbetalningsDatum}
-          nettolön={visaNettolön}
-          lönespec={lönespec}
-          anställd={anställd}
-          bruttolön={visaBruttolön}
-          skatt={visaSkatt}
-          socialaAvgifter={visaSocialaAvgifter}
-          lönekostnad={visaLönekostnad}
-        />
-
-        <div className="flex gap-2 mt-4 justify-center">
-          <Knapp
-            text="👁️ Förhandsgranska & Exportera PDF"
-            onClick={() => onFörhandsgranskning(lönespec.id)}
-          />
-        </div>
-      </div>
+      {innehåll}
     </AnimeradFlik>
   );
   //#endregion

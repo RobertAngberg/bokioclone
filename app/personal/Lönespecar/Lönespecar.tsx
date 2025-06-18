@@ -9,9 +9,19 @@ import Förhandsgranskning from "./Förhandsgranskning";
 
 interface LönespecProps {
   anställd: any;
+  specificLönespec?: any;
+  ingenAnimering?: boolean;
+  onTaBortLönespec?: () => void;
+  taBortLoading?: boolean;
 }
 
-export default function Lönespecar({ anställd }: LönespecProps) {
+export default function Lönespecar({
+  anställd,
+  specificLönespec,
+  ingenAnimering,
+  onTaBortLönespec,
+  taBortLoading,
+}: LönespecProps) {
   //#endregion
 
   //#region State
@@ -25,6 +35,12 @@ export default function Lönespecar({ anställd }: LönespecProps) {
 
   //#region Data Loading
   useEffect(() => {
+    if (specificLönespec) {
+      setLönespecar([specificLönespec]);
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       if (!anställd?.id) return;
 
@@ -51,7 +67,7 @@ export default function Lönespecar({ anställd }: LönespecProps) {
     };
 
     loadData();
-  }, [anställd?.id]);
+  }, [anställd?.id, specificLönespec]);
   //#endregion
 
   //#region Handlers
@@ -76,6 +92,9 @@ export default function Lönespecar({ anställd }: LönespecProps) {
         onFörhandsgranskning={setVisaFörhandsgranskning}
         onBeräkningarUppdaterade={handleBeräkningarUppdaterade}
         beräknadeVärden={beräknadeVärden}
+        ingenAnimering={ingenAnimering}
+        onTaBortLönespec={onTaBortLönespec}
+        taBortLoading={taBortLoading}
       />
 
       {visaFörhandsgranskning && (

@@ -8,6 +8,9 @@ interface LönespecListProps {
   onFörhandsgranskning: (id: string) => void;
   onBeräkningarUppdaterade: (lönespecId: string, beräkningar: any) => void;
   beräknadeVärden: any;
+  ingenAnimering?: boolean;
+  onTaBortLönespec?: () => void;
+  taBortLoading?: boolean;
 }
 
 export default function LönespecList({
@@ -17,6 +20,9 @@ export default function LönespecList({
   onFörhandsgranskning,
   onBeräkningarUppdaterade,
   beräknadeVärden,
+  ingenAnimering,
+  onTaBortLönespec,
+  taBortLoading,
 }: LönespecListProps) {
   //#endregion
 
@@ -40,6 +46,9 @@ export default function LönespecList({
           onFörhandsgranskning={onFörhandsgranskning}
           onBeräkningarUppdaterade={onBeräkningarUppdaterade}
           beräknadeVärden={beräknadeVärden}
+          ingenAnimering={ingenAnimering}
+          onTaBortLönespec={onTaBortLönespec}
+          taBortLoading={taBortLoading}
         />
       ))}
     </div>

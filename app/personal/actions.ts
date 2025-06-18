@@ -1072,3 +1072,128 @@ export async function taBortExtrarad(extraradId: number) {
     throw error;
   }
 }
+
+export async function skapaNyLönespec(data: {
+  anställd_id: number;
+  månad: number;
+  år: number;
+  period_start: string;
+  period_slut: string;
+}) {
+  console.log("🚀 skapaNyLönespec() startar för anställd:", data.anställd_id);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    // 1. Hämta anställdas kontrakt för att få månadslön
+    const anställdQuery = `
+      SELECT kompensation, skattetabell FROM anställda 
+      WHERE id = $1 AND user_id = $2
+    `;
+    const anställdResult = await client.query(anställdQuery, [data.anställd_id, userId]);
+
+    if (anställdResult.rows.length === 0) {
+      client.release();
+      throw new Error("Anställd inte hittad");
+    }
+
+    const anställd = anställdResult.rows[0];
+    const grundlön = parseFloat(anställd.kompensation || "0");
+
+    // 2. Beräkna värden
+    const bruttolön = grundlön;
+    const socialaAvgifter = bruttolön * 0.3142; // 31,42% sociala avgifter
+    const skattesats = 0.25; // Ungefärlig skatt 25%
+    const skatt = bruttolön * skattesats;
+    const nettolön = bruttolön - skatt;
+
+    // 3. Skapa lönespecifikation
+    const insertQuery = `
+      INSERT INTO lönespecifikationer (
+        anställd_id, månad, år, period_start, period_slut,
+        grundlön, bruttolön, skatt, sociala_avgifter, nettolön,
+        status, arbetade_timmar, skapad_av
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING *
+    `;
+
+    const insertResult = await client.query(insertQuery, [
+      data.anställd_id,
+      data.månad,
+      data.år,
+      data.period_start,
+      data.period_slut,
+      grundlön,
+      bruttolön,
+      skatt,
+      socialaAvgifter,
+      nettolön,
+      "Utkast",
+      160, // Standard 4 veckor x 40 timmar
+      userId,
+    ]);
+
+    const nyLönespec = insertResult.rows[0];
+
+    client.release();
+    revalidatePath("/personal");
+
+    console.log("✅ Ny lönespec skapad med ID:", nyLönespec.id);
+    return nyLönespec;
+  } catch (error) {
+    console.error("❌ skapaNyLönespec error:", error);
+    throw error;
+  }
+}
+
+export async function taBortLönespec(lönespecId: number) {
+  console.log("🗑️ taBortLönespec() startar för ID:", lönespecId);
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
+  const userId = parseInt(session.user.id, 10);
+
+  try {
+    const client = await pool.connect();
+
+    // Kontrollera att lönespec tillhör användarens anställd
+    const checkQuery = `
+      SELECT l.id FROM lönespecifikationer l
+      JOIN anställda a ON l.anställd_id = a.id
+      WHERE l.id = $1 AND a.user_id = $2
+    `;
+    const checkResult = await client.query(checkQuery, [lönespecId, userId]);
+
+    if (checkResult.rows.length === 0) {
+      client.release();
+      throw new Error("Lönespec inte hittad");
+    }
+
+    const deleteQuery = `
+      DELETE FROM lönespecifikationer 
+      WHERE id = $1
+    `;
+
+    const result = await client.query(deleteQuery, [lönespecId]);
+    console.log("✅ Lönespec borttagen:", result.rowCount);
+
+    client.release();
+    revalidatePath("/personal");
+
+    return { success: true, message: "Lönespec borttagen!" };
+  } catch (error) {
+    console.error("❌ taBortLönespec error:", error);
+    throw error;
+  }
+}
