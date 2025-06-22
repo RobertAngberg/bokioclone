@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { hämtaExtrarader, taBortExtrarad } from "../../actions";
 import ExtraRader from "../Extrarader/Extrarader";
 import LöneTabell from "./LöneTabell";
+import { beräknaKomplett, beräknaSocialaAvgifter, beräknaLönekostnad } from "../LöneBeräkningar";
 
 type LönekomponenterProps = {
   lönespec: any;
@@ -38,56 +39,87 @@ export default function Lönekomponenter({
     const originalGrundlön = grundlön ?? lönespec?.grundlön ?? lönespec?.bruttolön ?? 35000;
     const originalÖvertid = övertid ?? lönespec?.övertid ?? 0;
 
-    // Summera alla extrarader
-    const extraradsSumma = extrarader.reduce((total, rad) => {
+    // Skapa kontrakt för LöneBeräkningar
+    const kontrakt = {
+      månadslön: originalGrundlön,
+      arbetstimmarPerVecka: 40,
+      skattetabell: "34",
+      skattekolumn: 1,
+      kommunalSkatt: 32,
+      socialaAvgifterSats: 0.3142,
+    };
+
+    // Analysera extrarader för dagavdrag
+    const dagAvdrag = {
+      föräldraledighet: 0,
+      vårdAvSjuktBarn: 0,
+      sjukfrånvaro: 0,
+    };
+
+    let övrigaExtrarader = 0;
+
+    extrarader.forEach((rad) => {
       const antal = parseFloat(rad.kolumn2) || 1;
       const aSek = parseFloat(rad.kolumn3) || 0;
-      return total + antal * aSek;
-    }, 0);
+      const totalVärde = antal * aSek;
 
-    // Beräkna bruttolön (grundlön + övertid + extrarader)
-    const nyBruttolön = originalGrundlön + originalÖvertid + extraradsSumma;
+      // Identifiera dagavdrag baserat på benämning
+      if (rad.kolumn1?.toLowerCase().includes("föräldraledighet")) {
+        dagAvdrag.föräldraledighet = antal; // Antal dagar
+      } else if (rad.kolumn1?.toLowerCase().includes("vård av sjukt barn")) {
+        dagAvdrag.vårdAvSjuktBarn = antal; // Antal dagar
+      } else if (rad.kolumn1?.toLowerCase().includes("sjuk")) {
+        dagAvdrag.sjukfrånvaro = antal; // Antal dagar
+      } else {
+        // Andra extrarader läggs till bruttolön
+        övrigaExtrarader += totalVärde;
+      }
+    });
 
-    // Sociala avgifter: 31,42% av bruttolön
-    const nySocialaAvgifter = nyBruttolön * 0.3142;
+    // Beräkna övertidstimmar (förenklat)
+    const övertidTimmar = originalÖvertid > 0 ? originalÖvertid / (originalGrundlön * 0.01) : 0;
 
-    // Skatt: Bokios sats verkar vara ~21,974%
-    const nySkatt = nyBruttolön * 0.21974;
+    // Använd LöneBeräkningar för korrekt beräkning
+    const beräkningar = beräknaKomplett(kontrakt, övertidTimmar, dagAvdrag);
 
-    // Nettolön = bruttolön - skatt
-    const nyNettolön = nyBruttolön - nySkatt;
-
-    // Lönekostnad = bruttolön + sociala avgifter
-    const nyLönekostnad = nyBruttolön + nySocialaAvgifter;
+    // Lägg till övriga extrarader till bruttolön
+    const slutligBruttolön = beräkningar.bruttolön + övrigaExtrarader;
+    const slutligaSocialaAvgifter = beräknaSocialaAvgifter(slutligBruttolön);
+    const slutligLönekostnad = beräknaLönekostnad(slutligBruttolön, slutligaSocialaAvgifter);
+    const slutligNettolön = slutligBruttolön - beräkningar.skatt;
 
     return {
       grundlön: originalGrundlön,
       övertid: originalÖvertid,
-      extraradsSumma,
-      bruttolön: nyBruttolön,
-      socialaAvgifter: nySocialaAvgifter,
-      skatt: nySkatt,
-      nettolön: nyNettolön,
-      lönekostnad: nyLönekostnad,
+      extraradsSumma: övrigaExtrarader,
+      bruttolön: slutligBruttolön,
+      socialaAvgifter: slutligaSocialaAvgifter,
+      skatt: beräkningar.skatt,
+      nettolön: slutligNettolön,
+      lönekostnad: slutligLönekostnad,
+
+      // Lägg till detaljerad info från LöneBeräkningar
+      timlön: beräkningar.timlön,
+      daglön: beräkningar.daglön,
+      dagavdrag: beräkningar.dagavdrag,
     };
   }
 
-  const beräknadeVärden = useMemo(
-    () => beräknaLönekomponenter(grundlön ?? 0, övertid ?? 0, lönespec, extrarader),
-    [grundlön, övertid, lönespec, extrarader]
-  );
+  const beräknadeVärden = useMemo(() => {
+    return beräknaLönekomponenter(grundlön ?? 0, övertid ?? 0, lönespec, extrarader);
+  }, [grundlön, övertid, lönespec, extrarader]);
   //#endregion
 
-  //#region Effects: Hämta extrarader och skicka beräkningar
+  //#region Effects
   useEffect(() => {
     if (lönespec?.id) {
       hämtaExtrarader(lönespec.id).then(setExtrarader);
     }
   }, [lönespec?.id]);
 
-  // Skicka beräkningar till parent när de ändras
+  // Skicka beräkningar till parent - SEPARAT useEffect
   useEffect(() => {
-    if (onBeräkningarUppdaterade && lönespec?.id) {
+    if (onBeräkningarUppdaterade && lönespec?.id && beräknadeVärden) {
       onBeräkningarUppdaterade(lönespec.id, beräknadeVärden);
     }
   }, [beräknadeVärden, onBeräkningarUppdaterade, lönespec?.id]);

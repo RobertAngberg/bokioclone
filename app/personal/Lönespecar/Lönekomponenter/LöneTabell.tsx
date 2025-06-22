@@ -27,18 +27,17 @@ export default function LöneTabell({
         </tr>
       </thead>
       <tbody>
-        {/* TOTALER FÖRST */}
         <LöneRadItem benämning="Lönekostnad" belopp={beräknadeVärden.lönekostnad} typ="total" />
-
-        <LöneRadItem
-          benämning="Sociala avgifter"
-          belopp={beräknadeVärden.socialaAvgifter}
-          typ="total"
-        />
 
         <LöneRadItem benämning="Bruttolön" belopp={beräknadeVärden.bruttolön} typ="total" />
 
-        <LöneRadItem benämning="Skatt" belopp={beräknadeVärden.skatt} typ="total" />
+        <LöneRadItem
+          benämning="sociala avgifter"
+          belopp={beräknadeVärden.socialaAvgifter}
+          typ="varav"
+        />
+
+        <LöneRadItem benämning="Skatt" belopp={beräknadeVärden.skatt} typ="varav" />
 
         {/* EXTRARADER */}
         {extrarader.map((rad, i) => {
@@ -49,8 +48,8 @@ export default function LöneTabell({
           return (
             <LöneRadItem
               key={rad.id || i}
-              benämning={rad.kolumn1}
-              belopp={belopp}
+              benämning={rad.kolumn1 || ""}
+              belopp={belopp || 0}
               typ="extrarad"
               kommentar={rad.kolumn4}
               onTaBort={() => onTaBortExtrarad(rad.id)}

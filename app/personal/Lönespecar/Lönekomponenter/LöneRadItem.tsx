@@ -1,7 +1,7 @@
 interface LöneRadItemProps {
   benämning: string;
   belopp: number;
-  typ: "total" | "extrarad" | "netto";
+  typ: "total" | "extrarad" | "netto" | "varav";
   onTaBort?: () => void;
   kommentar?: string;
 }
@@ -15,14 +15,20 @@ export default function LöneRadItem({
 }: LöneRadItemProps) {
   const textColor = typ === "netto" ? "text-white" : "text-white";
   const isExtrarad = typ === "extrarad";
+  const isVarav = typ === "varav";
 
   return (
     <tr
       className={`border-b border-slate-600/70 ${isExtrarad ? "hover:bg-slate-600 cursor-pointer group relative" : ""}`}
     >
-      <td className={`${textColor} font-medium py-2`}>{benämning}</td>
+      <td className={`${textColor} font-medium py-2 ${isVarav ? "pl-4 text-gray-300" : ""}`}>
+        {isVarav ? "varav " : ""}
+        {benämning}
+      </td>
       <td className="text-center text-gray-300 py-2">{kommentar || ""}</td>
-      <td className={`text-right ${textColor} font-medium py-2 relative`}>
+      <td
+        className={`text-right ${textColor} font-medium py-2 relative ${isVarav ? "text-gray-300" : ""}`}
+      >
         {belopp.toLocaleString("sv-SE", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
