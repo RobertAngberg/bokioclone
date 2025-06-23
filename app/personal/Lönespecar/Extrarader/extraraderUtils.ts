@@ -1,43 +1,138 @@
-import { RAD_KONFIGURATIONER } from "./radKonfiguration";
+/**
+ * EXTRARADER UTILITIES
+ *
+ * Detta är hjälpfunktioner för att hantera extrarader i lönesystemet.
+ * Extrarader kan vara allt från avdrag (vård av sjukt barn, föräldraledighet)
+ * till förmåner (försäkring, företagsbil, parkering) och tillägg (övertid, OB).
+ *
+ * Systemet fungerar genom att:
+ * 1. Läsa konfiguration från extraradDefinitioner.ts
+ * 2. Skapa dynamiska formulär baserat på konfigurationen
+ * 3. Beräkna totalsummor baserat på användarens input
+ * 4. Formatera värden för visning i UI:t
+ *
+ * Huvudkonfigurationen finns i RAD_KONFIGURATIONER som definierar:
+ * - Vilka fält som ska visas (antal, belopp, kommentar)
+ * - Hur beräkningar ska göras (fasta värden vs användardefinierade)
+ * - Hur värden ska formateras och valideras
+ */
 
+import { RAD_KONFIGURATIONER, RadKonfiguration } from "./extraradDefinitioner";
+
+/**
+ * FILTRERAR RADER BASERAT PÅ SÖKTERM
+ *
+ * Används för att söka bland alla tillgängliga extraradtyper i dropdown-menyn.
+ * Söker i radernas label-text och returnerar matchande resultat.
+ *
+ * @param rader - Array med alla tillgängliga rader {id, label}
+ * @param sökterm - Texten användaren söker efter
+ * @returns Filtrerade rader som matchar söktermen
+ */
 export function filtreraRader(rader: { id: string; label: string }[], sökterm: string) {
   if (!sökterm.trim()) return rader;
   return rader.filter((rad) => rad.label.toLowerCase().includes(sökterm.toLowerCase()));
 }
 
+/**
+ * BERÄKNAR TOTALSUMMA FÖR EN EXTRARAD
+ *
+ * Denna funktion hanterar alla typer av beräkningar för extrarader:
+ * 1. För rader med beräknaTotalt-funktion (t.ex. karensavdrag, daglön-baserade):
+ *    Använder grundlön och antal för att beräkna automatiskt
+ * 2. För rader utan beräknaTotalt (t.ex. försäkring, företagsbil):
+ *    Använder antal × belopp som användaren anger manuellt
+ * 3. Specialfall för text-input (t.ex. företagsbilmodell):
+ *    Om antal inte är ett nummer, använder bara beloppet
+ *
+ * @param rowId - ID för extraradtypen (t.ex. "foretagsbilExtra", "karensavdrag")
+ * @param modalFields - Formulärdata från användaren {kolumn2: antal, kolumn3: belopp}
+ * @param grundlön - Användarens månadslön (behövs för automatiska beräkningar)
+ * @returns Totalsumma som sträng
+ */
 export function beräknaSumma(rowId: string, modalFields: any, grundlön?: number) {
   const config = RAD_KONFIGURATIONER[rowId];
 
-  if (config?.beräknaTotalt && grundlön) {
-    const antal = parseFloat(modalFields.kolumn2) || 0;
-    let summa = config.beräknaTotalt(grundlön, antal);
+  console.log("🔍 beräknaSumma CALLED:", {
+    rowId,
+    enhet: config?.enhet,
+    visaBelopp: config?.fält?.visaBelopp,
+    harBeräknaTotalt: !!config?.beräknaTotalt,
+    grundlön,
+    modalFields,
+    STACK: new Error().stack?.split("\n")[1], // ← SE VAR ANROPET KOMMER FRÅN
+  });
 
-    if (config.negativtBelopp) {
-      summa = -Math.abs(summa);
-    }
-
-    return summa.toFixed(2);
+  // ✅ FLYTTA DENNA FÖRST - Specialfall för kr-enheter som inte visar belopp
+  if (config?.enhet === "kr" && !config.fält.visaBelopp) {
+    const summa = parseFloat(modalFields.kolumn2) || 0;
+    console.log("✅ KR SPECIALFALL - RETURNERAR:", summa, "för rowId:", rowId);
+    return summa.toString();
   }
 
-  // Fallback för vanliga beräkningar
-  const antal = parseFloat(modalFields.kolumn2) || 0;
+  // Automatiska beräkningar (karensavdrag, daglön-baserade avdrag, etc.)
+  if (config?.beräknaTotalt && grundlön) {
+    console.log("🔄 AUTOMATISK BERÄKNING");
+    const antal = parseFloat(modalFields.kolumn2) || 0;
+
+    // Kontrollera att antal är giltigt nummer
+    if (!isNaN(antal)) {
+      let summa = config.beräknaTotalt(grundlön, antal);
+      console.log("💰 BERÄKNAD SUMMA:", summa);
+
+      // Hantera negativa belopp (avdrag)
+      if (config.negativtBelopp) {
+        summa = -Math.abs(summa);
+      }
+
+      return summa.toFixed(2);
+    }
+  }
+
+  console.log("⬇️ FALLBACK LOGIK");
+  // Manuella beräkningar (försäkring, förmåner, tillägg)
+  const antal = parseFloat(modalFields.kolumn2);
   const belopp = parseFloat(modalFields.kolumn3) || 0;
-  return (antal * belopp).toString();
+
+  // Om antal inte är nummer (t.ex. "BMW" för företagsbil), använd bara beloppet
+  if (isNaN(antal)) {
+    console.log("📝 TEXT INPUT - använder bara belopp:", belopp);
+    return belopp.toString();
+  }
+
+  // Standard: antal × belopp
+  const resultat = antal * belopp;
+  console.log("🧮 STANDARD BERÄKNING:", antal, "×", belopp, "=", resultat);
+  return resultat.toString();
 }
 
+/**
+ * FORMATERAR KOLUMN2-VÄRDET FÖR VISNING I TABELLEN
+ *
+ * Tar rå-värdet från kolumn2 och formaterar det för presentation baserat på
+ * extraradtypen. Lägger till rätt enheter och formatering.
+ *
+ * Exempel:
+ * - "5" + enhet "dagar" → "5 Dag"
+ * - "100" + boende → "100m²"
+ * - "3" + gratisFrukost → "3 Mål"
+ *
+ * @param rowId - ID för extraradtypen
+ * @param modalFields - Formulärdata med råvärden
+ * @returns Formaterat värde för visning
+ */
 export function formatKolumn2Värde(rowId: string, modalFields: any) {
   const config = RAD_KONFIGURATIONER[rowId];
 
-  // För rader med dropdown, kombinera antal + enhet
+  // Hantera dropdown-enheter (t.ex. semesterskuld: "5 Dag", "10 Timme")
   if (config?.fält.enhetDropdown && modalFields.enhet) {
     return `${modalFields.kolumn2} ${modalFields.enhet}`;
   }
 
-  // För alla andra rader, lägg till enhetstext baserat på konfiguration
   if (config) {
     const antal = modalFields.kolumn2;
 
-    // Mappning av enheter till visningstext
+    // Mappning från intern enhet till visningstext
     const enhetTexts: Record<string, string> = {
       dagar: "Dag",
       timmar: "Timme",
@@ -45,39 +140,48 @@ export function formatKolumn2Värde(rowId: string, modalFields: any) {
       mål: "Mål",
       kvm: "m²",
       km: "km",
-      kr: "", // Ingen enhetstext för kronor (bara summan)
+      kr: "", // Kronor visas utan enhet
     };
 
     const enhetText = enhetTexts[config.enhet] || "";
 
-    // Specialfall för olika rader
-    if (rowId === "boende") {
-      return `${antal}m²`; // "1m²"
-    } else if (rowId === "gratisFrukost" || rowId === "gratisLunchMiddag") {
-      return `${antal} Mål`; // "1 Mål"
-    } else if (config.enhet === "kr") {
-      return antal; // Bara summan för kronor
-    } else if (enhetText) {
-      return `${antal} ${enhetText}`; // "1 Dag", "1 st", etc.
-    }
+    // Specialfall för vissa extraradtyper
+    if (rowId === "boende") return `${antal}m²`;
+    if (rowId === "gratisFrukost" || rowId === "gratisLunchMiddag") return `${antal} Mål`;
+    if (config.enhet === "kr") return antal; // Bara siffran för kronor
+    if (enhetText) return `${antal} ${enhetText}`;
   }
 
+  // Fallback: visa råvärdet
   return modalFields.kolumn2;
 }
 
+/**
+ * INITIALISERAR FORMULÄRFÄLT FÖR NYA EXTRARADER
+ *
+ * Skapar default-värden för formuläret när användaren väljer en extraradtyp.
+ * För automatiska beräkningar (t.ex. karensavdrag) förberäknas värdet.
+ * För manuella poster (t.ex. försäkring) lämnas fälten tomma.
+ *
+ * @param rowId - ID för extraradtypen
+ * @param grundlön - Användarens månadslön (för automatiska beräkningar)
+ * @returns Initial state för formulärfälten
+ */
 export function initializeModalFields(rowId: string, grundlön?: number) {
   const config = RAD_KONFIGURATIONER[rowId];
 
+  // För automatiska beräkningar: förberäkna värdet
   if (config?.beräknaVärde && grundlön) {
     const värde = config.beräknaVärde(grundlön);
     return {
-      kolumn2: config.fält.visaBelopp ? "1" : "",
-      kolumn3: värde.toFixed(2),
-      kolumn4: "",
-      enhet: config.fält.enhetDropdown ? config.fält.enhetDropdown[0] : "",
+      kolumn2: config.fält.visaBelopp ? "1" : "", // Antal defaultar till 1 om belopp ska visas
+      kolumn3: värde.toFixed(2), // Förberäknat värde
+      kolumn4: "", // Tom kommentar
+      enhet: config.fält.enhetDropdown ? config.fält.enhetDropdown[0] : "", // Första dropdown-alternativet
     };
   }
 
+  // För manuella poster: tomma fält
   return {
     kolumn2: "",
     kolumn3: "",
@@ -86,6 +190,16 @@ export function initializeModalFields(rowId: string, grundlön?: number) {
   };
 }
 
+/**
+ * SKAPAR STANDARD FORMULÄRFÄLT
+ *
+ * Fallback-funktion som används när ingen specifik konfiguration finns.
+ * Skapar grundläggande fält: Antal, Belopp, Kommentar.
+ *
+ * @param modalFields - Aktuella formulärvärden
+ * @param setModalFields - State-setter för formulärfälten
+ * @returns Array med formulärfält-objekt
+ */
 export function getStandardFields(modalFields: any, setModalFields: any) {
   return [
     {
@@ -122,6 +236,29 @@ export function getStandardFields(modalFields: any, setModalFields: any) {
   ];
 }
 
+/**
+ * SKAPAR DYNAMISKA FORMULÄRFÄLT BASERAT PÅ EXTRARADTYP
+ *
+ * Detta är huvudfunktionen som bygger formuläret för varje extraradtyp.
+ * Läser konfigurationen och skapar lämpliga fält:
+ *
+ * 1. Första fältet (kolumn2): Kan vara antal, modell, summa, etc.
+ * 2. Dropdown för enhet (om konfigurerat): Timme/Dag/St för flexibla poster
+ * 3. Beloppsfält (kolumn3): Visas endast om visaBelopp är true
+ * 4. Kommentarsfält (kolumn4): Visas alltid utom om skipKommentar är true
+ *
+ * Exempel på olika konfigurationer:
+ * - Karensavdrag: Antal + förberäknat belopp + kommentar
+ * - Försäkring: Antal + manuellt belopp + kommentar
+ * - Företagsbil: Modell (text) + manuellt belopp + kommentar
+ * - Semesterskuld: Antal + enhetsdropdown + manuellt belopp + kommentar
+ *
+ * @param rowId - ID för extraradtypen
+ * @param modalFields - Aktuella formulärvärden
+ * @param setModalFields - State-setter för formulärfälten
+ * @param grundlön - Användarens månadslön (för automatiska beräkningar)
+ * @returns Array med formulärfält-objekt redo för rendering
+ */
 export function getFieldsForRow(
   rowId: string,
   modalFields: any,
@@ -132,21 +269,22 @@ export function getFieldsForRow(
 
   if (config) {
     const fields: any[] = [
+      // FÖRSTA FÄLTET: Antal/Modell/Summa (beroende på extraradtyp)
       {
-        label: config.fält.antalLabel,
+        label: config.fält.antalLabel, // "Antal", "Modell", "Summa", etc.
         name: "kolumn2",
-        type: rowId === "foretagsbilExtra" ? "text" : "number",
+        type: rowId === "foretagsbilExtra" ? "text" : "number", // Text för bilmodeller, annars nummer
         value: modalFields.kolumn2,
         onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
           setModalFields((f: any) => ({ ...f, kolumn2: e.target.value })),
         required: true,
-        min: rowId === "foretagsbilExtra" ? undefined : "0",
-        step: config.fält.step || "1",
-        placeholder: config.fält.antalPlaceholder,
+        min: rowId === "foretagsbilExtra" ? undefined : "0", // Ingen min-gräns för text
+        step: config.fält.step || "1", // Steg för nummer-input
+        placeholder: config.fält.antalPlaceholder, // Dynamisk placeholder
       },
     ];
 
-    // Lägg till dropdown för enhet om konfigurerat
+    // ENHETSDROPDOWN: För flexibla poster som semesterskuld
     if (config.fält.enhetDropdown) {
       fields.push({
         label: "Enhet",
@@ -156,11 +294,11 @@ export function getFieldsForRow(
         onChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
           setModalFields((f: any) => ({ ...f, enhet: e.target.value })),
         required: true,
-        options: config.fält.enhetDropdown,
+        options: config.fält.enhetDropdown, // ["Timme", "Dag", "St"]
       });
     }
 
-    // Lägg till belopp-fält om konfigurerat
+    // BELOPPSFÄLT: Endast för manuella poster
     if (config.fält.visaBelopp) {
       fields.push({
         label: "à SEK",
@@ -169,26 +307,15 @@ export function getFieldsForRow(
         value: modalFields.kolumn3,
         onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
           setModalFields((f: any) => ({ ...f, kolumn3: e.target.value })),
-        step: "0.01",
+        step: "0.01", // Tillåt ören
         required: true,
         min: "0",
-        placeholder: "Belopp per " + config.enhet,
-      });
-    } else {
-      // Dolt fält för automatisk beräkning
-      fields.push({
-        label: "à SEK",
-        name: "kolumn3",
-        type: "text" as const,
-        value: config.beräknaVärde && grundlön ? config.beräknaVärde(grundlön).toFixed(2) : "0",
-        onChange: () => {},
-        required: false,
-        placeholder: "",
-        hidden: true,
+        // Använd custom placeholder eller fallback till generisk
+        placeholder: config.fält.beloppPlaceholder || "Belopp per " + config.enhet,
       });
     }
 
-    // Lägg till kommentar-fält ENDAST om inte skipKommentar är sant
+    // KOMMENTARSFÄLT: Alltid utom för fritext som har sitt eget kommentarsfält
     if (!config.fält.skipKommentar) {
       fields.push({
         label: "Kommentar",
@@ -205,6 +332,6 @@ export function getFieldsForRow(
     return fields;
   }
 
-  // Fallback för okonfigurerade rader
+  // FALLBACK: Om ingen konfiguration finns, använd standardfält
   return getStandardFields(modalFields, setModalFields);
 }

@@ -41,15 +41,26 @@ export default function LöneTabell({
 
         {/* EXTRARADER */}
         {extrarader.map((rad, i) => {
-          const antal = parseFloat(rad.kolumn2) || 1;
-          const aSek = parseFloat(rad.kolumn3) || 0;
-          const belopp = antal * aSek;
+          // Clean logic: För OB-tillägg och liknande, använd bara kolumn3
+          let belopp;
+
+          if (
+            rad.kolumn1?.toLowerCase().includes("ob-tillägg") ||
+            rad.kolumn1?.toLowerCase().includes("övertid") ||
+            rad.kolumn1?.toLowerCase().includes("risktillägg")
+          ) {
+            belopp = parseFloat(rad.kolumn3) || 0;
+          } else {
+            const antal = parseFloat(rad.kolumn2) || 1;
+            const aSek = parseFloat(rad.kolumn3) || 0;
+            belopp = antal * aSek;
+          }
 
           return (
             <LöneRadItem
               key={rad.id || i}
               benämning={rad.kolumn1 || ""}
-              belopp={belopp || 0}
+              belopp={belopp}
               typ="extrarad"
               kommentar={rad.kolumn4}
               onTaBort={() => onTaBortExtrarad(rad.id)}

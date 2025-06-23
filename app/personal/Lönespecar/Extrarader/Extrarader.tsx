@@ -1,4 +1,3 @@
-//#region: Huvud
 "use client";
 
 import AnimeradFlik from "../../../_components/AnimeradFlik";
@@ -23,7 +22,6 @@ export default function ExtraRader({
   onNyRad: () => void;
   grundlön?: number;
 }) {
-  //#endregion
   const {
     state,
     setState,
@@ -47,12 +45,16 @@ export default function ExtraRader({
     const newCheckedState = !state[id];
     setState((prev) => ({ ...prev, [id]: newCheckedState }));
 
-    // Öppna modal endast om raden kryssas I (inte ur)
     if (newCheckedState) {
       setModalRow({ id, label });
       setModalFields(initializeModalFields(id, grundlön));
       setModalOpen(true);
     }
+  };
+
+  const handleRemoveRow = (id: string) => {
+    setState((prev) => ({ ...prev, [id]: false }));
+    onNyRad();
   };
 
   return (
@@ -65,6 +67,7 @@ export default function ExtraRader({
         open={open}
         toggleDropdown={toggleDropdown}
         toggleCheckbox={toggleCheckbox}
+        onRemoveRow={handleRemoveRow}
       />
 
       <ExtraraderModal
@@ -79,13 +82,26 @@ export default function ExtraRader({
           const kolumn3Value = beräknaSumma(modalRow?.id || "", modalFields, grundlön);
           const kolumn2Value = formatKolumn2Värde(modalRow?.id || "", modalFields);
 
-          await sparaExtrarad({
+          console.log("� DEBUG kolumn3Value:", kolumn3Value);
+          console.log("🔍 DEBUG kolumn2Value:", kolumn2Value);
+          console.log("🔍 DEBUG modalFields:", modalFields);
+
+          const dataToSave = {
             lönespecifikation_id: lönespecId,
             kolumn1: modalRow?.label ?? "",
             kolumn2: kolumn2Value,
             kolumn3: kolumn3Value,
             kolumn4: modalFields.kolumn4,
-          });
+          };
+
+          console.log("🚀 SPARAR EXTRARAD:", dataToSave);
+          console.log("🚀 SPARAR EXTRARAD:", dataToSave);
+          console.log("🚀 kolumn1:", dataToSave.kolumn1);
+          console.log("🚀 kolumn2:", dataToSave.kolumn2);
+          console.log("🚀 kolumn3:", dataToSave.kolumn3);
+          console.log("🚀 kolumn4:", dataToSave.kolumn4);
+
+          await sparaExtrarad(dataToSave);
           setModalOpen(false);
           onNyRad();
         }}

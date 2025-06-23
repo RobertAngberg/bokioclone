@@ -1,18 +1,19 @@
-import { beräknaKarensavdrag, beräknaObetaldDag, beräknaDaglön } from "./formler";
+import { beräknaKarensavdrag, beräknaDaglön, beräknaObetaldDag } from "../Formler";
 
-interface RadKonfiguration {
+export interface RadKonfiguration {
   label: string;
-  enhet: string; // "dagar", "timmar", "antal", etc.
+  enhet: string;
   beräknaVärde?: (grundlön: number) => number;
   beräknaTotalt?: (grundlön: number, antal: number) => number;
   negativtBelopp?: boolean;
   fält: {
     antalLabel: string;
     antalPlaceholder: string;
+    beloppPlaceholder?: string;
     step?: string;
-    visaBelopp?: boolean; // Om à SEK-fältet ska visas
-    enhetDropdown?: string[]; // Dropdown-alternativ för enhet
-    skipKommentar?: boolean; // Hoppa över extra kommentarfält
+    visaBelopp?: boolean;
+    enhetDropdown?: string[];
+    skipKommentar?: boolean;
   };
 }
 
@@ -318,8 +319,6 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   obTillagg: {
     label: "OB-tillägg",
     enhet: "kr",
-    beräknaVärde: () => 1, // 1 kr per kr (passthrough)
-    beräknaTotalt: (grundlön, antal) => antal * 1, // Totalen = summan användaren anger
     fält: {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
@@ -360,7 +359,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
     enhet: "st",
     fält: {
       antalLabel: "Modell",
-      antalPlaceholder: "Ange modell/typ",
+      antalPlaceholder: "Modell",
+      beloppPlaceholder: "Belopp",
       step: "1",
       visaBelopp: true,
     },

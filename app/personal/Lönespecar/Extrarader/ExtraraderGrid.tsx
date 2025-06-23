@@ -9,6 +9,7 @@ interface Props {
   open: Record<string, boolean>;
   toggleDropdown: (key: string) => void;
   toggleCheckbox: (id: string, label: string) => void;
+  onRemoveRow?: (id: string) => void;
 }
 
 export default function ExtraraderGrid({
@@ -17,13 +18,12 @@ export default function ExtraraderGrid({
   open,
   toggleDropdown,
   toggleCheckbox,
+  onRemoveRow,
 }: Props) {
-  // Filtrera static rows
   const filtreradeStaticRows = filtreraRader(staticRows, sökterm);
   const mittenRows = filtreradeStaticRows.slice(0, Math.ceil(filtreradeStaticRows.length / 2));
   const hogerRows = filtreradeStaticRows.slice(Math.ceil(filtreradeStaticRows.length / 2));
 
-  // Filtrera dropdown-rader
   const dropdownRader = {
     sjukfranvaro: filtreraRader(dropdownRaderData.sjukfranvaro, sökterm),
     skattadeFormaner: filtreraRader(dropdownRaderData.skattadeFormaner, sökterm),
@@ -34,7 +34,6 @@ export default function ExtraraderGrid({
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Vänster kolumn: Dropdowns */}
         <div className="space-y-1">
           {(!sökterm || dropdownRader.sjukfranvaro.length > 0) && (
             <>
@@ -46,14 +45,17 @@ export default function ExtraraderGrid({
               {open.sjukfranvaro && (
                 <div className="ml-6 space-y-1">
                   {dropdownRader.sjukfranvaro
-                    .sort((a, b) => a.label.localeCompare(b.label, "sv"))
-                    .map((item) => (
+                    .sort((a: { label: string }, b: { label: string }) =>
+                      a.label.localeCompare(b.label, "sv")
+                    )
+                    .map((item: { id: string; label: string }) => (
                       <Rad
                         key={item.id}
                         id={item.id}
                         label={item.label}
                         checked={state[item.id]}
                         toggle={() => toggleCheckbox(item.id, item.label)}
+                        onRemove={onRemoveRow ? () => onRemoveRow(item.id) : undefined}
                       />
                     ))}
                 </div>
@@ -71,14 +73,17 @@ export default function ExtraraderGrid({
               {open.skattadeFormaner && (
                 <div className="ml-6 space-y-1">
                   {dropdownRader.skattadeFormaner
-                    .sort((a, b) => a.label.localeCompare(b.label, "sv"))
-                    .map((item) => (
+                    .sort((a: { label: string }, b: { label: string }) =>
+                      a.label.localeCompare(b.label, "sv")
+                    )
+                    .map((item: { id: string; label: string }) => (
                       <Rad
                         key={item.id}
                         id={item.id}
                         label={item.label}
                         checked={state[item.id]}
                         toggle={() => toggleCheckbox(item.id, item.label)}
+                        onRemove={onRemoveRow ? () => onRemoveRow(item.id) : undefined}
                       />
                     ))}
                 </div>
@@ -96,14 +101,17 @@ export default function ExtraraderGrid({
               {open.skattefrittTraktamente && (
                 <div className="ml-6 space-y-1">
                   {dropdownRader.skattefrittTraktamente
-                    .sort((a, b) => a.label.localeCompare(b.label, "sv"))
-                    .map((item) => (
+                    .sort((a: { label: string }, b: { label: string }) =>
+                      a.label.localeCompare(b.label, "sv")
+                    )
+                    .map((item: { id: string; label: string }) => (
                       <Rad
                         key={item.id}
                         id={item.id}
                         label={item.label}
                         checked={state[item.id]}
                         toggle={() => toggleCheckbox(item.id, item.label)}
+                        onRemove={onRemoveRow ? () => onRemoveRow(item.id) : undefined}
                       />
                     ))}
                 </div>
@@ -121,14 +129,17 @@ export default function ExtraraderGrid({
               {open.bilersattning && (
                 <div className="ml-6 space-y-1">
                   {dropdownRader.bilersattning
-                    .sort((a, b) => a.label.localeCompare(b.label, "sv"))
-                    .map((item) => (
+                    .sort((a: { label: string }, b: { label: string }) =>
+                      a.label.localeCompare(b.label, "sv")
+                    )
+                    .map((item: { id: string; label: string }) => (
                       <Rad
                         key={item.id}
                         id={item.id}
                         label={item.label}
                         checked={state[item.id]}
                         toggle={() => toggleCheckbox(item.id, item.label)}
+                        onRemove={onRemoveRow ? () => onRemoveRow(item.id) : undefined}
                       />
                     ))}
                 </div>
@@ -137,34 +148,33 @@ export default function ExtraraderGrid({
           )}
         </div>
 
-        {/* Mitten kolumn */}
         <div className="space-y-1">
-          {mittenRows.map((item) => (
+          {mittenRows.map((item: { id: string; label: string }) => (
             <Rad
               key={item.id}
               id={item.id}
               label={item.label}
               checked={state[item.id]}
               toggle={() => toggleCheckbox(item.id, item.label)}
+              onRemove={onRemoveRow ? () => onRemoveRow(item.id) : undefined}
             />
           ))}
         </div>
 
-        {/* Höger kolumn */}
         <div className="space-y-1">
-          {hogerRows.map((item) => (
+          {hogerRows.map((item: { id: string; label: string }) => (
             <Rad
               key={item.id}
               id={item.id}
               label={item.label}
               checked={state[item.id]}
               toggle={() => toggleCheckbox(item.id, item.label)}
+              onRemove={onRemoveRow ? () => onRemoveRow(item.id) : undefined}
             />
           ))}
         </div>
       </div>
 
-      {/* Visa meddelande om inga resultat */}
       {sökterm &&
         filtreradeStaticRows.length === 0 &&
         Object.values(dropdownRader).every((arr) => arr.length === 0) && (
