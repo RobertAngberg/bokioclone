@@ -4,19 +4,20 @@ import { useState, useEffect, useCallback } from "react";
 import AnimeradFlik from "../../_components/AnimeradFlik";
 import Knapp from "../../_components/Knapp";
 import Lönespecar from "../Lönespecar/Lönespecar";
-import BankgiroExport from "./BankgiroExport";
 import { skapaNyLönespec, taBortLönespec, hämtaLönespecifikationer } from "../actions";
 
 interface AnställdaListaProps {
   anställda: any[];
   loading: boolean;
   utbetalningsdatum: Date | null;
+  onLönespecarChange?: (lönespecar: Record<string, any>) => void;
 }
 
 export default function AnställdaLista({
   anställda,
   loading,
   utbetalningsdatum,
+  onLönespecarChange,
 }: AnställdaListaProps) {
   const [sparar, setSparar] = useState<Record<string, boolean>>({});
   const [taBort, setTaBort] = useState<Record<string, boolean>>({});
@@ -69,6 +70,14 @@ export default function AnställdaLista({
 
     laddaBefintligaLönespecar();
   }, [anställda, utbetalningsdatum, getLöneperiod]);
+
+  // ✅ Skicka upp lönespecar till föräldrakomponent
+  useEffect(() => {
+    if (onLönespecarChange) {
+      const allaLönespecar = { ...befintligaLönespecar, ...nyaLönespecar };
+      onLönespecarChange(allaLönespecar);
+    }
+  }, [befintligaLönespecar, nyaLönespecar, onLönespecarChange]);
 
   const handleSkapaNyLönespec = async (anställd: any) => {
     if (!utbetalningsdatum) return;
@@ -151,12 +160,7 @@ export default function AnställdaLista({
           Lönekörning {utbetalningsdatum?.toLocaleDateString("sv-SE")} ({anställda.length}{" "}
           anställda)
         </h5>
-
-        <BankgiroExport
-          anställda={anställda}
-          utbetalningsdatum={utbetalningsdatum}
-          lönespecar={{ ...befintligaLönespecar, ...nyaLönespecar }}
-        />
+        {/* ❌ BankgiroExport borttaget härifrån */}
       </div>
 
       {loading || laddaLönespecar ? (

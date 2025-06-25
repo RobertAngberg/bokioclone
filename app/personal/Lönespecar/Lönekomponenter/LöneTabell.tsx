@@ -44,6 +44,9 @@ export default function LöneTabell({
           // Clean logic: För OB-tillägg och liknande, använd bara kolumn3
           let belopp;
 
+          // ---------- //
+          // OBS Hårdkodat!
+          // ---------- //
           if (
             rad.kolumn1?.toLowerCase().includes("ob-tillägg") ||
             rad.kolumn1?.toLowerCase().includes("övertid") ||

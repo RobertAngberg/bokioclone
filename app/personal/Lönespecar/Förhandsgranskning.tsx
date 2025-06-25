@@ -66,10 +66,6 @@ export default function Förhandsgranskning({
       const element = document.getElementById("lonespec-print-area");
       if (!element) throw new Error("Element not found");
 
-      // Kolla först att elementet har innehåll
-      console.log("Element found:", element);
-      console.log("Element innerHTML:", element.innerHTML.substring(0, 200));
-
       // Skapa canvas direkt från originalet först för test
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -82,8 +78,6 @@ export default function Förhandsgranskning({
         removeContainer: false,
       });
 
-      console.log("Canvas created, size:", canvas.width, "x", canvas.height);
-
       // Kontrollera om canvas har data
       const imageData = canvas.toDataURL("image/png");
       if (
@@ -92,8 +86,6 @@ export default function Förhandsgranskning({
       ) {
         throw new Error("Canvas är tom!");
       }
-
-      console.log("Image data length:", imageData.length);
 
       // Skapa PDF
       const pdf = new jsPDF("portrait", "mm", "a4");

@@ -9,7 +9,6 @@ export default function Sammanfattning({ anställda }: SammanfattningProps) {
   const totalLönekostnad = totalBrutto * 1.3142; // Approximation med sociala avgifter
 
   const handleKörLönekörning = () => {
-    console.log("Kör lönekörning för alla anställda");
     // Här kan du lägga till logik för att köra lönekörning
   };
 

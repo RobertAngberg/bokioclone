@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { hämtaAllaAnställda } from "../actions";
 import Lönedatum from "./Lönedatum";
 import AnställdaLista from "./AnställdaLista";
+import BankgiroExport from "./BankgiroExport";
+import BokförKnapp from "./BokförKnappOchModal";
 import Sammanfattning from "./Sammanfattning";
 //#endregion
 
@@ -16,6 +18,7 @@ export default function Lönekörning() {
   const [anställda, setAnställda] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [utbetalningsdatum, setUtbetalningsdatum] = useState<Date | null>(null);
+  const [lönespecar, setLönespecar] = useState<Record<string, any>>({});
   //#endregion
 
   //#region Effects
@@ -55,7 +58,24 @@ export default function Lönekörning() {
           anställda={anställda}
           loading={loading}
           utbetalningsdatum={utbetalningsdatum}
+          onLönespecarChange={setLönespecar}
         />
+      )}
+
+      {/* EXPORT & BOKFÖRING - LÄNGST NER */}
+      {utbetalningsdatum && Object.keys(lönespecar).length > 0 && (
+        <div className="flex justify-center gap-4 pt-4 border-t border-gray-700">
+          <BankgiroExport
+            anställda={anställda}
+            utbetalningsdatum={utbetalningsdatum}
+            lönespecar={lönespecar}
+          />
+          <BokförKnapp
+            anställda={anställda}
+            utbetalningsdatum={utbetalningsdatum}
+            lönespecar={lönespecar}
+          />
+        </div>
       )}
 
       {/* <Sammanfattning anställda={anställda} /> */}

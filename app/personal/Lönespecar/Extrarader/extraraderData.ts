@@ -1,8 +1,8 @@
 export const staticRows = [
   { id: "foretagsbilExtra", label: "Företagsbil" },
   { id: "foraldraledighet", label: "Föräldraledighet" },
-  { id: "jamkning", label: "Jämkning" },
-  { id: "nettolönejustering", label: "Nettolönejustering" },
+  // { id: "jamkning", label: "Jämkning" },
+  { id: "nettolönejustering", label: "Justering, nettolön" },
   { id: "obetaldFranvaro", label: "Obetald frånvaro" },
   { id: "obTillagg", label: "OB-tillägg" },
   { id: "overtid", label: "Övertid" },
@@ -10,8 +10,8 @@ export const staticRows = [
   { id: "semesterskuld", label: "Semesterskuld" },
   { id: "semestertillagg", label: "Semestertillägg" },
   { id: "vab", label: "Vård av sjukt barn" },
-  { id: "fritext", label: "Fritext" },
-  { id: "lon", label: "Lön" },
+  // { id: "fritext", label: "Fritext" },
+  // { id: "lon", label: "Lön" },
 ];
 
 export const dropdownRaderData = {

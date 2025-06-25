@@ -38,8 +38,6 @@ type AnställdData = {
 //#endregion
 
 export async function hämtaAllaAnställda() {
-  console.log("🚀 hämtaAllaAnställda() startar...");
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -57,7 +55,6 @@ export async function hämtaAllaAnställda() {
     `;
 
     const result = await client.query(query, [userId]);
-    console.log("✅ Hittade", result.rows.length, "anställda");
 
     client.release();
     return result.rows;
@@ -68,8 +65,6 @@ export async function hämtaAllaAnställda() {
 }
 
 export async function hämtaAnställd(anställdId: number) {
-  console.log("🚀 hämtaAnställd() startar för ID:", anställdId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -86,8 +81,10 @@ export async function hämtaAnställd(anställdId: number) {
     `;
 
     const result = await client.query(query, [anställdId, userId]);
-    console.log("✅ Hämtade anställd:", result.rows[0]);
-
+    if (result.rows.length === 0) {
+      client.release();
+      return null; // Ingen anställd hittades
+    }
     client.release();
     return result.rows[0] || null;
   } catch (error) {
@@ -97,8 +94,6 @@ export async function hämtaAnställd(anställdId: number) {
 }
 
 export async function sparaAnställd(data: AnställdData, anställdId?: number | null) {
-  console.log("🚀 sparaAnställd() startar...", { anställdId });
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -154,7 +149,6 @@ export async function sparaAnställd(data: AnställdData, anställdId?: number |
         userId,
       ];
 
-      console.log("� Uppdaterar anställd ID:", anställdId);
       const result = await client.query(updateQuery, values);
 
       client.release();
@@ -239,8 +233,6 @@ export async function sparaAnställd(data: AnställdData, anställdId?: number |
 }
 
 export async function taBortAnställd(anställdId: number) {
-  console.log("🗑️ taBortAnställd() startar för ID:", anställdId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -310,8 +302,6 @@ export async function hämtaSemesterTransaktioner(
   typ?: string,
   bokfört?: boolean
 ) {
-  console.log("🚀 hämtaSemesterTransaktioner() startar för anställd:", anställdId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -396,8 +386,6 @@ export async function sparaSemesterTransaktion(data: {
   lönespecifikationId?: number;
   bokfört?: boolean;
 }) {
-  console.log("🚀 sparaSemesterTransaktion() startar...", data);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -463,8 +451,6 @@ export async function sparaSemesterTransaktion(data: {
 }
 
 export async function raderaSemesterTransaktion(transaktionId: number) {
-  console.log("🗑️ raderaSemesterTransaktion() startar för ID:", transaktionId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -518,8 +504,6 @@ export async function uppdateraSemesterdata(
     innestående?: number;
   }
 ) {
-  console.log("🚀 uppdateraSemesterdata() startar för anställd:", anställdId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -578,8 +562,6 @@ export async function uppdateraSemesterdata(
 }
 
 export async function hämtaLönespecifikationer(anställdId: number) {
-  console.log("🚀 hämtaLönespecifikationer() startar för anställd:", anställdId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -602,17 +584,43 @@ export async function hämtaLönespecifikationer(anställdId: number) {
       return [];
     }
 
-    const query = `
+    // Hämta lönespecifikationer
+    const lönespecQuery = `
       SELECT * FROM lönespecifikationer 
       WHERE anställd_id = $1 
-      ORDER BY år DESC, månad DESC
+      ORDER BY skapad DESC
     `;
+    const lönespecResult = await client.query(lönespecQuery, [anställdId]);
 
-    const result = await client.query(query, [anställdId]);
-    console.log("✅ Hittade", result.rows.length, "lönespecifikationer");
+    // ✅ LADDA EXTRARADER FÖR VARJE LÖNESPEC
+    const lönespecarMedExtrarader = await Promise.all(
+      lönespecResult.rows.map(async (lönespec) => {
+        try {
+          const extraradQuery = `
+            SELECT * FROM lönespec_extrarader 
+            WHERE lönespecifikation_id = $1 
+            ORDER BY id
+          `;
+          const extraradResult = await client.query(extraradQuery, [lönespec.id]);
+
+          return {
+            ...lönespec,
+            extrarader: extraradResult.rows,
+          };
+        } catch (error) {
+          console.error("❌ Fel vid laddning av extrarader för lönespec", lönespec.id, error);
+          return {
+            ...lönespec,
+            extrarader: [],
+          };
+        }
+      })
+    );
 
     client.release();
-    return result.rows;
+
+    console.log("🎯 FÄRDIGA LÖNESPECAR MED EXTRARADER:", lönespecarMedExtrarader);
+    return lönespecarMedExtrarader;
   } catch (error) {
     console.error("❌ hämtaLönespecifikationer error:", error);
     return [];
@@ -620,8 +628,6 @@ export async function hämtaLönespecifikationer(anställdId: number) {
 }
 
 export async function genereraLönespecifikation(anställdId: number, månad?: number, år?: number) {
-  console.log("🚀 genereraLönespecifikation() startar för anställd:", anställdId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -767,7 +773,6 @@ export async function genereraLönespecifikation(anställdId: number, månad?: n
     client.release();
 
     const lönespecId = insertResult.rows[0].id;
-    console.log("✅ Lönespecifikation skapad med ID:", lönespecId);
 
     return {
       success: true,
@@ -799,8 +804,6 @@ function getMånadsNamn(månad: number): string {
 }
 
 export async function hämtaUtlägg(anställdId: number) {
-  console.log("🚀 hämtaUtlägg() startar för anställd:", anställdId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -830,7 +833,6 @@ export async function hämtaUtlägg(anställdId: number) {
     `;
 
     const result = await client.query(query, [anställdId]);
-    console.log("✅ Hittade", result.rows.length, "utlägg");
 
     client.release();
     return result.rows;
@@ -841,8 +843,6 @@ export async function hämtaUtlägg(anställdId: number) {
 }
 
 export async function godkännUtlägg(utläggId: number, lönespecId?: number) {
-  console.log("🚀 godkännUtlägg() startar för utlägg:", utläggId, "lönespec:", lönespecId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -926,8 +926,6 @@ export async function godkännUtlägg(utläggId: number, lönespecId?: number) {
           utläggBelopp,
           lönespecId,
         ]);
-
-        console.log(`✅ Utlägg ${utläggBelopp} kr tillagt till lönespec ${lönespecId}`);
       }
     }
 
@@ -948,8 +946,6 @@ export async function godkännUtlägg(utläggId: number, lönespecId?: number) {
 }
 
 export async function avvisaUtlägg(utläggId: number, anledning?: string) {
-  console.log("🚀 avvisaUtlägg() startar för utlägg:", utläggId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -1016,14 +1012,74 @@ export async function sparaExtrarad({
   kolumn3: string;
   kolumn4: string;
 }) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Ingen inloggad användare");
+  }
+
   try {
     const client = await pool.connect();
-    await client.query(
-      `INSERT INTO lönespec_extrarader (lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4]
-    );
+
+    const belopp = Number(kolumn3 || 0);
+
+    // ✅ OM BELOPPET ÄR 0 ELLER TOM - TA BORT RADEN!
+    if (belopp <= 0) {
+      const deleteQuery = `
+        DELETE FROM lönespec_extrarader 
+        WHERE lönespecifikation_id = $1 AND kolumn1 = $2
+        RETURNING *
+      `;
+
+      client.release();
+      revalidatePath("/personal");
+      return { success: true, action: "deleted" };
+    }
+
+    // Kolla om extrarad redan finns
+    const checkQuery = `
+      SELECT id FROM lönespec_extrarader 
+      WHERE lönespecifikation_id = $1 AND kolumn1 = $2
+    `;
+    const checkResult = await client.query(checkQuery, [lönespecifikation_id, kolumn1]);
+
+    if (checkResult.rows.length > 0) {
+      console.log("🔄 Uppdaterar befintlig extrarad...");
+      // Uppdatera befintlig extrarad
+      const updateQuery = `
+        UPDATE lönespec_extrarader 
+        SET kolumn2 = $1, kolumn3 = $2, kolumn4 = $3, uppdaterad = NOW()
+        WHERE lönespecifikation_id = $4 AND kolumn1 = $5
+        RETURNING *
+      `;
+      const result = await client.query(updateQuery, [
+        kolumn2,
+        kolumn3,
+        kolumn4,
+        lönespecifikation_id,
+        kolumn1,
+      ]);
+    } else {
+      // Skapa ny extrarad
+      const insertQuery = `
+        INSERT INTO lönespec_extrarader (lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *
+      `;
+      const result = await client.query(insertQuery, [
+        lönespecifikation_id,
+        kolumn1,
+        kolumn2,
+        kolumn3,
+        kolumn4,
+      ]);
+    }
+
     client.release();
+    console.log("🔄 Anropar revalidatePath...");
+    revalidatePath("/personal");
+    console.log("✅ sparaExtrarad KLAR!");
+
     return { success: true };
   } catch (error) {
     console.error("❌ sparaExtrarad error:", error);
@@ -1047,8 +1103,6 @@ export async function hämtaExtrarader(lönespecifikation_id: number) {
 }
 
 export async function taBortExtrarad(extraradId: number) {
-  console.log("🚀 taBortExtrarad() startar för ID:", extraradId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -1063,9 +1117,12 @@ export async function taBortExtrarad(extraradId: number) {
     `;
 
     const result = await client.query(query, [extraradId]);
-    console.log("✅ Extrarad borttagen:", result.rowCount);
 
     client.release();
+
+    // ✅ LÄGG TILL DENNA RAD FÖR ATT UPPDATERA BOKFÖRINGEN!
+    revalidatePath("/personal");
+
     return { success: true };
   } catch (error) {
     console.error("❌ taBortExtrarad error:", error);
@@ -1080,8 +1137,6 @@ export async function skapaNyLönespec(data: {
   period_start: string;
   period_slut: string;
 }) {
-  console.log("🚀 skapaNyLönespec() startar för anställd:", data.anställd_id);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -1155,8 +1210,6 @@ export async function skapaNyLönespec(data: {
 }
 
 export async function taBortLönespec(lönespecId: number) {
-  console.log("🗑️ taBortLönespec() startar för ID:", lönespecId);
-
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
@@ -1186,7 +1239,6 @@ export async function taBortLönespec(lönespecId: number) {
     `;
 
     const result = await client.query(deleteQuery, [lönespecId]);
-    console.log("✅ Lönespec borttagen:", result.rowCount);
 
     client.release();
     revalidatePath("/personal");

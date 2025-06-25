@@ -52,9 +52,29 @@ export default function ExtraRader({
     }
   };
 
-  const handleRemoveRow = (id: string) => {
-    setState((prev) => ({ ...prev, [id]: false }));
-    onNyRad();
+  const handleRemoveRow = async (id: string) => {
+    alert("handleRemoveRow anropad för: " + id); // ← BRUTAL MEN TYDLIG
+
+    // ✅ HITTA EXTRARAD-ID från databasen baserat på lönespec + kolumn1
+    try {
+      // Först - ta bort från UI
+      setState((prev) => ({ ...prev, [id]: false }));
+
+      // Sen - ta bort från databas genom att spara med 0 belopp
+      await sparaExtrarad({
+        lönespecifikation_id: lönespecId,
+        kolumn1: id, // eller vad som matchar kolumn1
+        kolumn2: "0",
+        kolumn3: "0",
+        kolumn4: "",
+      });
+
+      onNyRad();
+    } catch (error) {
+      console.error("❌ Fel vid borttagning av extrarad:", error);
+      // Återställ UI om det blev fel
+      setState((prev) => ({ ...prev, [id]: true }));
+    }
   };
 
   return (
@@ -82,10 +102,6 @@ export default function ExtraRader({
           const kolumn3Value = beräknaSumma(modalRow?.id || "", modalFields, grundlön);
           const kolumn2Value = formatKolumn2Värde(modalRow?.id || "", modalFields);
 
-          console.log("� DEBUG kolumn3Value:", kolumn3Value);
-          console.log("🔍 DEBUG kolumn2Value:", kolumn2Value);
-          console.log("🔍 DEBUG modalFields:", modalFields);
-
           const dataToSave = {
             lönespecifikation_id: lönespecId,
             kolumn1: modalRow?.label ?? "",
@@ -93,13 +109,6 @@ export default function ExtraRader({
             kolumn3: kolumn3Value,
             kolumn4: modalFields.kolumn4,
           };
-
-          console.log("🚀 SPARAR EXTRARAD:", dataToSave);
-          console.log("🚀 SPARAR EXTRARAD:", dataToSave);
-          console.log("🚀 kolumn1:", dataToSave.kolumn1);
-          console.log("🚀 kolumn2:", dataToSave.kolumn2);
-          console.log("🚀 kolumn3:", dataToSave.kolumn3);
-          console.log("🚀 kolumn4:", dataToSave.kolumn4);
 
           await sparaExtrarad(dataToSave);
           setModalOpen(false);

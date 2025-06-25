@@ -374,43 +374,44 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalPlaceholder: "Ange antal",
       step: "1",
       visaBelopp: true,
+      beloppPlaceholder: "Belopp (använd - för avdrag)", // ← UPPDATERA PLACEHOLDER
       enhetDropdown: ["Timme", "Dag", "St"],
     },
   },
 
-  jamkning: {
-    label: "Jämkning",
-    enhet: "st",
-    fält: {
-      antalLabel: "Antal",
-      antalPlaceholder: "Ange antal",
-      step: "1",
-      visaBelopp: true,
-    },
-  },
+  // jamkning: {
+  //   label: "Jämkning",
+  //   enhet: "st",
+  //   fält: {
+  //     antalLabel: "Antal",
+  //     antalPlaceholder: "Ange antal",
+  //     step: "1",
+  //     visaBelopp: true,
+  //   },
+  // },
 
-  fritext: {
-    label: "Fritext",
-    enhet: "st",
-    fält: {
-      antalLabel: "Kommentar",
-      antalPlaceholder: "Skriv din text här",
-      step: "1",
-      visaBelopp: false,
-      skipKommentar: true,
-    },
-  },
+  // fritext: {
+  //   label: "Fritext",
+  //   enhet: "st",
+  //   fält: {
+  //     antalLabel: "Text",
+  //     antalPlaceholder: "Skriv din text här",
+  //     step: "1",
+  //     visaBelopp: false,
+  //     skipKommentar: true,
+  //   },
+  // },
 
-  lon: {
-    label: "Lön",
-    enhet: "st",
-    fält: {
-      antalLabel: "Antal",
-      antalPlaceholder: "Ange antal",
-      step: "1",
-      visaBelopp: true,
-    },
-  },
+  // lon: {
+  //   label: "Lön",
+  //   enhet: "st",
+  //   fält: {
+  //     antalLabel: "Antal",
+  //     antalPlaceholder: "Ange antal",
+  //     step: "1",
+  //     visaBelopp: true,
+  //   },
+  // },
 };
 
 export type RadKonfigurationType = RadKonfiguration;

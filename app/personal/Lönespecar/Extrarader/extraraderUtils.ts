@@ -53,32 +53,12 @@ export function filtreraRader(rader: { id: string; label: string }[], sökterm: 
 export function beräknaSumma(rowId: string, modalFields: any, grundlön?: number) {
   const config = RAD_KONFIGURATIONER[rowId];
 
-  console.log("🔍 beräknaSumma CALLED:", {
-    rowId,
-    enhet: config?.enhet,
-    visaBelopp: config?.fält?.visaBelopp,
-    harBeräknaTotalt: !!config?.beräknaTotalt,
-    grundlön,
-    modalFields,
-    STACK: new Error().stack?.split("\n")[1], // ← SE VAR ANROPET KOMMER FRÅN
-  });
-
-  // ✅ FLYTTA DENNA FÖRST - Specialfall för kr-enheter som inte visar belopp
-  if (config?.enhet === "kr" && !config.fält.visaBelopp) {
-    const summa = parseFloat(modalFields.kolumn2) || 0;
-    console.log("✅ KR SPECIALFALL - RETURNERAR:", summa, "för rowId:", rowId);
-    return summa.toString();
-  }
-
   // Automatiska beräkningar (karensavdrag, daglön-baserade avdrag, etc.)
   if (config?.beräknaTotalt && grundlön) {
-    console.log("🔄 AUTOMATISK BERÄKNING");
     const antal = parseFloat(modalFields.kolumn2) || 0;
 
-    // Kontrollera att antal är giltigt nummer
     if (!isNaN(antal)) {
       let summa = config.beräknaTotalt(grundlön, antal);
-      console.log("💰 BERÄKNAD SUMMA:", summa);
 
       // Hantera negativa belopp (avdrag)
       if (config.negativtBelopp) {
@@ -89,20 +69,21 @@ export function beräknaSumma(rowId: string, modalFields: any, grundlön?: numbe
     }
   }
 
-  console.log("⬇️ FALLBACK LOGIK");
-  // Manuella beräkningar (försäkring, förmåner, tillägg)
-  const antal = parseFloat(modalFields.kolumn2);
-  const belopp = parseFloat(modalFields.kolumn3) || 0;
-
-  // Om antal inte är nummer (t.ex. "BMW" för företagsbil), använd bara beloppet
-  if (isNaN(antal)) {
-    console.log("📝 TEXT INPUT - använder bara belopp:", belopp);
-    return belopp.toString();
+  // KR-enheter utan belopp-fält (flyttat hit)
+  if (config?.enhet === "kr" && !config.fält.visaBelopp) {
+    const summa = parseFloat(modalFields.kolumn2) || 0;
+    return summa.toString();
   }
 
   // Standard: antal × belopp
+  const antal = parseFloat(modalFields.kolumn2);
+  const belopp = parseFloat(modalFields.kolumn3) || 0;
+
+  if (isNaN(antal)) {
+    return belopp.toString();
+  }
+
   const resultat = antal * belopp;
-  console.log("🧮 STANDARD BERÄKNING:", antal, "×", belopp, "=", resultat);
   return resultat.toString();
 }
 
@@ -273,7 +254,7 @@ export function getFieldsForRow(
       {
         label: config.fält.antalLabel, // "Antal", "Modell", "Summa", etc.
         name: "kolumn2",
-        type: rowId === "foretagsbilExtra" ? "text" : "number", // Text för bilmodeller, annars nummer
+        type: rowId === "foretagsbilExtra" ? "text" : "number",
         value: modalFields.kolumn2,
         onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
           setModalFields((f: any) => ({ ...f, kolumn2: e.target.value })),
@@ -301,7 +282,7 @@ export function getFieldsForRow(
     // BELOPPSFÄLT: Endast för manuella poster
     if (config.fält.visaBelopp) {
       fields.push({
-        label: "à SEK",
+        label: "å SEK",
         name: "kolumn3",
         type: "number" as const,
         value: modalFields.kolumn3,
@@ -309,13 +290,13 @@ export function getFieldsForRow(
           setModalFields((f: any) => ({ ...f, kolumn3: e.target.value })),
         step: "0.01", // Tillåt ören
         required: true,
-        min: "0",
+        min: rowId === "nettolönejustering" ? undefined : "0", // ← TILLÅT NEGATIVA FÖR NETTOLÖNEJUSTERING
         // Använd custom placeholder eller fallback till generisk
         placeholder: config.fält.beloppPlaceholder || "Belopp per " + config.enhet,
       });
     }
 
-    // KOMMENTARSFÄLT: Alltid utom för fritext som har sitt eget kommentarsfält
+    // KOMMENTARSFÄLT
     if (!config.fält.skipKommentar) {
       fields.push({
         label: "Kommentar",

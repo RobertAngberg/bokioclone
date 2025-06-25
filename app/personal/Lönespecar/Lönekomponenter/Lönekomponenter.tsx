@@ -65,9 +65,29 @@ export default function Lönekomponenter({
     }
   };
 
-  const handleNyRad = () => {
+  const handleNyRad = async () => {
     if (lönespec?.id) {
-      hämtaExtrarader(lönespec.id).then(setExtrarader);
+      try {
+        const nyaExtrarader = await hämtaExtrarader(lönespec.id);
+
+        setExtrarader(nyaExtrarader);
+
+        // ✅ TVINGA OMBERÄKNING DIREKT
+        setTimeout(() => {
+          const nyaBeräkningar = beräknaLönekomponenter(
+            grundlön ?? 0,
+            övertid ?? 0,
+            lönespec,
+            nyaExtrarader
+          );
+
+          if (onBeräkningarUppdaterade && lönespec?.id) {
+            onBeräkningarUppdaterade(lönespec.id, nyaBeräkningar);
+          }
+        }, 100);
+      } catch (error) {
+        console.error("❌ Fel vid omladdning av extrarader:", error);
+      }
     }
   };
   //#endregion
