@@ -331,55 +331,6 @@ export function beräknaSkattunderlag(grundlön: number, extrarader: any[]): num
 // =====================================================================================
 
 /**
- * Förenklad komplett löneberäkning (huvudfunktion för actions.ts)
- * Ersätter alla beräkningar från actions.ts
- */
-export function beräknaKompletLön(
-  grundlön: number,
-  extrarader: any[] = [],
-  anställd?: any
-): LöneBeräkning {
-  // Beräkna tillägg och avdrag från extrarader
-  let tillägg = 0;
-  let avdrag = 0;
-
-  extrarader.forEach((rad) => {
-    const belopp = Number(rad.kolumn3 || 0);
-    if (belopp > 0) {
-      tillägg += belopp;
-    } else if (belopp < 0) {
-      avdrag += Math.abs(belopp);
-    }
-  });
-
-  // Verklig bruttolön
-  const bruttolön = grundlön + tillägg - avdrag;
-
-  // Sociala avgifter
-  const socialaAvgifter = beräknaSocialaAvgifter(bruttolön);
-
-  // Skatt (använd anställds skattetabell eller fallback)
-  const skatt = beräknaSkattMedTabell(bruttolön, parseInt(anställd?.skattetabell));
-
-  // Nettolön
-  const nettolön = bruttolön - skatt;
-
-  // Total lönekostnad
-  const totalLönekostnad = beräknaLönekostnad(bruttolön, socialaAvgifter);
-
-  return {
-    grundlön,
-    tillägg,
-    avdrag,
-    bruttolön,
-    socialaAvgifter,
-    skatt,
-    nettolön,
-    totalLönekostnad,
-  };
-}
-
-/**
  * Komplett löneberäkning med extrarader (från huvudberäkningar.ts)
  * För avancerade beräkningar med övertid och dagavdrag
  */
@@ -504,34 +455,6 @@ export function beräknaLönekomponenter(
     daglön: beräkningar.daglön,
     dagavdrag: beräkningar.dagavdrag,
     skattunderlag: beräkningar.skattunderlag,
-  };
-}
-
-/**
- * Förenklad version för nya komponenter (från huvudberäkningar.ts)
- */
-export function beräknaKomplettLön(grundlön: number, extrarader: any[]) {
-  const skattunderlag = beräknaSkattunderlag(grundlön, extrarader);
-  const skatt = beräknaSkatt(skattunderlag);
-
-  let extraradsSumma = 0;
-  extrarader.forEach((rad) => {
-    const belopp = parseFloat(rad.kolumn3) || 0;
-    extraradsSumma += belopp;
-  });
-
-  const bruttolön = grundlön + extraradsSumma;
-  const socialaAvgifter = beräknaSocialaAvgifter(bruttolön);
-  const lönekostnad = beräknaLönekostnad(bruttolön, socialaAvgifter);
-  const nettolön = bruttolön - skatt;
-
-  return {
-    skattunderlag,
-    bruttolön,
-    skatt,
-    socialaAvgifter,
-    lönekostnad,
-    nettolön,
   };
 }
 
