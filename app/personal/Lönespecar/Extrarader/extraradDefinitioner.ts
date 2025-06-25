@@ -1,4 +1,4 @@
-import { beräknaKarensavdrag, beräknaDaglön, beräknaObetaldDag } from "../Formler";
+import { beräknaKarensavdrag, beräknaDaglön, beräknaObetaldDag } from "../../löneberäkningar";
 
 export interface RadKonfiguration {
   label: string;

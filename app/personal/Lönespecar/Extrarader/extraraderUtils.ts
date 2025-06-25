@@ -55,6 +55,7 @@ export function beräknaSumma(rowId: string, modalFields: any, grundlön?: numbe
 
   // Automatiska beräkningar (karensavdrag, daglön-baserade avdrag, etc.)
   if (config?.beräknaTotalt && grundlön) {
+    console.log("🔄 AUTOMATISK BERÄKNING");
     const antal = parseFloat(modalFields.kolumn2) || 0;
 
     if (!isNaN(antal)) {

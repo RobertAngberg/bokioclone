@@ -627,163 +627,76 @@ export async function hämtaLönespecifikationer(anställdId: number) {
   }
 }
 
-export async function genereraLönespecifikation(anställdId: number, månad?: number, år?: number) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Ingen inloggad användare");
-  }
+// export async function genereraLönespecifikation(anställdId: number, månad?: number, år?: number) {
+//   const session = await auth();
+//   if (!session?.user?.id) {
+//     throw new Error("Ingen inloggad användare");
+//   }
 
-  const userId = parseInt(session.user.id, 10);
+//   const userId = parseInt(session.user.id, 10);
 
-  try {
-    const client = await pool.connect();
+//   try {
+//     const client = await pool.connect();
 
-    // Hämta anställd data
-    const anställdQuery = `
-      SELECT * FROM anställda 
-      WHERE id = $1 AND user_id = $2
-    `;
-    const anställdResult = await client.query(anställdQuery, [anställdId, userId]);
+//     // Hämta anställd från databas
+//     const anställdQuery = `SELECT * FROM anställda WHERE id = $1 AND user_id = $2`;
+//     const anställdResult = await client.query(anställdQuery, [anställdId, userId]);
 
-    if (anställdResult.rows.length === 0) {
-      client.release();
-      return { success: false, error: "Anställd hittades inte" };
-    }
+//     if (anställdResult.rows.length === 0) {
+//       client.release();
+//       return { success: false, error: "Anställd hittades inte" };
+//     }
 
-    const anställd = anställdResult.rows[0];
+//     // Bestäm målperiod
+//     const now = new Date();
+//     const targetMånad = månad || now.getMonth() + 1;
+//     const targetÅr = år || now.getFullYear();
 
-    // Beräkna period (nuvarande månad om inte specificerat)
-    const now = new Date();
-    const targetMånad = månad || now.getMonth() + 1; // 1-12
-    const targetÅr = år || now.getFullYear();
+//     // Kontrollera duplicat
+//     const existsQuery = `SELECT id FROM lönespecifikationer WHERE anställd_id = $1 AND månad = $2 AND år = $3`;
+//     const existsResult = await client.query(existsQuery, [anställdId, targetMånad, targetÅr]);
 
-    // Kontrollera om lönespec redan finns
-    const existsQuery = `
-      SELECT id FROM lönespecifikationer 
-      WHERE anställd_id = $1 AND månad = $2 AND år = $3
-    `;
-    const existsResult = await client.query(existsQuery, [anställdId, targetMånad, targetÅr]);
+//     if (existsResult.rows.length > 0) {
+//       client.release();
+//       return {
+//         success: false,
+//         error: `Lönespecifikation för ${targetMånad}/${targetÅr} finns redan`,
+//       };
+//     }
 
-    if (existsResult.rows.length > 0) {
-      client.release();
-      return {
-        success: false,
-        error: `Lönespecifikation för ${targetMånad}/${targetÅr} finns redan`,
-      };
-    }
+//     // Beräkna perioddatum
+//     const periodStart = new Date(targetÅr, targetMånad - 1, 1);
+//     const periodSlut = new Date(targetÅr, targetMånad, 0);
 
-    // Beräkna period datum
-    const periodStart = new Date(targetÅr, targetMånad - 1, 1);
-    const periodSlut = new Date(targetÅr, targetMånad, 0);
+//     // ✅ BARA SKAPA GRUNDSTRUKTUR - INGA BERÄKNINGAR!
+//     const insertQuery = `
+//       INSERT INTO lönespecifikationer (
+//         anställd_id, period_start, period_slut, månad, år, status, skapad_av
+//       ) VALUES ($1, $2, $3, $4, $5, 'Utkast', $6)
+//       RETURNING id
+//     `;
 
-    // Beräkna grundlön baserat på anställnings typ
-    let grundlön = 0;
-    const kompensation = parseFloat(anställd.kompensation || 0);
+//     const insertResult = await client.query(insertQuery, [
+//       anställdId,
+//       periodStart,
+//       periodSlut,
+//       targetMånad,
+//       targetÅr,
+//       userId,
+//     ]);
 
-    switch (anställd.ersättning_per) {
-      case "Månad":
-        grundlön = kompensation;
-        break;
-      case "År":
-        grundlön = kompensation / 12;
-        break;
-      case "Timme":
-        const timmarPerVecka = parseFloat(anställd.arbetsvecka_timmar || 40);
-        grundlön = (kompensation * timmarPerVecka * 52) / 12;
-        break;
-      case "Vecka":
-        grundlön = (kompensation * 52) / 12;
-        break;
-      case "Dag":
-        grundlön = kompensation * 21.7; // Genomsnitt arbetsdagar per månad
-        break;
-      default:
-        grundlön = kompensation;
-    }
+//     client.release();
 
-    // Justera för deltid
-    if (anställd.arbetsbelastning === "Deltid" && anställd.deltid_procent) {
-      grundlön = grundlön * (parseFloat(anställd.deltid_procent) / 100);
-    }
-
-    // Bruttolön (bara grundlön till att börja med)
-    const bruttolön = grundlön;
-
-    // Beräkna skatt
-    const skattesatser: { [key: number]: number } = {
-      29: 0.18,
-      30: 0.2,
-      31: 0.21974,
-      32: 0.24,
-      33: 0.26,
-      34: 0.21974,
-      35: 0.3,
-      36: 0.32,
-      37: 0.34,
-      38: 0.36,
-      39: 0.38,
-      40: 0.4,
-      41: 0.42,
-      42: 0.44,
-    };
-
-    const skattetabell = parseInt(anställd.skattetabell) || 34;
-    const skattesats = skattesatser[skattetabell] || 0.21974;
-    const skatt = Math.round(bruttolön * skattesats);
-
-    // Beräkna sociala avgifter (arbetsgivaravgifter)
-    const socialaAvgifter = Math.round(bruttolön * 0.3142); // 31.42%
-
-    // Nettolön
-    const nettolön = bruttolön - skatt;
-
-    // Standard arbetstimmar per månad
-    const standardTimmar =
-      anställd.ersättning_per === "Timme"
-        ? parseFloat(anställd.arbetsvecka_timmar || 40) * 4.33
-        : 0;
-
-    // Skapa lönespecifikation
-    const insertQuery = `
-      INSERT INTO lönespecifikationer (
-        anställd_id, period_start, period_slut, månad, år,
-        grundlön, bruttolön, skatt, sociala_avgifter, nettolön,
-        arbetade_timmar, status, skapad_av
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      RETURNING id
-    `;
-
-    const insertResult = await client.query(insertQuery, [
-      anställdId,
-      periodStart,
-      periodSlut,
-      targetMånad,
-      targetÅr,
-      Math.round(grundlön),
-      Math.round(bruttolön),
-      skatt,
-      socialaAvgifter,
-      Math.round(nettolön),
-      standardTimmar,
-      "Utkast",
-      userId,
-    ]);
-
-    client.release();
-
-    const lönespecId = insertResult.rows[0].id;
-
-    return {
-      success: true,
-      message: `Lönespecifikation för ${getMånadsNamn(targetMånad)} ${targetÅr} har skapats`,
-      id: lönespecId,
-    };
-  } catch (error) {
-    console.error("❌ genereraLönespecifikation error:", error);
-    return { success: false, error: "Kunde inte skapa lönespecifikation" };
-  }
-}
+//     return {
+//       success: true,
+//       message: `Lönespecifikation för ${getMånadsNamn(targetMånad)} ${targetÅr} har skapats`,
+//       id: insertResult.rows[0].id,
+//     };
+//   } catch (error) {
+//     console.error("❌ genereraLönespecifikation error:", error);
+//     return { success: false, error: "Kunde inte skapa lönespecifikation" };
+//   }
+// }
 
 function getMånadsNamn(månad: number): string {
   const månader = [
@@ -842,109 +755,6 @@ export async function hämtaUtlägg(anställdId: number) {
   }
 }
 
-export async function godkännUtlägg(utläggId: number, lönespecId?: number) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Ingen inloggad användare");
-  }
-
-  const userId = parseInt(session.user.id, 10);
-
-  try {
-    const client = await pool.connect();
-
-    // Kontrollera att utlägg tillhör användarens anställd
-    const checkQuery = `
-      SELECT u.*, a.förnamn, a.efternamn FROM utlägg u
-      JOIN anställda a ON u.anställd_id = a.id
-      WHERE u.id = $1 AND a.user_id = $2
-    `;
-    const checkResult = await client.query(checkQuery, [utläggId, userId]);
-
-    if (checkResult.rows.length === 0) {
-      client.release();
-      return { success: false, error: "Utlägg inte hittat" };
-    }
-
-    const utlägg = checkResult.rows[0];
-
-    if (utlägg.status !== "Väntande") {
-      client.release();
-      return { success: false, error: "Utlägg är redan behandlat" };
-    }
-
-    // Uppdatera utlägg status
-    const updateUtläggQuery = `
-      UPDATE utlägg SET
-        status = 'Godkänd',
-        godkänd_datum = NOW(),
-        lönespecifikation_id = $1,
-        uppdaterad = NOW()
-      WHERE id = $2
-      RETURNING *
-    `;
-
-    await client.query(updateUtläggQuery, [lönespecId || null, utläggId]);
-
-    // Om lönespec är specificerad, uppdatera lönespecen
-    if (lönespecId) {
-      // Kontrollera att lönespec tillhör samma anställd
-      const lönespecQuery = `
-        SELECT * FROM lönespecifikationer 
-        WHERE id = $1 AND anställd_id = $2
-      `;
-      const lönespecResult = await client.query(lönespecQuery, [lönespecId, utlägg.anställd_id]);
-
-      if (lönespecResult.rows.length > 0) {
-        const lönespec = lönespecResult.rows[0];
-        const utläggBelopp = parseFloat(utlägg.belopp);
-
-        // Lägg till utlägg till bruttolön
-        const nyBruttolön = parseFloat(lönespec.bruttolön) + utläggBelopp;
-
-        // Omberäkna skatt och nettolön
-        const skattetabell = 34; // Default, borde hämtas från anställd
-        const skattesats = 0.21974;
-        const nySkatt = Math.round(nyBruttolön * skattesats);
-        const nyNettolön = nyBruttolön - nySkatt;
-
-        // Uppdatera lönespecifikation
-        const updateLönespecQuery = `
-          UPDATE lönespecifikationer SET
-            bruttolön = $1,
-            skatt = $2,
-            nettolön = $3,
-            utlägg_total = COALESCE(utlägg_total, 0) + $4,
-            uppdaterad = NOW()
-          WHERE id = $5
-        `;
-
-        await client.query(updateLönespecQuery, [
-          Math.round(nyBruttolön),
-          nySkatt,
-          Math.round(nyNettolön),
-          utläggBelopp,
-          lönespecId,
-        ]);
-      }
-    }
-
-    client.release();
-    revalidatePath("/personal");
-
-    return {
-      success: true,
-      message: `Utlägg godkänt${lönespecId ? " och tillagt till lönespec" : ""}!`,
-    };
-  } catch (error) {
-    console.error("❌ godkännUtlägg error:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Ett fel uppstod",
-    };
-  }
-}
-
 export async function avvisaUtlägg(utläggId: number, anledning?: string) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -999,21 +809,8 @@ export async function avvisaUtlägg(utläggId: number, anledning?: string) {
   }
 }
 
-export async function sparaExtrarad({
-  lönespecifikation_id,
-  kolumn1,
-  kolumn2,
-  kolumn3,
-  kolumn4,
-}: {
-  lönespecifikation_id: number;
-  kolumn1: string;
-  kolumn2: string;
-  kolumn3: string;
-  kolumn4: string;
-}) {
+export async function sparaExtrarad(data: any) {
   const session = await auth();
-
   if (!session?.user?.id) {
     throw new Error("Ingen inloggad användare");
   }
@@ -1021,69 +818,33 @@ export async function sparaExtrarad({
   try {
     const client = await pool.connect();
 
-    const belopp = Number(kolumn3 || 0);
-
-    // ✅ OM BELOPPET ÄR 0 ELLER TOM - TA BORT RADEN!
-    if (belopp <= 0) {
-      const deleteQuery = `
-        DELETE FROM lönespec_extrarader 
-        WHERE lönespecifikation_id = $1 AND kolumn1 = $2
-        RETURNING *
-      `;
-
-      client.release();
-      revalidatePath("/personal");
-      return { success: true, action: "deleted" };
-    }
-
-    // Kolla om extrarad redan finns
-    const checkQuery = `
-      SELECT id FROM lönespec_extrarader 
-      WHERE lönespecifikation_id = $1 AND kolumn1 = $2
+    const insertQuery = `
+      INSERT INTO lönespec_extrarader (
+        lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4
+      ) VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
     `;
-    const checkResult = await client.query(checkQuery, [lönespecifikation_id, kolumn1]);
 
-    if (checkResult.rows.length > 0) {
-      console.log("🔄 Uppdaterar befintlig extrarad...");
-      // Uppdatera befintlig extrarad
-      const updateQuery = `
-        UPDATE lönespec_extrarader 
-        SET kolumn2 = $1, kolumn3 = $2, kolumn4 = $3, uppdaterad = NOW()
-        WHERE lönespecifikation_id = $4 AND kolumn1 = $5
-        RETURNING *
-      `;
-      const result = await client.query(updateQuery, [
-        kolumn2,
-        kolumn3,
-        kolumn4,
-        lönespecifikation_id,
-        kolumn1,
-      ]);
-    } else {
-      // Skapa ny extrarad
-      const insertQuery = `
-        INSERT INTO lönespec_extrarader (lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-      `;
-      const result = await client.query(insertQuery, [
-        lönespecifikation_id,
-        kolumn1,
-        kolumn2,
-        kolumn3,
-        kolumn4,
-      ]);
-    }
+    const values = [
+      data.lönespecifikation_id,
+      data.kolumn1 || null,
+      data.kolumn2 || null,
+      data.kolumn3 || null,
+      data.kolumn4 || null,
+    ];
+
+    const result = await client.query(insertQuery, values);
 
     client.release();
-    console.log("🔄 Anropar revalidatePath...");
     revalidatePath("/personal");
-    console.log("✅ sparaExtrarad KLAR!");
 
-    return { success: true };
+    return { success: true, data: result.rows[0] };
   } catch (error) {
     console.error("❌ sparaExtrarad error:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Fel vid sparande" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Ett fel uppstod",
+    };
   }
 }
 
@@ -1130,6 +891,85 @@ export async function taBortExtrarad(extraradId: number) {
   }
 }
 
+// export async function skapaNyLönespec(data: {
+//   anställd_id: number;
+//   månad: number;
+//   år: number;
+//   period_start: string;
+//   period_slut: string;
+// }) {
+//   const session = await auth();
+//   if (!session?.user?.id) {
+//     throw new Error("Ingen inloggad användare");
+//   }
+
+//   const userId = parseInt(session.user.id, 10);
+
+//   try {
+//     const client = await pool.connect();
+
+//     // 1. Hämta anställdas kontrakt för att få månadslön
+//     const anställdQuery = `
+//       SELECT kompensation, skattetabell FROM anställda
+//       WHERE id = $1 AND user_id = $2
+//     `;
+//     const anställdResult = await client.query(anställdQuery, [data.anställd_id, userId]);
+
+//     if (anställdResult.rows.length === 0) {
+//       client.release();
+//       throw new Error("Anställd inte hittad");
+//     }
+
+//     const anställd = anställdResult.rows[0];
+//     const grundlön = parseFloat(anställd.kompensation || "0");
+
+//     // 2. Beräkna värden
+//     const bruttolön = grundlön;
+//     const socialaAvgifter = bruttolön * 0.3142; // 31,42% sociala avgifter
+//     const skattesats = 0.25; // Ungefärlig skatt 25%
+//     const skatt = bruttolön * skattesats;
+//     const nettolön = bruttolön - skatt;
+
+//     // 3. Skapa lönespecifikation
+//     const insertQuery = `
+//       INSERT INTO lönespecifikationer (
+//         anställd_id, månad, år, period_start, period_slut,
+//         grundlön, bruttolön, skatt, sociala_avgifter, nettolön,
+//         status, arbetade_timmar, skapad_av
+//       )
+//       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+//       RETURNING *
+//     `;
+
+//     const insertResult = await client.query(insertQuery, [
+//       data.anställd_id,
+//       data.månad,
+//       data.år,
+//       data.period_start,
+//       data.period_slut,
+//       grundlön,
+//       bruttolön,
+//       skatt,
+//       socialaAvgifter,
+//       nettolön,
+//       "Utkast",
+//       160, // Standard 4 veckor x 40 timmar
+//       userId,
+//     ]);
+
+//     const nyLönespec = insertResult.rows[0];
+
+//     client.release();
+//     revalidatePath("/personal");
+
+//     console.log("✅ Ny lönespec skapad med ID:", nyLönespec.id);
+//     return nyLönespec;
+//   } catch (error) {
+//     console.error("❌ skapaNyLönespec error:", error);
+//     throw error;
+//   }
+// }
+
 export async function skapaNyLönespec(data: {
   anställd_id: number;
   månad: number;
@@ -1147,65 +987,61 @@ export async function skapaNyLönespec(data: {
   try {
     const client = await pool.connect();
 
-    // 1. Hämta anställdas kontrakt för att få månadslön
-    const anställdQuery = `
-      SELECT kompensation, skattetabell FROM anställda 
-      WHERE id = $1 AND user_id = $2
-    `;
+    // Hämta anställd från databas
+    const anställdQuery = `SELECT kompensation FROM anställda WHERE id = $1 AND user_id = $2`;
     const anställdResult = await client.query(anställdQuery, [data.anställd_id, userId]);
 
     if (anställdResult.rows.length === 0) {
       client.release();
-      throw new Error("Anställd inte hittad");
+      return { success: false, error: "Anställd hittades inte" };
     }
 
     const anställd = anställdResult.rows[0];
+
+    // Kontrollera duplicat
+    const existsQuery = `SELECT id FROM lönespecifikationer WHERE anställd_id = $1 AND månad = $2 AND år = $3`;
+    const existsResult = await client.query(existsQuery, [data.anställd_id, data.månad, data.år]);
+
+    if (existsResult.rows.length > 0) {
+      client.release();
+      return {
+        success: false,
+        error: `Lönespecifikation för ${data.månad}/${data.år} finns redan`,
+      };
+    }
+
+    // ✅ ANVÄND KOMPENSATION DIREKT FRÅN ANSTÄLLD - INGA BERÄKNINGAR!
     const grundlön = parseFloat(anställd.kompensation || "0");
 
-    // 2. Beräkna värden
-    const bruttolön = grundlön;
-    const socialaAvgifter = bruttolön * 0.3142; // 31,42% sociala avgifter
-    const skattesats = 0.25; // Ungefärlig skatt 25%
-    const skatt = bruttolön * skattesats;
-    const nettolön = bruttolön - skatt;
-
-    // 3. Skapa lönespecifikation
     const insertQuery = `
       INSERT INTO lönespecifikationer (
-        anställd_id, månad, år, period_start, period_slut,
+        anställd_id, period_start, period_slut, månad, år,
         grundlön, bruttolön, skatt, sociala_avgifter, nettolön,
-        status, arbetade_timmar, skapad_av
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        status, skapad_av
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Utkast', $11)
       RETURNING *
     `;
 
     const insertResult = await client.query(insertQuery, [
       data.anställd_id,
-      data.månad,
-      data.år,
       data.period_start,
       data.period_slut,
-      grundlön,
-      bruttolön,
-      skatt,
-      socialaAvgifter,
-      nettolön,
-      "Utkast",
-      160, // Standard 4 veckor x 40 timmar
+      data.månad,
+      data.år,
+      grundlön, // ✅ 35000 direkt från anställd.kompensation
+      grundlön, // ✅ Bruttolön = grundlön initialt
+      0, // Skatt beräknas senare
+      0, // Sociala avgifter beräknas senare
+      grundlön, // ✅ Nettolön = grundlön initialt (innan skatt)
       userId,
     ]);
 
-    const nyLönespec = insertResult.rows[0];
-
     client.release();
-    revalidatePath("/personal");
 
-    console.log("✅ Ny lönespec skapad med ID:", nyLönespec.id);
-    return nyLönespec;
+    return insertResult.rows[0];
   } catch (error) {
     console.error("❌ skapaNyLönespec error:", error);
-    throw error;
+    throw new Error("Kunde inte skapa lönespecifikation");
   }
 }
 

@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { hämtaExtrarader, taBortExtrarad } from "../../actions";
 import ExtraRader from "../Extrarader/Extrarader";
 import LöneTabell from "./LöneTabell";
-import { beräknaLönekomponenter } from "../Formler";
+import { beräknaLönekomponenter } from "../../löneberäkningar";
 
 type LönekomponenterProps = {
   lönespec: any;
@@ -31,7 +31,7 @@ export default function Lönekomponenter({
 
   //#region Beräkningar
   const beräknadeVärden = useMemo(() => {
-    // Från formler.ts
+    // Från löneberäkningar.ts
     return beräknaLönekomponenter(grundlön ?? 0, övertid ?? 0, lönespec, extrarader);
   }, [grundlön, övertid, lönespec, extrarader]);
   //#endregion
