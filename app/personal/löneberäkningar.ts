@@ -1,3 +1,6 @@
+import { RAD_KONFIGURATIONER } from "./Lönespecar/Extrarader/extraradDefinitioner";
+import { SKATTETABELL_34_1_2025 } from "./skattetabell34";
+
 // =====================================================================================
 // 🎯 CENTRALISERADE LÖNEBERÄKNINGAR
 // =====================================================================================
@@ -313,16 +316,14 @@ export function beräknaSkattMedTabell(bruttolön: number, skattetabell?: number
 /**
  * Beräknar skattunderlag med alla skattepliktiga tillägg
  */
+
 export function beräknaSkattunderlag(grundlön: number, extrarader: any[]): number {
   let skattunderlag = grundlön;
-
   extrarader.forEach((rad) => {
-    const belopp = parseFloat(rad.kolumn3) || 0;
-    if (ärSkattepliktig(rad.kolumn1)) {
-      skattunderlag += belopp;
+    if (RAD_KONFIGURATIONER[rad.typ]?.skattepliktig) {
+      skattunderlag += parseFloat(rad.kolumn3) || 0;
     }
   });
-
   return skattunderlag;
 }
 
@@ -351,31 +352,62 @@ export function beräknaKomplett(
   const totalDagavdrag =
     (dagAvdrag.föräldraledighet + dagAvdrag.vårdAvSjuktBarn + dagAvdrag.sjukfrånvaro) * daglön;
 
-  // 4. Extrarader
-  let extraradsSumma = 0;
+  // 4. Dela upp extrarader
+  let skattepliktigaFörmåner = 0;
+  let övrigaTillägg = 0;
   extrarader.forEach((rad) => {
     const belopp = parseFloat(rad.kolumn3) || 0;
-    extraradsSumma += belopp;
+    if (RAD_KONFIGURATIONER[rad.typ]?.skattepliktig) {
+      skattepliktigaFörmåner += belopp;
+    } else {
+      övrigaTillägg += belopp;
+    }
   });
 
-  const justeradBruttolön =
-    kontrakt.månadslön + övertidsersättning - totalDagavdrag + extraradsSumma;
+  // 5. Bruttolön = lön + övertid + övriga tillägg - dagavdrag (ej förmåner!)
+  const bruttolön = kontrakt.månadslön + övertidsersättning + övrigaTillägg - totalDagavdrag;
 
-  // 5. Skatt med extrarader
-  const skattunderlag = beräknaSkattunderlag(
-    kontrakt.månadslön + övertidsersättning - totalDagavdrag,
-    extrarader
-  );
-  const skatt = beräknaSkatt(skattunderlag);
+  // 6. Skatteunderlag = bruttolön + skattepliktiga förmåner
+  const skattunderlag = bruttolön + skattepliktigaFörmåner;
 
-  const socialaAvgifter = beräknaSocialaAvgifter(justeradBruttolön, kontrakt.socialaAvgifterSats);
-  const lönekostnad = beräknaLönekostnad(justeradBruttolön, socialaAvgifter);
-  const nettolön = justeradBruttolön - skatt;
+  // 7. Beräkna skatt enligt skattetabell 34
+  const skatt = beräknaSkattTabell34(skattunderlag);
+
+  // 8. Nettolön = bruttolön - skatt (förmåner betalas inte ut!)
+  const nettolön = bruttolön - skatt;
+
+  // 9. Sociala avgifter på skatteunderlag
+  const socialaAvgifter = beräknaSocialaAvgifter(skattunderlag, kontrakt.socialaAvgifterSats);
+
+  // 10. Lönekostnad = bruttolön + sociala avgifter + förmåner
+  const lönekostnad = bruttolön + socialaAvgifter + skattepliktigaFörmåner;
+
+  console.log("==== LÖNEDEBUG ====");
+  console.log("Extrarader:");
+  extrarader.forEach((rad, i) => {
+    console.log(
+      `  [${i}] ${rad.kolumn1} | Belopp: ${rad.kolumn3} | rad.typ: "${rad.typ}" | Skattepliktig:`,
+      RAD_KONFIGURATIONER[rad.typ]?.skattepliktig,
+      "| Alla nycklar i RAD_KONFIGURATIONER:",
+      Object.keys(RAD_KONFIGURATIONER)
+    );
+  });
+  console.log({
+    skattepliktigaFörmåner,
+    övrigaTillägg,
+    bruttolön,
+    skattunderlag,
+    skatt,
+    socialaAvgifter,
+    nettolön,
+    lönekostnad,
+  });
+  console.log("===================");
 
   return {
     timlön: Math.round(timlön * 100) / 100,
     daglön: Math.round(daglön),
-    bruttolön: justeradBruttolön,
+    bruttolön,
     socialaAvgifter,
     lönekostnad,
     skatt,
@@ -420,12 +452,16 @@ export function beräknaLönekomponenter(
     sjukfrånvaro: 0,
   };
 
+  let karensavdragSumma = 0;
   const övrigaExtrarader: any[] = [];
 
   extrarader.forEach((rad) => {
     const antal = parseFloat(rad.kolumn2) || 1;
 
-    if (rad.kolumn1?.toLowerCase().includes("föräldraledighet")) {
+    if (rad.kolumn1?.toLowerCase().includes("karensavdrag")) {
+      // Hantera karensavdrag enligt Bokio
+      karensavdragSumma += beräknaKarensavdrag(originalGrundlön) * antal;
+    } else if (rad.kolumn1?.toLowerCase().includes("föräldraledighet")) {
       dagAvdrag.föräldraledighet = antal;
     } else if (rad.kolumn1?.toLowerCase().includes("vård av sjukt barn")) {
       dagAvdrag.vårdAvSjuktBarn = antal;
@@ -436,11 +472,23 @@ export function beräknaLönekomponenter(
     }
   });
 
+  // Om karensavdrag finns, lägg till det som dagavdrag (så det bara dras en gång)
+  let justeradeDagAvdrag = { ...dagAvdrag };
+  if (karensavdragSumma > 0) {
+    // Vi lägger karensavdraget som "sjukfrånvaro" (eller egen property om du vill)
+    justeradeDagAvdrag.sjukfrånvaro += karensavdragSumma / beräknaDaglön(originalGrundlön);
+  }
+
   // Beräkna övertidstimmar
   const övertidTimmar = originalÖvertid > 0 ? originalÖvertid / (originalGrundlön * 0.01) : 0;
 
   // Använd huvudberäkning
-  const beräkningar = beräknaKomplett(kontrakt, övertidTimmar, dagAvdrag, övrigaExtrarader);
+  const beräkningar = beräknaKomplett(
+    kontrakt,
+    övertidTimmar,
+    justeradeDagAvdrag,
+    övrigaExtrarader
+  );
 
   return {
     grundlön: originalGrundlön,
@@ -456,6 +504,16 @@ export function beräknaLönekomponenter(
     dagavdrag: beräkningar.dagavdrag,
     skattunderlag: beräkningar.skattunderlag,
   };
+}
+
+export function beräknaSkattTabell34(bruttolön: number): number {
+  const entry = SKATTETABELL_34_1_2025.find((row) => bruttolön >= row.from && bruttolön <= row.to);
+  if (entry) {
+    console.log("Skattetabellrad används:", entry);
+    return entry.skatt;
+  }
+  console.log("Ingen rad hittad för bruttolön:", bruttolön);
+  return 0;
 }
 
 // =====================================================================================

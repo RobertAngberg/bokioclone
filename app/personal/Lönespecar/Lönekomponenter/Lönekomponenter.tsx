@@ -96,15 +96,6 @@ export default function Lönekomponenter({
     <div className="bg-slate-700 p-4 rounded-lg">
       <h3 className="text-lg font-semibold text-white mb-4">Lönekomponenter</h3>
 
-      {/* Debug info */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mb-4 p-2 bg-slate-600 rounded text-xs text-yellow-300">
-          <strong>Debug:</strong> Skattunderlag: {beräknadeVärden.skattunderlag?.toLocaleString()}{" "}
-          kr | Skatt: {beräknadeVärden.skatt?.toLocaleString()} kr | Extrarader: {extrarader.length}{" "}
-          st
-        </div>
-      )}
-
       <LöneTabell
         beräknadeVärden={beräknadeVärden}
         extrarader={extrarader}

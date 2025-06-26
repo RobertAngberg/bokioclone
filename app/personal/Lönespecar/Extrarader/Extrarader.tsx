@@ -104,11 +104,16 @@ export default function ExtraRader({
 
           const dataToSave = {
             lönespecifikation_id: lönespecId,
+            typ: modalRow?.id,
             kolumn1: modalRow?.label ?? "",
             kolumn2: kolumn2Value,
             kolumn3: kolumn3Value,
             kolumn4: modalFields.kolumn4,
           };
+
+          console.log("SPARAR EXTRARAD:", dataToSave);
+
+          console.log("modalRow vid sparande:", modalRow);
 
           await sparaExtrarad(dataToSave);
           setModalOpen(false);

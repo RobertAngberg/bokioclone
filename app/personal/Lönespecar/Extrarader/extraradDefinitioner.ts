@@ -6,6 +6,7 @@ export interface RadKonfiguration {
   beräknaVärde?: (grundlön: number) => number;
   beräknaTotalt?: (grundlön: number, antal: number) => number;
   negativtBelopp?: boolean;
+  skattepliktig?: boolean;
   fält: {
     antalLabel: string;
     antalPlaceholder: string;
@@ -48,14 +49,14 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
 
   reduceradeDagar: {
     label: "Reducerade dagar",
-    enhet: "timmar",
-    beräknaVärde: (grundlön) => (beräknaDaglön(grundlön) * 0.2) / 8, // Per timme
-    beräknaTotalt: (grundlön, antal) => ((beräknaDaglön(grundlön) * 0.2) / 8) * antal,
+    enhet: "dagar",
+    beräknaVärde: (grundlön) => beräknaDaglön(grundlön) * 0.2,
+    beräknaTotalt: (grundlön, antal) => beräknaDaglön(grundlön) * 0.2 * antal,
     negativtBelopp: true,
     fält: {
-      antalLabel: "Antal timmar",
-      antalPlaceholder: "Ange antal timmar",
-      step: "0.5",
+      antalLabel: "Antal dagar",
+      antalPlaceholder: "Ange antal dagar",
+      step: "1",
       visaBelopp: false,
     },
   },
@@ -63,7 +64,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   vab: {
     label: "Vård av sjukt barn",
     enhet: "dagar",
-    beräknaVärde: (grundlön) => beräknaDaglön(grundlön), // 4,6% av månadslön
+    beräknaVärde: (grundlön) => beräknaDaglön(grundlön),
     beräknaTotalt: (grundlön, antal) => beräknaDaglön(grundlön) * antal,
     negativtBelopp: true,
     fält: {
@@ -77,7 +78,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   foraldraledighet: {
     label: "Föräldraledighet",
     enhet: "dagar",
-    beräknaVärde: (grundlön) => beräknaDaglön(grundlön), // 4,6% av månadslön
+    beräknaVärde: (grundlön) => beräknaDaglön(grundlön),
     beräknaTotalt: (grundlön, antal) => beräknaDaglön(grundlön) * antal,
     negativtBelopp: true,
     fält: {
@@ -91,6 +92,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   forsakring: {
     label: "Försäkring",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -102,6 +104,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   ranteforman: {
     label: "Ränteförmån",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -113,6 +116,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   parkering: {
     label: "Parkering",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -124,6 +128,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   annanForman: {
     label: "Annan förmån",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -135,7 +140,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   gratisFrukost: {
     label: "Gratis frukost",
     enhet: "mål",
-    beräknaVärde: () => 61, // Fast belopp 61 kr per mål
+    skattepliktig: true,
+    beräknaVärde: () => 61,
     beräknaTotalt: (grundlön, antal) => 61 * antal,
     fält: {
       antalLabel: "Antal mål",
@@ -148,7 +154,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   gratisLunchMiddag: {
     label: "Gratis lunch eller middag",
     enhet: "mål",
-    beräknaVärde: () => 122, // Fast belopp 122 kr per mål
+    skattepliktig: true,
+    beräknaVärde: () => 122,
     beräknaTotalt: (grundlön, antal) => 122 * antal,
     fält: {
       antalLabel: "Antal mål",
@@ -161,7 +168,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   gratisMat: {
     label: "Gratis mat",
     enhet: "dagar",
-    beräknaVärde: () => 305, // Fast belopp 305 kr per dag
+    skattepliktig: true,
+    beräknaVärde: () => 305,
     beräknaTotalt: (grundlön, antal) => 305 * antal,
     fält: {
       antalLabel: "Antal dagar",
@@ -174,7 +182,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   boende: {
     label: "Boende",
     enhet: "kvm",
-    beräknaVärde: () => 135, // Fast belopp 135 kr per kvm (ändrat från 134)
+    skattepliktig: true,
+    beräknaVärde: () => 135,
     beräknaTotalt: (grundlön, antal) => 135 * antal,
     fält: {
       antalLabel: "Kvadratmeter",
@@ -187,6 +196,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   resersattning: {
     label: "Reseersättning",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -198,6 +208,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   logi: {
     label: "Logi",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -209,6 +220,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   uppehalleInrikes: {
     label: "Uppehälle, inrikes",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -220,6 +232,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   uppehalleUtrikes: {
     label: "Uppehälle, utrikes",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -231,6 +244,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   annanKompensation: {
     label: "Annan kompensation",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -242,46 +256,50 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   privatBil: {
     label: "Privat bil",
     enhet: "km",
-    beräknaVärde: () => 2.5, // Fast ersättning 2,50 kr per km
+    skattepliktig: true,
+    beräknaVärde: () => 2.5,
     beräknaTotalt: (grundlön, antal) => 2.5 * antal,
     fält: {
       antalLabel: "Kilometer",
       antalPlaceholder: "Ange antal kilometer",
       step: "0.1",
-      visaBelopp: true, // Visar förifyllt värde som användaren kan ändra
+      visaBelopp: true,
     },
   },
 
   foretagsbilBensinDiesel: {
     label: "Företagsbil, bensin eller diesel",
     enhet: "km",
-    beräknaVärde: () => 1.2, // Fast ersättning 1,20 kr per km
+    skattepliktig: true,
+    beräknaVärde: () => 1.2,
     beräknaTotalt: (grundlön, antal) => 1.2 * antal,
     fält: {
       antalLabel: "Kilometer",
       antalPlaceholder: "Ange antal kilometer",
       step: "0.1",
-      visaBelopp: true, // Visar förifyllt värde som användaren kan ändra
+      visaBelopp: true,
     },
   },
 
   foretagsbilEl: {
     label: "Företagsbil, el",
     enhet: "km",
-    beräknaVärde: () => 0.95, // Fast ersättning 0,95 kr per km
+    skattepliktig: true,
+    beräknaVärde: () => 0.95,
     beräknaTotalt: (grundlön, antal) => 0.95 * antal,
     fält: {
       antalLabel: "Kilometer",
       antalPlaceholder: "Ange antal kilometer",
       step: "0.1",
-      visaBelopp: true, // Visar förifyllt värde som användaren kan ändra
+      visaBelopp: true,
     },
   },
 
   semestertillagg: {
     label: "Semestertillägg",
     enhet: "dagar",
-    beräknaVärde: () => 150.5, // Fast belopp 150,50 kr per dag
+    skattepliktig: true,
+    beräknaVärde: () => 150.5,
     beräknaTotalt: (grundlön, antal) => 150.5 * antal,
     fält: {
       antalLabel: "Antal dagar",
@@ -294,6 +312,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   semesterskuld: {
     label: "Semesterskuld",
     enhet: "variabel",
+    skattepliktig: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -306,7 +325,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   overtid: {
     label: "Övertid",
     enhet: "kr",
-    beräknaVärde: () => 1, // 1 kr per kr (passthrough)
+    skattepliktig: true,
+    beräknaVärde: () => 1,
     beräknaTotalt: (grundlön, antal) => antal * 1,
     fält: {
       antalLabel: "Summa",
@@ -319,6 +339,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   obTillagg: {
     label: "OB-tillägg",
     enhet: "kr",
+    skattepliktig: true,
     fält: {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
@@ -330,8 +351,9 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   risktillagg: {
     label: "Risktillägg",
     enhet: "kr",
-    beräknaVärde: () => 1, // 1 kr per kr (passthrough)
-    beräknaTotalt: (grundlön, antal) => antal * 1, // Totalen = summan användaren anger
+    skattepliktig: true,
+    beräknaVärde: () => 1,
+    beräknaTotalt: (grundlön, antal) => antal * 1,
     fält: {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
@@ -343,8 +365,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   obetaldFranvaro: {
     label: "Obetald frånvaro",
     enhet: "kr",
-    beräknaVärde: () => 1, // 1 kr per kr (passthrough)
-    beräknaTotalt: (grundlön, antal) => antal * 1, // Totalen = summan användaren anger
+    beräknaVärde: () => 1,
+    beräknaTotalt: (grundlön, antal) => antal * 1,
     negativtBelopp: true,
     fält: {
       antalLabel: "Summa",
@@ -357,6 +379,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   foretagsbilExtra: {
     label: "Företagsbil",
     enhet: "st",
+    skattepliktig: true,
     fält: {
       antalLabel: "Modell",
       antalPlaceholder: "Modell",
@@ -374,44 +397,10 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalPlaceholder: "Ange antal",
       step: "1",
       visaBelopp: true,
-      beloppPlaceholder: "Belopp (använd - för avdrag)", // ← UPPDATERA PLACEHOLDER
+      beloppPlaceholder: "Belopp (använd - för avdrag)",
       enhetDropdown: ["Timme", "Dag", "St"],
     },
   },
-
-  // jamkning: {
-  //   label: "Jämkning",
-  //   enhet: "st",
-  //   fält: {
-  //     antalLabel: "Antal",
-  //     antalPlaceholder: "Ange antal",
-  //     step: "1",
-  //     visaBelopp: true,
-  //   },
-  // },
-
-  // fritext: {
-  //   label: "Fritext",
-  //   enhet: "st",
-  //   fält: {
-  //     antalLabel: "Text",
-  //     antalPlaceholder: "Skriv din text här",
-  //     step: "1",
-  //     visaBelopp: false,
-  //     skipKommentar: true,
-  //   },
-  // },
-
-  // lon: {
-  //   label: "Lön",
-  //   enhet: "st",
-  //   fält: {
-  //     antalLabel: "Antal",
-  //     antalPlaceholder: "Ange antal",
-  //     step: "1",
-  //     visaBelopp: true,
-  //   },
-  // },
 };
 
 export type RadKonfigurationType = RadKonfiguration;

@@ -677,13 +677,14 @@ export async function sparaExtrarad(data: any) {
 
     const insertQuery = `
       INSERT INTO lönespec_extrarader (
-        lönespecifikation_id, kolumn1, kolumn2, kolumn3, kolumn4
-      ) VALUES ($1, $2, $3, $4, $5)
+        lönespecifikation_id, typ, kolumn1, kolumn2, kolumn3, kolumn4
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
     const values = [
       data.lönespecifikation_id,
+      data.typ || null,
       data.kolumn1 || null,
       data.kolumn2 || null,
       data.kolumn3 || null,
