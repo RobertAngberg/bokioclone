@@ -12,7 +12,7 @@ export interface RadKonfiguration {
     antalPlaceholder: string;
     beloppPlaceholder?: string;
     step?: string;
-    visaBelopp?: boolean;
+    visaSomTotalsumma?: boolean;
     enhetDropdown?: string[];
     skipKommentar?: boolean;
   };
@@ -29,7 +29,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal",
       antalPlaceholder: "Vanligtvis 1",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -43,7 +43,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal dagar",
       antalPlaceholder: "Ange antal dagar",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -57,7 +57,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal dagar",
       antalPlaceholder: "Ange antal dagar",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -71,7 +71,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal dagar",
       antalPlaceholder: "Ange antal dagar",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -85,7 +85,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal dagar",
       antalPlaceholder: "Ange antal dagar",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -97,7 +97,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -109,7 +109,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -121,7 +121,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -133,7 +133,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -147,7 +147,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal mål",
       antalPlaceholder: "Ange antal mål",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -161,7 +161,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal mål",
       antalPlaceholder: "Ange antal mål",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -175,7 +175,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal dagar",
       antalPlaceholder: "Ange antal dagar",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -189,81 +189,81 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Kvadratmeter",
       antalPlaceholder: "Ange antal kvm",
       step: "0.5",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
   resersattning: {
     label: "Reseersättning",
     enhet: "st",
-    skattepliktig: true,
+    skattepliktig: false,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
   logi: {
     label: "Logi",
     enhet: "st",
-    skattepliktig: true,
+    skattepliktig: false,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
   uppehalleInrikes: {
     label: "Uppehälle, inrikes",
     enhet: "st",
-    skattepliktig: true,
+    skattepliktig: false,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
   uppehalleUtrikes: {
     label: "Uppehälle, utrikes",
     enhet: "st",
-    skattepliktig: true,
+    skattepliktig: false,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
   annanKompensation: {
     label: "Annan kompensation",
     enhet: "st",
-    skattepliktig: true,
+    skattepliktig: false,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
   privatBil: {
     label: "Privat bil",
     enhet: "km",
-    skattepliktig: true,
+    skattepliktig: false,
     beräknaVärde: () => 2.5,
     beräknaTotalt: (grundlön, antal) => 2.5 * antal,
     fält: {
       antalLabel: "Kilometer",
       antalPlaceholder: "Ange antal kilometer",
-      step: "0.1",
-      visaBelopp: true,
+      step: "1",
+      visaSomTotalsumma: false,
     },
   },
 
@@ -277,7 +277,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Kilometer",
       antalPlaceholder: "Ange antal kilometer",
       step: "0.1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -291,7 +291,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Kilometer",
       antalPlaceholder: "Ange antal kilometer",
       step: "0.1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -305,7 +305,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal dagar",
       antalPlaceholder: "Ange antal dagar",
       step: "1",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -317,7 +317,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
       enhetDropdown: ["Timme", "Dag", "St"],
     },
   },
@@ -332,7 +332,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
       step: "0.01",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -344,7 +344,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
       step: "0.01",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -358,7 +358,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
       step: "0.01",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -372,7 +372,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
       step: "0.01",
-      visaBelopp: false,
+      visaSomTotalsumma: false,
     },
   },
 
@@ -385,7 +385,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalPlaceholder: "Modell",
       beloppPlaceholder: "Belopp",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
     },
   },
 
@@ -396,7 +396,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
       step: "1",
-      visaBelopp: true,
+      visaSomTotalsumma: true,
       beloppPlaceholder: "Belopp (använd - för avdrag)",
       enhetDropdown: ["Timme", "Dag", "St"],
     },

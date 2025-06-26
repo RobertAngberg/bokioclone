@@ -1,4 +1,5 @@
 import LöneRadItem from "./LöneRadItem";
+import { RAD_KONFIGURATIONER } from "../Extrarader/extraradDefinitioner";
 
 interface LöneTabellProps {
   beräknadeVärden: {
@@ -41,17 +42,11 @@ export default function LöneTabell({
 
         {/* EXTRARADER */}
         {extrarader.map((rad, i) => {
-          // Clean logic: För OB-tillägg och liknande, använd bara kolumn3
           let belopp;
+          const konfig = RAD_KONFIGURATIONER[rad.typ];
 
-          // ---------- //
-          // OBS Hårdkodat!
-          // ---------- //
-          if (
-            rad.kolumn1?.toLowerCase().includes("ob-tillägg") ||
-            rad.kolumn1?.toLowerCase().includes("övertid") ||
-            rad.kolumn1?.toLowerCase().includes("risktillägg")
-          ) {
+          // Om visaSomTotalSumma = false (t.ex. övertid, ob-tillägg, privat bil, logi, resersattning, uppehälle...) visa bara kolumn3 (totalsumma)
+          if (konfig && !konfig.fält.visaSomTotalsumma) {
             belopp = parseFloat(rad.kolumn3) || 0;
           } else {
             const antal = parseFloat(rad.kolumn2) || 1;

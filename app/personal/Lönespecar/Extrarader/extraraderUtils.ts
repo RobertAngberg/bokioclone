@@ -71,7 +71,7 @@ export function beräknaSumma(rowId: string, modalFields: any, grundlön?: numbe
   }
 
   // KR-enheter utan belopp-fält (flyttat hit)
-  if (config?.enhet === "kr" && !config.fält.visaBelopp) {
+  if (config?.enhet === "kr" && !config.fält.visaSomTotalsumma) {
     const summa = parseFloat(modalFields.kolumn2) || 0;
     return summa.toString();
   }
@@ -156,7 +156,7 @@ export function initializeModalFields(rowId: string, grundlön?: number) {
   if (config?.beräknaVärde && grundlön) {
     const värde = config.beräknaVärde(grundlön);
     return {
-      kolumn2: config.fält.visaBelopp ? "1" : "", // Antal defaultar till 1 om belopp ska visas
+      kolumn2: config.fält.visaSomTotalsumma ? "1" : "", // Antal defaultar till 1 om belopp ska visas
       kolumn3: värde.toFixed(2), // Förberäknat värde
       kolumn4: "", // Tom kommentar
       enhet: config.fält.enhetDropdown ? config.fält.enhetDropdown[0] : "", // Första dropdown-alternativet
@@ -226,7 +226,7 @@ export function getStandardFields(modalFields: any, setModalFields: any) {
  *
  * 1. Första fältet (kolumn2): Kan vara antal, modell, summa, etc.
  * 2. Dropdown för enhet (om konfigurerat): Timme/Dag/St för flexibla poster
- * 3. Beloppsfält (kolumn3): Visas endast om visaBelopp är true
+ * 3. Beloppsfält (kolumn3): Visas endast om visaSomTotalsumma är true
  * 4. Kommentarsfält (kolumn4): Visas alltid utom om skipKommentar är true
  *
  * Exempel på olika konfigurationer:
@@ -281,7 +281,7 @@ export function getFieldsForRow(
     }
 
     // BELOPPSFÄLT: Endast för manuella poster
-    if (config.fält.visaBelopp) {
+    if (config.fält.visaSomTotalsumma) {
       fields.push({
         label: "å SEK",
         name: "kolumn3",

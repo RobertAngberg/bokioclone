@@ -355,10 +355,15 @@ export function beräknaKomplett(
   // 4. Dela upp extrarader
   let skattepliktigaFörmåner = 0;
   let övrigaTillägg = 0;
+  let skattefriaErsättningar = 0;
+
   extrarader.forEach((rad) => {
     const belopp = parseFloat(rad.kolumn3) || 0;
-    if (RAD_KONFIGURATIONER[rad.typ]?.skattepliktig) {
+    const konfig = RAD_KONFIGURATIONER[rad.typ];
+    if (konfig?.skattepliktig === true) {
       skattepliktigaFörmåner += belopp;
+    } else if (konfig?.skattepliktig === false) {
+      skattefriaErsättningar += belopp;
     } else {
       övrigaTillägg += belopp;
     }
@@ -373,8 +378,8 @@ export function beräknaKomplett(
   // 7. Beräkna skatt enligt skattetabell 34
   const skatt = beräknaSkattTabell34(skattunderlag);
 
-  // 8. Nettolön = bruttolön - skatt (förmåner betalas inte ut!)
-  const nettolön = bruttolön - skatt;
+  // 8. Nettolön = bruttolön - skatt + skattefria ersättningar
+  const nettolön = bruttolön - skatt + skattefriaErsättningar;
 
   // 9. Sociala avgifter på skatteunderlag
   const socialaAvgifter = beräknaSocialaAvgifter(skattunderlag, kontrakt.socialaAvgifterSats);
@@ -395,6 +400,7 @@ export function beräknaKomplett(
   console.log({
     skattepliktigaFörmåner,
     övrigaTillägg,
+    skattefriaErsättningar,
     bruttolön,
     skattunderlag,
     skatt,
@@ -419,6 +425,7 @@ export function beräknaKomplett(
     },
     nettolön,
     skattunderlag,
+    skattefriaErsättningar,
   };
 }
 
