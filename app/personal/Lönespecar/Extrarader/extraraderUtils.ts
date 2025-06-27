@@ -1,3 +1,6 @@
+// beräknaTotalsummaAutomatiskt: true = antal × belopp per enhet (räkna ut totalsumman automatiskt)
+// beräknaTotalsummaAutomatiskt: false = användaren matar in totalsumman direkt
+
 /**
  * EXTRARADER UTILITIES
  *
@@ -71,9 +74,20 @@ export function beräknaSumma(rowId: string, modalFields: any, grundlön?: numbe
   }
 
   // KR-enheter utan belopp-fält (flyttat hit)
-  if (config?.enhet === "kr" && !config.fält.visaSomTotalsumma) {
+  if (config?.enhet === "kr" && !config.fält.beräknaTotalsummaAutomatiskt) {
     const summa = parseFloat(modalFields.kolumn2) || 0;
     return summa.toString();
+  }
+
+  // ...existing code...
+
+  // Om raden har beräknaTotalsummaAutomatiskt : true, spara totalsumman i kolumn3
+  if (config?.fält.beräknaTotalsummaAutomatiskt) {
+    const antal = parseFloat(modalFields.kolumn2);
+    const beloppPerEnhet = parseFloat(modalFields.kolumn3) || 0;
+    if (isNaN(antal)) return "0";
+    const totalsumma = antal * beloppPerEnhet;
+    return totalsumma.toFixed(2);
   }
 
   // Standard: antal × belopp
@@ -86,6 +100,7 @@ export function beräknaSumma(rowId: string, modalFields: any, grundlön?: numbe
 
   const resultat = antal * belopp;
   return resultat.toString();
+  // ...existing code...
 }
 
 /**
@@ -156,7 +171,7 @@ export function initializeModalFields(rowId: string, grundlön?: number) {
   if (config?.beräknaVärde && grundlön) {
     const värde = config.beräknaVärde(grundlön);
     return {
-      kolumn2: config.fält.visaSomTotalsumma ? "1" : "", // Antal defaultar till 1 om belopp ska visas
+      kolumn2: config.fält.beräknaTotalsummaAutomatiskt ? "1" : "", // Antal defaultar till 1 om belopp ska visas
       kolumn3: värde.toFixed(2), // Förberäknat värde
       kolumn4: "", // Tom kommentar
       enhet: config.fält.enhetDropdown ? config.fält.enhetDropdown[0] : "", // Första dropdown-alternativet
@@ -226,7 +241,7 @@ export function getStandardFields(modalFields: any, setModalFields: any) {
  *
  * 1. Första fältet (kolumn2): Kan vara antal, modell, summa, etc.
  * 2. Dropdown för enhet (om konfigurerat): Timme/Dag/St för flexibla poster
- * 3. Beloppsfält (kolumn3): Visas endast om visaSomTotalsumma är true
+ * 3. Beloppsfält (kolumn3): Visas endast om beräknaTotalsummaAutomatiskt  är true
  * 4. Kommentarsfält (kolumn4): Visas alltid utom om skipKommentar är true
  *
  * Exempel på olika konfigurationer:
@@ -281,7 +296,7 @@ export function getFieldsForRow(
     }
 
     // BELOPPSFÄLT: Endast för manuella poster
-    if (config.fält.visaSomTotalsumma) {
+    if (config.fält.beräknaTotalsummaAutomatiskt) {
       fields.push({
         label: "å SEK",
         name: "kolumn3",

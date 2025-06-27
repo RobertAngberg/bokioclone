@@ -45,8 +45,9 @@ export default function LöneTabell({
           let belopp;
           const konfig = RAD_KONFIGURATIONER[rad.typ];
 
-          // Om visaSomTotalSumma = false (t.ex. övertid, ob-tillägg, privat bil, logi, resersattning, uppehälle...) visa bara kolumn3 (totalsumma)
-          if (konfig && !konfig.fält.visaSomTotalsumma) {
+          // beräknaTotalsummaAutomatiskt: true = antal × belopp per enhet (räkna ut totalsumman automatiskt)
+          // beräknaTotalsummaAutomatiskt: false = användaren matar in totalsumman direkt
+          if (konfig && !konfig.fält.beräknaTotalsummaAutomatiskt) {
             belopp = parseFloat(rad.kolumn3) || 0;
           } else {
             const antal = parseFloat(rad.kolumn2) || 1;
