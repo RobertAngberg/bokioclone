@@ -10,6 +10,8 @@ export interface RadKonfiguration {
   beräknaTotalt?: (grundlön: number, antal: number) => number;
   negativtBelopp?: boolean;
   skattepliktig?: boolean;
+  läggTillINettolön?: boolean;
+  läggTillIBruttolön?: boolean;
   fält: {
     antalLabel: string;
     antalPlaceholder: string;
@@ -298,10 +300,23 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
     },
   },
 
+  // Semestertillägg – kortfattat:
+
+  // Vad: Ett extra tillägg (minst 0,43 % av månadslönen per semesterdag) som betalas ut när anställda tar semester.
+  // Skatt: Semestertillägg är skattepliktigt och ska beskattas som vanlig lön.
+  // Syfte: Ger extra pengar under semestern utöver ordinarie lön.
+
+  // Så funkar det i koden:
+  // I extrarad-konfigurationen har semestertillägg läggTillIBruttolön: true.
+  // Vid löneberäkning summeras alla extrarader med denna flagga direkt till bruttolönen.
+  // Skatt och sociala avgifter beräknas på bruttolönen inklusive semestertillägg.
+  // Ingen hårdkodning – det styrs helt av flaggan i konfigurationen.
+
   semestertillagg: {
     label: "Semestertillägg",
     enhet: "dagar",
     skattepliktig: true,
+    läggTillIBruttolön: true, // <-- NYTT!
     beräknaVärde: () => 150.5,
     beräknaTotalt: (grundlön, antal) => 150.5 * antal,
     fält: {
@@ -316,6 +331,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
     label: "Semesterskuld",
     enhet: "variabel",
     skattepliktig: true,
+    läggTillIBruttolön: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",
@@ -329,6 +345,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
     label: "Övertid",
     enhet: "kr",
     skattepliktig: true,
+    läggTillIBruttolön: true,
     beräknaVärde: () => 1,
     beräknaTotalt: (grundlön, antal) => antal * 1,
     fält: {
@@ -343,6 +360,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
     label: "OB-tillägg",
     enhet: "kr",
     skattepliktig: true,
+    läggTillIBruttolön: true,
     fält: {
       antalLabel: "Summa",
       antalPlaceholder: "Ange summa i kronor",
@@ -355,6 +373,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
     label: "Risktillägg",
     enhet: "kr",
     skattepliktig: true,
+    läggTillIBruttolön: true,
     beräknaVärde: () => 1,
     beräknaTotalt: (grundlön, antal) => antal * 1,
     fält: {
@@ -384,8 +403,8 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
     enhet: "st",
     skattepliktig: true,
     fält: {
-      antalLabel: "Modell",
-      antalPlaceholder: "Modell",
+      antalLabel: "Antal",
+      antalPlaceholder: "Ange antal",
       beloppPlaceholder: "Belopp",
       step: "1",
       beräknaTotalsummaAutomatiskt: true,
@@ -395,6 +414,7 @@ export const RAD_KONFIGURATIONER: Record<string, RadKonfiguration> = {
   nettolönejustering: {
     label: "Nettolönejustering",
     enhet: "variabel",
+    läggTillINettolön: true,
     fält: {
       antalLabel: "Antal",
       antalPlaceholder: "Ange antal",

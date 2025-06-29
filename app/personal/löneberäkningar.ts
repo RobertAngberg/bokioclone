@@ -1,17 +1,19 @@
 import { RAD_KONFIGURATIONER } from "./Lönespecar/Extrarader/extraradDefinitioner";
 import { SKATTETABELL_34_1_2025 } from "./skattetabell34";
 
-// =====================================================================================
-// 🎯 CENTRALISERADE LÖNEBERÄKNINGAR
-// =====================================================================================
-// Alla formler och beräkningar från Formler-mappen konsoliderade till en enda fil
-// Ersätter: konstanter.ts, typer.ts, grundberäkningar.ts, avgifter.ts,
-//          skatteberäkning.ts, extrarader.ts, huvudberäkningar.ts
-// =====================================================================================
+// Om semestertillägg – kortfattat:
 
-// =====================================================================================
-// 📋 INTERFACES OCH TYPER
-// =====================================================================================
+// Vad: Ett extra tillägg (minst 0,43 % av månadslönen per semesterdag) som betalas ut när anställda tar semester.
+// Skatt: Semestertillägg är skattepliktigt och ska beskattas som vanlig lön.
+// Syfte: Ger extra pengar under semestern utöver ordinarie lön.
+
+// Så funkar det i koden:
+// I extrarad-konfigurationen har semestertillägg läggTillIBruttolön: true.
+// Vid löneberäkning summeras alla extrarader med denna flagga direkt till bruttolönen.
+// Skatt och sociala avgifter beräknas på bruttolönen inklusive semestertillägg.
+// Ingen hårdkodning – det styrs helt av flaggan i konfigurationen.
+
+//#region Huvud
 
 export interface LöneBeräkning {
   grundlön: number;
@@ -47,6 +49,7 @@ export interface Extrarad {
   kolumn3: string; // Belopp
   kolumn4?: string; // Kommentar
 }
+//#endregion
 
 // =====================================================================================
 // 🔢 KONSTANTER OCH SATSER
@@ -214,7 +217,48 @@ export function beräknaVårdavdrag(månadslön: number): number {
 }
 
 // =====================================================================================
-// 💰 LÖNEKONVERTERING (från actions.ts)
+// � NYTT: KLASSIFICERA EXTRARADER FLEXIBELT
+// =====================================================================================
+
+/**
+ * Klassificerar extrarader enligt konfigurationens flaggor.
+ * Summerar till rätt kategori för löneberäkningarna.
+ */
+export function klassificeraExtrarader(extrarader: any[]) {
+  let bruttolönTillägg = 0;
+  let skattepliktigaFörmåner = 0;
+  let skattefriaErsättningar = 0;
+  let övrigaTillägg = 0;
+  let nettolönejustering = 0;
+
+  extrarader.forEach((rad) => {
+    const konfig = RAD_KONFIGURATIONER[rad.typ];
+    const belopp = parseFloat(rad.kolumn3) || 0;
+
+    if (konfig?.läggTillINettolön) {
+      nettolönejustering += belopp;
+    } else if (konfig?.läggTillIBruttolön) {
+      bruttolönTillägg += belopp;
+    } else if (konfig?.skattepliktig === true) {
+      skattepliktigaFörmåner += belopp;
+    } else if (konfig?.skattepliktig === false) {
+      skattefriaErsättningar += belopp;
+    } else {
+      övrigaTillägg += belopp;
+    }
+  });
+
+  return {
+    bruttolönTillägg,
+    skattepliktigaFörmåner,
+    skattefriaErsättningar,
+    övrigaTillägg,
+    nettolönejustering,
+  };
+}
+
+// =====================================================================================
+// �💰 LÖNEKONVERTERING (från actions.ts)
 // =====================================================================================
 
 /**
@@ -316,7 +360,6 @@ export function beräknaSkattMedTabell(bruttolön: number, skattetabell?: number
 /**
  * Beräknar skattunderlag med alla skattepliktiga tillägg
  */
-
 export function beräknaSkattunderlag(grundlön: number, extrarader: any[]): number {
   let skattunderlag = grundlön;
   extrarader.forEach((rad) => {
@@ -341,74 +384,28 @@ export function beräknaKomplett(
   dagAvdrag: DagAvdrag = { föräldraledighet: 0, vårdAvSjuktBarn: 0, sjukfrånvaro: 0 },
   extrarader: any[] = []
 ) {
-  // 1. Grundberäkningar
   const timlön = beräknaTimlön(kontrakt.månadslön, kontrakt.arbetstimmarPerVecka);
   const daglön = beräknaDaglön(kontrakt.månadslön);
-
-  // 2. Övertidsersättning
   const övertidsersättning = övertidTimmar * timlön * 1.5;
-
-  // 3. Dagavdrag
   const totalDagavdrag =
     (dagAvdrag.föräldraledighet + dagAvdrag.vårdAvSjuktBarn + dagAvdrag.sjukfrånvaro) * daglön;
 
-  // 4. Dela upp extrarader
-  let skattepliktigaFörmåner = 0;
-  let övrigaTillägg = 0;
-  let skattefriaErsättningar = 0;
-
-  extrarader.forEach((rad) => {
-    const belopp = parseFloat(rad.kolumn3) || 0;
-    const konfig = RAD_KONFIGURATIONER[rad.typ];
-    if (konfig?.skattepliktig === true) {
-      skattepliktigaFörmåner += belopp;
-    } else if (konfig?.skattepliktig === false) {
-      skattefriaErsättningar += belopp;
-    } else {
-      övrigaTillägg += belopp;
-    }
-  });
-
-  // 5. Bruttolön = lön + övertid + övriga tillägg - dagavdrag (ej förmåner!)
-  const bruttolön = kontrakt.månadslön + övertidsersättning + övrigaTillägg - totalDagavdrag;
-
-  // 6. Skatteunderlag = bruttolön + skattepliktiga förmåner
-  const skattunderlag = bruttolön + skattepliktigaFörmåner;
-
-  // 7. Beräkna skatt enligt skattetabell 34
-  const skatt = beräknaSkattTabell34(skattunderlag);
-
-  // 8. Nettolön = bruttolön - skatt + skattefria ersättningar
-  const nettolön = bruttolön - skatt + skattefriaErsättningar;
-
-  // 9. Sociala avgifter på skatteunderlag
-  const socialaAvgifter = beräknaSocialaAvgifter(skattunderlag, kontrakt.socialaAvgifterSats);
-
-  // 10. Lönekostnad = bruttolön + sociala avgifter + förmåner
-  const lönekostnad = bruttolön + socialaAvgifter + skattepliktigaFörmåner;
-
-  console.log("==== LÖNEDEBUG ====");
-  console.log("Extrarader:");
-  extrarader.forEach((rad, i) => {
-    console.log(
-      `  [${i}] ${rad.kolumn1} | Belopp: ${rad.kolumn3} | rad.typ: "${rad.typ}" | Skattepliktig:`,
-      RAD_KONFIGURATIONER[rad.typ]?.skattepliktig,
-      "| Alla nycklar i RAD_KONFIGURATIONER:",
-      Object.keys(RAD_KONFIGURATIONER)
-    );
-  });
-  console.log({
+  const {
+    bruttolönTillägg,
     skattepliktigaFörmåner,
-    övrigaTillägg,
     skattefriaErsättningar,
-    bruttolön,
-    skattunderlag,
-    skatt,
-    socialaAvgifter,
-    nettolön,
-    lönekostnad,
-  });
-  console.log("===================");
+    övrigaTillägg,
+    nettolönejustering,
+  } = klassificeraExtrarader(extrarader);
+
+  const bruttolön =
+    kontrakt.månadslön + övertidsersättning + övrigaTillägg + bruttolönTillägg - totalDagavdrag;
+
+  const skattunderlag = bruttolön + skattepliktigaFörmåner;
+  const skatt = beräknaSkattTabell34(skattunderlag);
+  const nettolön = bruttolön - skatt + skattefriaErsättningar + nettolönejustering;
+  const socialaAvgifter = beräknaSocialaAvgifter(skattunderlag, kontrakt.socialaAvgifterSats);
+  const lönekostnad = bruttolön + socialaAvgifter + skattepliktigaFörmåner;
 
   return {
     timlön: Math.round(timlön * 100) / 100,
@@ -528,5 +525,4 @@ export function beräknaSkattTabell34(bruttolön: number): number {
 // =====================================================================================
 // Huvudfunktioner för actions.ts: beräknaKompletLön(), konverteraLön()
 // Huvudfunktioner för komponenter: beräknaLönekomponenter(), beräknaKomplett()
-// Huvudfunktioner för bokföring: beräknaKompletLön() med extrarader
-// Grundfunktioner: beräknaDaglön(), beräknaTimlön(), beräknaSocialaAvgifter(), etc.
+// Huvudfunktioner för bokföring: beräknaKompletLön() med

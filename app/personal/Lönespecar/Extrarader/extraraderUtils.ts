@@ -306,7 +306,7 @@ export function getFieldsForRow(
           setModalFields((f: any) => ({ ...f, kolumn3: e.target.value })),
         step: "0.01", // Tillåt ören
         required: true,
-        min: rowId === "nettolönejustering" ? undefined : "0", // ← TILLÅT NEGATIVA FÖR NETTOLÖNEJUSTERING
+        // min: rowId === "nettolönejustering" ? undefined : "0", // ← TILLÅT NEGATIVA FÖR NETTOLÖNEJUSTERING
         // Använd custom placeholder eller fallback till generisk
         placeholder: config.fält.beloppPlaceholder || "Belopp per " + config.enhet,
       });
